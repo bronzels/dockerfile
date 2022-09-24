@@ -1,0 +1,41 @@
+FROM mhart/alpine-node:6.17.1
+#FROM node:alpine
+
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
+RUN cat /etc/apk/repositories
+# Install base packages and set timezone ShangHai
+RUN apk update && apk add bash tzdata \
+    && cp -r -f /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+RUN apk del tzdata
+
+#RUN apk add git g++ openssh-client
+#RUN apk add --no-cache --virtual build-dependencies \
+# python3-dev \
+# libffi-dev \
+# openssl-dev \
+# gcc \
+# libc-dev \
+# make
+#RUN apk add jpeg-dev zlib-dev
+#RUN apk add python3 wget
+#COPY get-pip.py /get-pip.py
+#RUN python3 /get-pip.py
+#RUN pip install --upgrade pip setuptools==45.2.0 -i https://pypi.tuna.tsinghua.edu.cn/simple
+#RUN pip install cython -i https://pypi.tuna.tsinghua.edu.cn/simple
+
+RUN npm config set registry http://registry.npm.taobao.org
+RUN npm install gitbook-cli -g
+RUN gitbook fetch 3.2.3
+#RUN npm install -g codepiano/gitbook
+
+RUN gitbook -V
+
+RUN rm -rf /tmp/* /var/cache/apk/*
+
+RUN mkdir /root/api-doc
+WORKDIR /root/api-doc
+#COPY book.json /root/api-doc/
+
+EXPOSE 4000
+
+CMD ["gitbook", "serve"]

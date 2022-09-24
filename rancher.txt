@@ -1,0 +1,134 @@
+helm repo add nginx-stable https://helm.nginx.com/stable
+helm show values nginx-stable/nginx-ingress
+helm install myng nginx-stable/nginx-ingress -n cattle-system \
+  --set controller.service.type=NodePort \
+  --set controller.replicaCount=2 \
+  --set controller.service.httpPort.nodePort=30080 \
+  --set controller.service.httpsPort.nodePort=30443
+  
+docker run --name mych2docker -itd --privileged -v /cdhdata1/bigopera/rancher-tmp:/tmp/rancher --restart=unless-stopped -p 1080:80 -p 1443:443 rancher/rancher:stable
+
+密码：mych23456
+
+helm repo add rancher-stable https://releases.rancher.com/server-charts/stable
+kubectl create ns cattle-system
+helm install myrch rancher-stable/rancher \
+ --namespace cattle-system \
+ --set hostname=rancher.my.org \
+ --set ingress.tls.source=secret
+ 
+helm install myrch rancher-stable/rancher \
+ --namespace cattle-system \
+ --set hostname=rancher.my.org \
+ --set ingress.tls.source=secret \
+ --set privateCA=true
+
+helm uninstall myrch --namespace cattle-system
+ 
+c:\windows\system32\drivers\etc\hosts:
+
+192.168.0.84 rancher.my.org
+192.168.0.84 traefik-ui.my.org
+192.168.0.84 serv.my.org
+
+
+./create_self-signed-cert.sh --ssl-domain=my.org --ssl-trusted-domain=rancher.my.org,traefik-ui.my.org \
+--ssl-trusted-ip=192.168.0.61,192.168.0.62,192.168.0.63 --ssl-size=2048 --ssl-date=3650
+
+./create_self-signed-cert.sh --ssl-domain=rancher.my.org \
+--ssl-trusted-ip=192.168.0.84,192.168.0.86 --ssl-size=2048 --ssl-date=3650
+
+
+       - name: traefik
+          image: traefik:v2.3.6
+          args:
+            - --api.insecure
+            - --accesslog
+            - --entrypoints.web.Address=:8000
+            - --entrypoints.websecure.Address=:4443
+            - --providers.kubernetescrd
+            - --certificatesresolvers.default.acme.tlschallenge
+            - --certificatesresolvers.default.acme.email=alexliu@acadsoc.com
+            - --certificatesresolvers.default.acme.storage=acme.json
+
+kubectl -n cattle-system create secret tls tls-rancher-ingress   --cert=../cert/tls.crt   --key=../cert/tls.key
+kubectl -n cattle-system create secret generic tls-ca --from-file=../cert/cacerts.pem 
+
+kubectl -n cattle-system delete secret tls-rancher-ingress
+kubectl -n cattle-system delete secret tls-ca
+ 
+helm install kong/kong --generate-name --set ingressController.installCRDs=false
+
+#helm install kong kong/kong -n default \
+#    --set admin.useTLS=false \
+#    --set admin.nodePort=32444 \
+#    --set proxy.http.nodePort=32080 \
+#    --set proxy.tls.nodePort=32443 \
+#    --set replicaCount=3
+
+NAME: kong-1609313336
+LAST DEPLOYED: Wed Dec 30 15:29:10 2020
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+To connect to Kong, please execute the following commands:
+
+HOST=$(kubectl get svc --namespace default kong-1609313336-kong-proxy -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+PORT=$(kubectl get svc --namespace default kong-1609313336-kong-proxy -o jsonpath='{.spec.ports[0].port}')
+export PROXY_IP=${HOST}:${PORT}
+curl $PROXY_IP
+
+Once installed, please follow along the getting started guide to start using
+Kong: https://bit.ly/k4k8s-get-started
+
+	
+
+kubectl delete crd kongclusterplugins.configuration.konghq.com
+kubectl delete crd kongconsumers.configuration.konghq.com
+kubectl delete crd kongingresses.configuration.konghq.com	
+kubectl delete crd kongplugins.configuration.konghq.com	
+kubectl delete crd tcpingresses.configuration.konghq.com
+
+
+helm uninstall myhb
+
+watch kubectl get pod
+
+#!/bin/bash
+kubectl get pvc |grep myhb > tmp.txt
+cat tmp.txt |awk '{split($0,a," ");print a[1]}' > tmp2.txt
+for line in `cat tmp2.txt`
+do
+kubectl delete pvc $line
+done
+
+#!/bin/bash
+kubectl get pv |grep harbor > tmp.txt
+cat tmp.txt |awk '{split($0,a," ");print a[1]}' > tmp2.txt
+for line in `cat tmp2.txt`
+do
+kubectl delete pv $line
+done
+
+mkdir ../../tmp/1230-3
+
+mv /cdhdata1/bigopera/nfs-harbor/* ../../tmp/1230-3/
+
+mkdir -p /cdhdata1/bigopera/nfs-harbor/{pv1,pv2,pv3,pv4,pv5,pv6}
+chmod -R 777  /cdhdata1/bigopera/nfs-harbor
+
+kubectl apply -f ../harbor-pv.yaml
+
+helm install myhb ./
+
+watch kubectl get pod
+
+helm list -n cattle-system
+helm install mytrf ./ -n cattle-system
+helm uninstall mytrf -n cattle-system
+
+	
+	
+	

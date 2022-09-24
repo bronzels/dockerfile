@@ -1,0 +1,1372 @@
+mkdir -p jenkins/data
+cd jenkins
+chown -R 1000:1000 data
+
+
+#Dockerfile
+FROM jenkins/jenkins:2.263.1-lts-centos7
+USER root
+
+RUN yum -y install gcc gcc-c++ make automake 
+RUN yum -y install libxml2-devel openssl-devel curl-devel libjpeg-devel libpng-devel libicu-devel freetype-devel openldap-devel openldap openldap-devel
+RUN yum -y install sqlite-devel bzip2-devel.x86_64 libxslt-devel
+COPY libzip-1.2.0.tar.gz /
+RUN tar -zxvf libzip-1.2.0.tar.gz
+WORKDIR /libzip-1.2.0
+RUN ./configure
+RUN make && make install
+WORKDIR /
+RUN yum -y install http://down.24kplus.com/linux/oniguruma/oniguruma-6.7.0-1.el7.x86_64.rpm
+RUN yum -y install http://down.24kplus.com/linux/oniguruma/oniguruma-devel-6.7.0-1.el7.x86_64.rpm
+COPY php-7.4.7.tar.gz /
+RUN tar -zxvf php-7.4.7.tar.gz
+WORKDIR /php-7.4.7
+RUN ./configure \
+--prefix=/usr/local/php \
+--with-config-file-path=/usr/local/php/etc \
+--with-fpm-user=www \
+--with-fpm-group=www \
+--with-curl \
+--with-MySQL=/usr/local/mysql \
+--with-freetype-dir=/user/local/freetype \
+--enable-gd \
+--with-gettext \
+--with-iconv-dir \
+--with-kerberos \
+--with-libdir=lib64 \
+--with-libxml-dir \
+--with-mysqli \
+--with-openssl \
+--with-pcre-regex \
+--with-pdo-mysql \
+--with-pdo-sqlite \
+--with-pear \
+--with-png-dir=/user/local/libpng \
+--with-jpeg-dir=/user/local/libjpeg \
+--with-xmlrpc \
+--with-xsl \
+--with-zlib \
+--with-zlib-dir=/user/local/zlib \
+--with-bz2 \
+--with-mhash \
+--with-zip \
+--enable-fpm \
+--enable-bcmath \
+--enable-libxml \
+--enable-inline-optimization \
+--enable-mbregex \
+--enable-mbstring \
+--enable-opcache \
+--enable-pcntl \
+--enable-shmop \
+--enable-soap \
+--enable-sockets \
+--enable-sysvsem \
+--enable-sysvshm \
+--enable-xml \
+--enable-zip \
+--enable-fpm
+RUN cd ..
+
+RUN make
+RUN make install
+
+RUN cp /etc/yum/pluginconf.d/fastestmirror.conf /etc/yum/pluginconf.d/fastestmirror.conf.bak
+RUN sed -i 's/enabled = 1/enabled = 0/g' /etc/yum/pluginconf.d/fastestmirror.conf
+RUN cp /etc/yum.conf /etc/yum.conf.bak
+RUN sed -i 's/plugins=1/plugins=0/g' /etc/yum.conf
+RUN cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
+COPY CentOS-Base.repo /etc/yum.repos.d/
+#RUN cp /etc/yum.repos.d/epel.repo /etc/yum.repos.d/epel.repo.bak
+COPY epel.repo /etc/yum.repos.d/
+RUN yum clean all
+RUN yum makecache
+RUN rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+RUN rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
+RUN yum -y install php72w php72w-cli php72w-fpm php72w-common php72w-devel 
+RUN php -v
+
+RUN yum install -y yum-utils
+RUN yum-config-manager \
+    --add-repo \
+    https://download.docker.com/linux/centos/docker-ce.repo
+RUN yum-config-manager --disable docker-ce-nightly
+RUN yum install -y docker-ce docker-ce-cli containerd.io
+
+cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+
+USER jenkins
+
+
+#docker run -d --name jenkins --restart unless-stopped -p 28080:8080 -p 50000:50000 -v /cdhdata1/bigopera/jenkins/data:/var/jenkins_home jenkins/jenkins:2.263.1-lts-centos7
+docker run -d --name jenkins --restart unless-stopped -p 28080:8080 -p 50000:50000 -v /var/run/docker.sock:/var/run/docker.sock -v /cdhdata1/bigopera/jenkins/data:/var/jenkins_home harbor.my.org:1080/library/ci/jenkins_jenkins_2.263.1-lts-centos7
+docker exec -it jenkins /bin/sh
+	cat /var/jenkins_home/secrets/initialAdminPassword
+c73ee36b082647f2af318dea0fb2e93b
+cp /var/jenkins_home/updates/default.json /var/jenkins_home/updates/default.json.bk
+sed -i 's/updates.jenkins-ci.org\/download/mirrors.tuna.tsinghua.edu.cn\/jenkins/g'	/var/jenkins_home/updates/default.json
+sed -i 's/www.google.com/www.baidu.com/g' /var/jenkins_home/updates/default.json
+alexliu/MeReco6ms
+设置插件mirror
+
+ln -s /var/jenkins_home/arcanist-master/bin/arc /usr/bin/arc
+
+  exec java -Duser.home="$JENKINS_HOME" "${java_opts_array[@]}" -jar ${JENKINS_WAR} "${jenkins_opts_array[@]}" "$@"
+  exec java -Duser.home="$JENKINS_HOME" -Dhudson.security.csrf.GlobalCrumbIssuerConfiguration.DISABLE_CSRF_PROTECTION=true "${java_opts_array[@]}" -jar ${JENKINS_WAR} "${jenkins_opts_array[@]}" "$@"
+  
+  
+ -Dhudson.security.csrf.GlobalCrumbIssuerConfiguration.DISABLE_CSRF_PROTECTION=true
+ 
+
+http://jenkins.my.org:8080/job/mvn_automated_construction_test/buildWithParameters?token=automated_dfdHJGJGJ536&DIFF_ID=${buildable.diff}&PHID=${target.phid}&git_url=${repository.uri}&project=${repository.callsign}&commitId=${buildable.commit}
+http://jenkins.my.org:8080/job/mvn_automated_construction_test/build?token=TOKEN_NAME
+
+build plan配置：http://JENKINS_URL/job/DEV-${repository.callsign}/build?token=123456&cause=${repository.callsign}
+build plan运行：http://yourdomain/job/DEV-HSCFTEST/build?token=123456&cause=HSCFTEST
+
+phabricator robot token:
+api-jkyekodlspmm6hoesmld6izlzfu2
+1, vcp password:
+75STRSffhf
+
+
+cd /var/jenkins_home
+git clone https://github.com/phacility/arcanist.git
+
+
+jenkins token:
+automated_dfdHJGJGJ536
+
+clean package -U
+./${project}/pom.xml
+
+要手工填写项目的callsign大写（只允许大写字母，不允许空格下划线等特殊字符）：
+JAVAMAVENJUNITHELLOWORLD
+
+yum install -y maven
+设置MAVEN_HOME
+/usr/share/maven/conf/settings.xml
+
+
+arc set-config default http://phabricator.my.org:10080
+
+http://jenkins.my.org:8080/job/mvn_automated_construction_test/buildWithParameters?token=automated_dfdHJGJGJ536&DIFF_ID=${buildable.diff}&PHID=${target.phid}&project=${repository.callsign}&commitId=${buildable.commit}
+
+project=${repository.callsign}&commitId=${buildable.commit}
+
+
+
+#root
+tar xzvf harbor-offline-installer-v2.1.2.tgz
+  "insecure-registries":["harbor.my.org:1080"],
+  
+  
+  
+账户名admin密码Harbor12345(初始密码，写在配置文件里了)
+
+openssl genrsa -out ca.key 4096
+openssl req -x509 -new -nodes -sha512 -days 3650 \
+-subj "/C=CN/ST=Shanghai/L=Shanghai/O=example/OU=Personal/CN=harbor.my.org" \
+-key ca.key \
+-out ca.crt
+openssl genrsa -out harbor.my.org.key 4096
+openssl req -sha512 -new \
+    -subj "/C=CN/ST=Shanghai/L=Shanghai/O=example/OU=Personal/CN=harbor.my.org" \
+    -key harbor.my.org.key \
+    -out harbor.my.org.csr
+	
+cat > v3.ext <<-EOF
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1=harbor.my.org
+DNS.2=harbor
+DNS.3=192.168.0.62
+EOF
+
+openssl x509 -req -sha512 -days 3650 \
+    -extfile v3.ext \
+    -CA ca.crt -CAkey ca.key -CAcreateserial \
+    -in harbor.my.org.csr \
+    -out harbor.my.org.crt
+
+openssl x509 -inform PEM -in harbor.my.org.crt -out harbor.my.org.cert
+
+cp harbor.my.org.cert /etc/docker/certs.d/harbor.my.org/
+cp harbor.my.org.key /etc/docker/certs.d/harbor.my.org/
+cp ca.crt /etc/docker/certs.d/harbor.my.org/
+
+/data/cdhdata1/bigopera/harbor-cert/harbor.my.org.crt
+/data/cdhdata1/bigopera/harbor-cert/harbor.my.org.key
+
+
+
+windows 使用docker:
+  找到gitbash exe，右键管理员权限运行
+  mkdir -p /etc/docker/certs.d//harbor.my.org:1080
+  cp harbor.my.org.crt /etc/docker/certs.d//harbor.my.org:1080/ca.crt
+  重启docker desktop
+  ！！！碰到拉不下来自建harbor仓库的image的情况，先docker pull，然后再build
+
+
+cat /root/.kube/config
+
+https://api.k8s.at.bronzels:6443
+
+cat certificate-authority-data | base64 -d > ca.crt
+cat client-certificate-data | base64 -d > client.crt
+cat client-key-data | base64 -d > client.key
+
+kubectl create secret generic harborsecret -n servdoc \
+    --from-file=.dockerconfigjson=/home/bigopera/.docker/config.json \
+    --type=kubernetes.io/dockerconfigjson
+
+kubectl get secrets harborsecret --output="jsonpath={.data.\.dockerconfigjson}" | base64 -d
+
+kubectl get secret harborsecret --output=yaml
+
+[bigopera@Hadoop-Pre001 bigopera]$ kubectl get pod -o wide -n cattle-system 
+NAME                                    READY   STATUS    RESTARTS   AGE   IP                NODE            NOMINATED NODE   READINESS GATES
+cattle-cluster-agent-8696475564-4b9cj   1/1     Running   1          17d   192.168.152.198   hadoop-pre001   <none>           <none>
+mytrf-traefik-55ddc7b4cb-5lq6f          1/1     Running   1          17d   192.168.214.153   hadoop-pre002   <none>           <none>
+mytrf-traefik-55ddc7b4cb-8prlp          1/1     Running   1          17d   192.168.43.168    hadoop-pre003   <none>           <none>
+rancher-webhook-6977f86c5f-zmf7f        1/1     Running   1          18d   192.168.43.167    hadoop-pre003   <none>           <none>
+
+hadoop-pre001:
+sudo /sbin/iptables -t nat -I POSTROUTING -s 192.168.152.0/24 -j MASQUERADE
+hadoop-pre002:
+sudo /sbin/iptables -t nat -I POSTROUTING -s 192.168.214.0/24 -j MASQUERADE
+hadoop-pre003:
+sudo /sbin/iptables -t nat -I POSTROUTING -s 192.168.43.0/24 -j MASQUERADE
+
+
+
+
+chmod 777 data
+
+version: "3.7"
+services:
+  nexus:
+    restart: "unless-stopped"
+    image: sonatype/nexus3
+    container_name: nexus3.my.org
+    ports:
+      - 18081:8081
+    volumes:
+      - /cdhdata1/bigopera/nexus/data:/nexus-data
+	  
+账户密码
+admin/9c168bde-997a-4a94-80fe-8c1a8b9b29c2
+admin/nexus34567
+
+在nexus中新建third repo，允许redeploy，打开maven-public group repo，加入third
+
+setting.xml
+    <server>
+          <id>maven-releases</id>
+          <username>admin</username>
+          <password>nexus34567</password>
+    </server>
+    <server>
+      <id>maven-snapshots</id>
+      <username>admin</username>
+      <password>nexus34567</password>
+    </server>
+    <server>
+      <id>third</id>
+      <username>admin</username>
+      <password>nexus34567</password>
+    </server>
+
+maven仓库无法下载的jar文件，上传到third仓库
+mvn deploy:deploy-file -DgroupId=com.cloudera -DartifactId=ImpalaJDBC41 -Dversion=2.6.3 -Dpackaging=jar -Dfile=/cdhdata1/bigopera/nexus/ImpalaJDBC41-2.6.3.jar -Durl=http://nexus3.my.org:18081/repository/third/ -DrepositoryId=third
+
+修改工程的pom.xml
+
+<distributionManagement>
+        <snapshotRepository>
+            <id>maven-snapshots</id>
+            <name>maven-snapshots-repository</name>
+            <url>http://192.168.172.141:8081/repository/maven-snapshots/</url>
+        </snapshotRepository>
+        <repository>
+            <id>maven-releases</id>
+            <name>maven-releases-repository</name>
+            <url>http://192.168.172.141:8081/repository/maven-releases/</url>
+        </repository>
+</distributionManagement>
+
+<repositories>
+        <repository>
+            <id>nexus</id>
+            <name>Nexus Repository</name>
+            <url>http://nexus3.my.org:18081/repository/maven-public/</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+</repositories>
+<pluginRepositories>
+        <pluginRepository>
+            <id>nexus</id>
+            <name>Nexus Plugin Repository</name>
+            <url>http://nexus3.my.org:18081/repository/maven-public/</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </pluginRepository>
+</pluginRepositories>
+
+
+
+kubectl create configmap settings-xml --from-file=./settings.xml
+kubectl create configmap pip-conf --from-file=./pip.conf
+
+sudo vim /etc/exports
+/data/cdhdata1/bigopera/nfs 192.168.0.0/24(rw,async,no_root_squash,no_all_squash)
+/data/cdhdata1/bigopera/nfs-mvn 192.168.0.0/24(rw,async,no_root_squash,no_all_squash)
+sudo systemctl reload nfs
+
+sudo showmount -e 192.168.0.62
+mkdir /cdhdata1/bigopera/nfsmnt
+sudo mount -t nfs 192.168.0.62:/data/cdhdata1/bigopera/nfs-mvn /cdhdata1/bigopera/nfsmnt
+ls /cdhdata1/bigopera/nfsmnt
+sudo umount /cdhdata1/bigopera/nfsmnt
+
+
+cat > mvn-m2-nfs-pv.yaml << EOF
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mvn-m2-nfs-pv
+  labels:
+    storage: mvn-nfs-pv
+  annotations:
+    kubernetes.io.description: pv-storage
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs
+  mountOptions:
+    - vers=4
+  nfs:
+    path: /data/cdhdata1/bigopera/nfs-mvn
+    server: 192.168.0.62
+EOF
+
+kubectl apply -f mvn-m2-nfs-pv.yaml
+
+cat > mvn-m2-pvc.yaml << EOF
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: mvn-m2-pvc
+  labels:
+    storage: mvn-nfs-pvc
+  annotations:
+    kubernetes.io/description: "PersistentVolumeClaim for PV"
+spec:
+  selector:
+    matchLabels:
+      storage: mvn-nfs-pv
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Filesystem
+  storageClassName: nfs
+  resources:
+    requests:
+      storage: 8Gi
+EOF
+
+kubectl apply -f mvn-m2-pvc.yaml
+
+cat > mvn-pod-test.yaml << EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mvn-pod-test
+spec:
+  containers:
+  - image: registry.cn-hangzhou.aliyuncs.com/rookieops/maven:3.5.0-alpine
+    name: mvn
+    imagePullPolicy: Always
+    command:
+    - cat
+    tty: true
+    volumeMounts:
+    - name: mvn-m2
+      mountPath: "/root/.m2"
+  volumes:
+    - name: mvn-m2
+      persistentVolumeClaim:
+        claimName: mvn-m2-pvc
+EOF
+
+#k8s所有节点安装sudo yum install nfs-utils -y
+
+kubectl apply -f mvn-pod-test.yaml
+
+		
+		
+mkdir data
+chmod 777 data
+git clone https://gitee.com/ibisheng/deploy.git
+cd deploy
+docker network create bisheng
+
+nginx/docker-compose.yml
+#端口修改为10080
+
+bash install.sh /cdhdata1/bigopera/ibisheng/data
+#bash stop.sh
+
+管理员默认用户名为： admin ;密码为 bisheng
+
+docker run -i -t -d -p 20080:80 onlyoffice/documentserver
+
+pypi.my.org	10080
+harbor.my.org 1080
+phabricator.my.org 10080/10022/10443
+sonar.my.org 19000
+jenkins.my.org 28080/50000
+nexus3.my.org
+
+ibisheng.my.org 10080/10443
+onlyoffice.my.org 20080
+argocd.my.org 32080
+rancher 1080/1443
+
+
+
+#基础镜像为centos
+
+FROM centos:7
+
+#java环境
+ADD ./lib/jdk-8u271-linux-x64.tar.gz  /usr/local/
+ENV JAVA_HOME /usr/local/jdk1.8.0_271
+ENV JRE_HOME /usr/local/jdk1.8.0_271/jre
+ENV PATH $JAVA_HOME/bin:$JRE_HOME/bin:$PATH
+
+#引入openoffice
+ADD ./lib/Apache_OpenOffice_4.1.8_Linux_x86-64_install-rpm_zh-CN.tar.gz  /tmp/Apache_OpenOffice_4.1.8_Linux_x86-64_install-rpm_zh-CN
+#ADD ./lib/Apache_OpenOffice_4.1.8_Linux_x86-64_langpack-rpm_zh-CN.tar.gz  /tmp/Apache_OpenOffice_4.1.8_Linux_x86-64_langpack-rpm_zh-CN
+
+RUN cd /tmp && \
+yum install -y /tmp/Apache_OpenOffice_4.1.8_Linux_x86-64_install-rpm_zh-CN/zh-CN/RPMS/*.rpm && \
+yum install -y /tmp/Apache_OpenOffice_4.1.8_Linux_x86-64_install-rpm_zh-CN/zh-CN/RPMS/desktop-integration/openoffice4.1.8-redhat-menus-4.1.8-9803.noarch.rpm
+
+#RUN yum install -y /tmp/Apache_OpenOffice_4.1.8_Linux_x86-64_langpack-rpm_zh-CN/zh-CN/RPMS/*.rpm
+
+#删除压缩包
+RUN rm -f /tmp/Apache_OpenOffice_4.1.6_Linux_x86-64_install-rpm_zh-CN
+#RUN rm -f /tmp/Apache_OpenOffice_4.1.8_Linux_x86-64_langpack-rpm_zh-CN
+
+#必要的库
+RUN yum install -y libXext.x86_64 && \
+yum install  -y gcc  && \
+yum install  -y gcc-c++ && \
+yum install  -y freetype-devel && \
+yum install  -y glib2-devel  && \
+yum install  -y cairo-devel
+
+#启动openoffice4服务报错:no suitable windowing system found, exiting问题
+RUN yum groupinstall -y "X Window System"
+
+#安装中文字体，解决中文乱码
+ADD /lib/fonts  /usr/share/fonts
+RUN cd /usr/share/fonts/ && \
+chmod -R 755 /usr/share/fonts && \
+yum install -y mkfontscale && \
+yum install -y fontconfig && \
+mkfontscale && \
+mkfontdir && \
+fc-cache -fv
+
+#清除yum缓存
+RUN yum clean all
+
+#暴露接口
+EXPOSE 8100
+
+#启动服务，占用8100端口
+CMD /opt/openoffice4/program/soffice -headless -accept="socket,host=0.0.0.0,port=8100;urp;" -nofirststartwizard &
+
+
+VOLUME /tmp
+## 上传自己项目jar包运行
+ADD /target/oss-server-1.1.jar  /tmp/app.jar
+ENTRYPOINT [ "java", "-jar", "/tmp/app.jar" ]
+
+docker build ./ -t harbor.my.org:1080/library/office/openoffice
+docker push harbor.my.org:1080/library/office/openoffice
+
+
+kubectl create configmap pip-conf --from-file=./pip.conf
+kubectl create configmap dot-pypirc --from-file=./.pypirc
+
+docker run -itd --name openoffice.my.org --restart unless-stopped -p 18100:8100 harbor.my.org:1080/library/office/openoffice
+
+FROM registry.cn-hangzhou.aliyuncs.com/rookieops/maven:3.5.0-alpine
+
+docker build ./ -f Dockerfile-alpine-mvn -t harbor.my.org:1080/library/ci/rookieops/maven:3.5.0-alpine
+docker push harbor.my.org:1080/library/ci/rookieops/maven:3.5.0-alpine
+
+FROM pf5f57i3.mirror.aliyuncs.com/lernisto/py35
+
+docker build ./ --add-host pypi.my.org:192.168.0.62 -f Dockerfile-alpine-py35 -t harbor.my.org:1080/library/ci/python:3.5-alpine3.4
+docker push harbor.my.org:1080/library/ci/python:3.5-alpine3.4
+
+docker build ./ --add-host pypi.my.org:192.168.0.62 -f Dockerfile-alpine-py37 -t harbor.my.org:1080/library/ci/python:3.7-alpine
+docker push harbor.my.org:1080/library/ci/python:3.7-alpine
+
+FROM openjdk:8-jdk-alpine
+
+#镜像的制作人
+MAINTAINER alexliu/alexliu@acadsoc.com
+
+RUN apk update
+RUN apk add tzdata
+RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+RUN echo Asia/Shanghai > /etc/timezone
+RUN apk del tzdata
+RUN rm -rf /tmp/* /var/cache/apk/*
+
+docker build ./ -f Dockerfile-base-java -t harbor.my.org:1080/base/mvn/openjdk:8-jdk-alpine
+docker push harbor.my.org:1080/base/mvn/openjdk:8-jdk-alpine
+
+docker build ./ --add-host pypi.my.org:192.168.0.62 -f Dockerfile-base-py35 -t harbor.my.org:1080/base/py/python:3.5-alpine3.4
+docker push harbor.my.org:1080/base/py/python:3.5-alpine3.4
+
+docker build ./ --add-host pypi.my.org:192.168.0.62 -f Dockerfile-base-py37 -t harbor.my.org:1080/base/py/python:3.7-alpine
+docker push harbor.my.org:1080/base/py/python:3.7-alpine
+
+docker rmi harbor.my.org:1080/base/py/python:3.5-alpine3.4
+
+#停止状态为Exited的容器
+docker ps -a | grep "Exited" | awk '{print $1 }'|xargs docker stop
+#删除状态为Exited的容器
+docker ps -a | grep "Exited" | awk '{print $1 }'|xargs docker rm
+#删除 tag名称为none的image
+docker images|grep none|awk '{print $3 }'|xargs docker rmi
+
+
+如果因为卸载插件需要重启Jenkins的docker：
+1，su root密码root，/etc/hosts增加
+192.168.0.85 api.k8s.at.bronzels
+不然连不到beta k8s集群，无法运行pipeline
+2，“系统管理”-“脚本命令行”，黏贴，点击“运行”按钮。
+System.setProperty('org.apache.commons.jelly.tags.fmt.timeZone', 'Asia/Shanghai')
+不然jenkins的console日志中显示时间是UTC。
+
+docker run  -d -h mail.ewomail.com --restart=unless-stopped \
+  -p 30025:25 \
+  -p 30080:80 \
+  -p 38080:8080 \
+  --network cicd \
+  --name smtp.ewomail.com bestwu/ewomail
+admin/ewomail123
+
+JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8
+JAVA_OPTS=-Duser.timezone=Asia/Shanghai -Dsun.jnu.encoding=UTF-8 -Dfile.encoding=UTF-8
+LANG=zh_CN.UTF-8
+
+#source /etc/locale.conf
+#export LC_ALL=C.UTF-8
+#export JAVA_OPTS=-Duser.timezone=Asia/Shanghai -Dsun.jnu.encoding=UTF-8 -Dfile.encoding=UTF-8
+#export LANG=C.UTF-8
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: argocd-server-external
+    app.kubernetes.io/part-of: argocd
+  name: argocd-server-external
+spec:
+  type: NodePort
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+    nodePort: 32080
+after spec:
+      hostAliases:
+      - ip: "192.168.0.62"
+        hostnames:
+        - "phabricator.my.org"
+kubectl apply -f install.yaml -n argocd
+#kubectl delete -f install.yaml -n argocd
+kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-server -o name | cut -d'/' -f 2
+http://www.ab126.com/goju/10822.html
+	输入argo56789
+	把加密结果copy到下面的admin.password
+kubectl -n argocd patch secret argocd-secret   -p '{"stringData": {
+      "admin.password": "$2a$10$0ryXxiEgW6A/51d7osshgu37ZdR3VUKXbqG0JYxVRaTv0aBJNFcrS",
+      "admin.passwordMtime": "'$(date +%FT%T%Z)'"
+    }}'
+admin/argo56789
+
+argocd-server-6c64d486bc-4tw72
+$2a$10$8xuIDgrP9n4kySbdPw1tI.TFpr97n3tgz/yuRZYMWm1wk7HPVolTq
+kubectl -n argocd patch secret argocd-secret   -p '{"stringData": {
+      "admin.password": "$2a$10$8xuIDgrP9n4kySbdPw1tI.TFpr97n3tgz/yuRZYMWm1wk7HPVolTq",
+      "admin.passwordMtime": "'$(date +%FT%T%Z)'"
+    }}'
+
+
+wget -c https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.9.2/kustomize_v3.9.2_linux_amd64.tar.gz
+tar xzvf kustomize_v3.9.2_linux_amd64.tar.gz
+sudo mv kustomize /usr/bin
+
+kustomize build gitops-cd/overlays/beta/flask-demo
+kustomize build gitops-cd/overlays/beta/spring-boot-demo
+
+kubectl create secret generic harborsecret \
+    --from-file=.dockerconfigjson=/home/bigopera/.docker/config.json \
+    --type=kubernetes.io/dockerconfigjson \
+	-n servmvn
+
+kubectl create secret generic harborsecret \
+    --from-file=.dockerconfigjson=/home/bigopera/.docker/config.json \
+    --type=kubernetes.io/dockerconfigjson \
+	-n servpy
+
+kubectl create secret docker-registry harborsecret --namespace=argocd \
+--docker-server=http://harbor.my.org:1080 --docker-username=admin \
+--docker-password=Harbor12345 --docker-email=alexliu@acadsoc.com \
+	-n servmvn
+
+echo 'mygitops'|base64
+bXlnaXRvcHMK
+https://tool.oschina.net/encrypt?type=3，要用在线才行，命令的错误
+bXlnaXRvcHM=
+kubectl edit secret argocd-secret -n argocd
+  webhook.gitlab.secret: 上一句base64输出
+  webhook.gitlab.secret: bXlnaXRvcHMK
+kind: Secret
+metadata:  
+kubectl describe secret argocd-secret -n argocd  
+设置自建gitlab上gitops-cd工程的webhook
+	http://192.168.0.85:32080/api/webhook
+	mygitops
+	check Push Events
+	uncheck Enable SSL verification
+kubectl create namespace argo-rollouts
+wget -c https://raw.githubusercontent.com/argoproj/argo-rollouts/stable/manifests/install.yaml -O install-rollout.yaml
+kubectl apply -n argo-rollouts -f install-rollout.yaml
+curl -LO https://github.com/argoproj/argo-rollouts/releases/latest/download/kubectl-argo-rollouts-linux-amd64
+chmod +x ./kubectl-argo-rollouts-linux-amd64
+sudo mv ./kubectl-argo-rollouts-linux-amd64 /usr/local/bin/kubectl-argo-rollouts
+
+kubectl run test-mysr -ti --image=praqma/network-multitool --rm=true --restart=Never -- curl http://myservice-spring-boot-demo:8080/hello
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: strip2prefixregex
+spec:
+  stripPrefixRegex:
+    regex:
+      - "/[a-z0-9]+/[a-z0-9]+"
+
+ && PathPrefix(`/mvn/sbd`)
+ 
+      middlewares:
+        - name: strip2prefixregex 
+
+kubectl apply -f middleware_strip2prefixregex.yaml -n servmvn
+#kubectl delete -f middleware_strip2prefixregex.yaml -n servmvn		
+kubectl apply -f middleware_strip2prefixregex.yaml -n servpy
+#kubectl delete -f middleware_strip2prefixregex.yaml -n servpy
+	
+	
+	
+	
+85启动启动一堆nginx进程
+kill -9 $(ps -ef|grep "bash -c /usr/local/nginx/sbin/nginx -V 2>&1"|gawk '$0 !~/grep/ {print $2}' |tr -s '\n' ' ')
+ps -ef|grep "bash -c /usr/local/nginx/sbin/nginx -V 2>&1"
+
+
+#kubectl create configmap usertestsys-db-account -n servpy --from-file=./db.config
+
+## 加密
+echo -n AcadsocDataAnalysis | base64
+YWRtaW4=
+echo -n "jS&D6v7jT9jpI7L@" | base64
+alMmRDZ2N2pUOWpwSTdMQA==
+echo -n wx44a3aa5cab9d39a0 | base64
+d3g0NGEzYWE1Y2FiOWQzOWEw
+echo -n "45dcc46158d64b35442a1f29c60b3637" | base64
+NDVkY2M0NjE1OGQ2NGIzNTQ0MmExZjI5YzYwYjM2Mzc=
+
+## 解密
+echo -n d3g0NGEzYWE1Y2FiOWQzOWEw | base64 -d
+wx44a3aa5cab9d39a0
+echo -n NDVkY2M0NjE1OGQ2NGIzNTQ0MmExZjI5YzYwYjM2Mzc= | base64 -d
+45dcc46158d64b35442a1f29c60b3637
+
+vim secrets-servpy-usertestsys.yaml
+...
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysecret-usertestsys
+  namespace: servpy
+type: Opaque
+data:
+  password: alMmRDZ2N2pUOWpwSTdMQA==
+  username: YWRtaW4=
+  appid: d3g0NGEzYWE1Y2FiOWQzOWEw
+  apisecret: NDVkY2M0NjE1OGQ2NGIzNTQ0MmExZjI5YzYwYjM2Mzc=
+...
+kubectl create -f secrets-servpy-usertestsys.yaml -n servpy
+
+docker build ./ --add-host pypi.my.org:192.168.0.62 -f Dockerfile-usertestsys-py37 -t harbor.my.org:1080/base/py/usertestsys
+docker push harbor.my.org:1080/base/py/usertestsys
+
+-e DB_HOST=192.168.74.42 -e DB_DATABASE=AcadsocDataAnalysisAlgorithm -e DB_USER=DevDBA-e DB_PASSWD=Dev@#0907Dba
+
+set LIB=C:\OpenSSL-win64\lib;%LIB%
+set INCLUDE=C:\OpenSSL-win64\include;%INCLUDE%
+
+docker build ./ --add-host pypi.my.org:192.168.0.62 -f Dockerfile-api-doc-node -t harbor.my.org:1080/base/node/api-doc
+docker push harbor.my.org:1080/base/node/api-doc
+
+docker build ./ --add-host pypi.my.org:192.168.0.62 -f Dockerfile-base-nginx -t harbor.my.org:1080/base/nginx
+docker push harbor.my.org:1080/base/nginx
+
+
+
+/mnt/analysis_group/projects/vocab-estimation
+/mnt/analysis_group/projects/vocab-estimation/word_audio
+/mnt/analysis_group/projects/vocab-estimation/word_audio/qr_code
+
+deploy_env/vocabularySizeEstimation/bin/python3 -m vocabularySizeEstimation.service.vocabulary_size_estimate_service 8801
+deploy_env/speakingEvaluation/bin/python -m speakingEvaluation.service.evaluation_service 8803
+deploy_env/grammarEvaluation/bin/python3 -m grammarEvaluation.service.evaluation_service 8804
+deploy_env/readingEvaluation/bin/python3 -m readingEvaluation.service.evaluation_service 8805
+deploy_env/listeningEvaluation/bin/python3 -m listeningEvaluation.service.evaluation_service 8806
+
+docker run -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=Aks@12345' -p 1433:1433 --name=mysqlserver2017 -d mcr.microsoft.com/mssql/server:2017-latest
+
+
+docker exec -it mysqlserver2017 /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Aks@12345
+
+create database AcadsocDataAnalysisAlgorithm COLLATE Chinese_PRC_CI_AS
+go
+use AcadsocDataAnalysisAlgorithm
+
+
+docker run -itd --rm --name nginx-usertestsys -p 18085:80 harbor.my.org:1080/base/nginx
+
+mkdir -p /cdhdata1/analysis_group/usertestsys_rel_xxx
+mkdir -p /cdhdata1/analysis_group/nginx-usertestsys_rel_xxx/conf
+mkdir -p /cdhdata1/analysis_group/nginx-usertestsys_rel_xxx/log
+docker run -itd --restart unless-stopped --name nginx-usertestsys -p 21081:80 -p 21443:443 -v /cdhdata1/analysis_group/usertestsys_rel_xxx:/usr/share/nginx/html -v /cdhdata1/analysis_group/nginx-usertestsys_rel_xxx/conf:/etc/nginx -v /cdhdata1/analysis_group/nginx-usertestsys_rel_xxx/logs:/var/log/nginx harbor.my.org:1080/base/nginx
+
+docker run -itd --restart unless-stopped --name nginx-usertestsys -p 21080:80 -p 21443:443 -v /cdhdata1/analysis_group/usertestsys:/usr/share/nginx/html -v /cdhdata1/analysis_group/nginx-usertestsys/conf:/etc/nginx -v /cdhdata1/analysis_group/nginx-usertestsys/logs:/var/log/nginx harbor.my.org:1080/base/nginx
+
+docker run -itd --restart unless-stopped --name nginx-usertestsys-general -p 8088:80 -p 8443:443 -v /e/usertestsys-general/files:/usr/share/nginx/html -v /e/usertestsys-general/nginx-usertestsys/conf:/etc/nginx -v /e/usertestsys-general/nginx-usertestsys/logs:/var/log/nginx harbor.my.org:1080/base/nginx
+
+
+kustomize build gitops-cd/overlays/beta/usertestsys/usertestsys-vocabularysizeestimation | kubectl apply -f -
+kustomize build gitops-cd/overlays/beta/usertestsys/usertestsys-vocabularysizeestimation | kubectl delete -f -
+kustomize build gitops-cd/overlays/beta/usertestsys/usertestsys-grammarevaluation | kubectl apply -f -
+kustomize build gitops-cd/overlays/beta/usertestsys/usertestsys-grammarevaluation | kubectl delete -f -
+
+
+
+
+http://192.168.0.62:12080/root/gitops-cd.git
+overlays/beta
+
+automated
+prune resources
+self heal
+
+from libadsusertestsys.orm.app import SERVER_ADDR, DATABASE, USER_ACCOUNT, SECURIT_CODE
+print(
+   \
+   ERVER_ADDR:{},DATABASE:{},USER_ACCOUNT:{},SECURIT_CODE:{}'.format(SERVER_ADDR, DATABASE, USER_ACCOUNT,
+
+‘
+、
+】【派特务去问人体、、-0987654321·		`	`AQ	1`	BVNM,  SECURIT_CODE))
+】【派特务去问人体、、-0987654321·		`	`AQ	1`	BVNM,  SECURIT_CODE))
+from libadsusertestsys.orm.config import DEBUG_SWITCH, FILES_URL_PREFIX
+print('DEBUG_SWITCH:{},FILES_URL_PREFIX:{}'.format(DEBUG_SWITCH, FILES_URL_PREFIX))
+from libadsusertestsys.redis_module.redis_pool import REDIS_HOST, REDIS_PORT, REDIS_PASSWD, REDIS_MAX_CONN
+print(
+    'REDIS_HOST:{},REDIS_PORT:{},REDIS_PASSWD:{},REDIS_MAX_CONN:{}'.format(REDIS_HOST, REDIS_PORT, REDIS_PASSWD,
+                                                                          REDIS_MAX_CONN))
+from libadsusertestsys.orm.config import XUNFEI_APIKEY, XUNFEI_APISECRET, XUNFEI_APPID
+print(
+    'XUNFEI_APIKEY:{},XUNFEI_APISECRET:{},XUNFEI_APPID:{}'.format(XUNFEI_APIKEY, XUNFEI_APISECRET, XUNFEI_APPID))
+
+
+    from libadsusertestsys.orm.app import SERVER_ADDR, DATABASE, USER_ACCOUNT, SECURIT_CODE
+    mylog.logger.debug('SERVER_ADDR:{},DATABASE:{},USER_ACCOUNT:{},SECURIT_CODE:{}'.format(SERVER_ADDR,DATABASE,USER_ACCOUNT,SECURIT_CODE))
+    from libadsusertestsys.orm.config import DEBUG_SWITCH, FILES_URL_PREFIX
+    mylog.logger.debug('DEBUG_SWITCH:{},FILES_URL_PREFIX:{}'.format(DEBUG_SWITCH,FILES_URL_PREFIX))
+    from libadsusertestsys.redis_module.redis_pool import REDIS_HOST, REDIS_PORT, REDIS_PASSWD, REDIS_MAX_CONN
+    mylog.logger.debug('REDIS_HOST:{},REDIS_PORT:{},REDIS_PASSWD:{},REDIS_MAX_CONN:{}'.format(REDIS_HOST,REDIS_PORT,REDIS_PASSWD,REDIS_MAX_CONN))
+    from libadsusertestsys.orm.config import XUNFEI_APIKEY, XUNFEI_APISECRET, XUNFEI_APPID
+    mylog.logger.debug('XUNFEI_APIKEY:{},XUNFEI_APISECRET:{},XUNFEI_APPID:{}'.format(XUNFEI_APIKEY,XUNFEI_APISECRET,XUNFEI_APPID))
+
+
+
+docker run -d --name usertestsys-redis -p 16379:6379 redis --requirepass "12345"
+
+docker stop usertestsys-redis
+docker rm usertestsys-redis
+
+
+cd /opt/acadsoc/core/test-evaluation
+./build.sh 
+
+
+SELECT * FROM (SELECT 'GrammarTestQuestion' as test_type, acadsoc_level,count(*) as questions FROM [dbo].[GrammarTestQuestion] GROUP BY acadsoc_level
+UNION
+SELECT 'ListeningTestQuestion' as test_type, acadsoc_level,count(*) as questions FROM [dbo].[ListeningTestQuestion] GROUP BY acadsoc_level
+UNION
+SELECT 'ReadingTestQuestion' as test_type, acadsoc_level,count(*) as questions FROM [dbo].[ReadingTestQuestion] GROUP BY acadsoc_level
+UNION
+SELECT 'SpeakingTestQuestion' as test_type, acadsoc_level,count(*) as questions FROM [dbo].[SpeakingTestQuestion] GROUP BY acadsoc_level
+UNION
+SELECT 'VocabularyTestQuestion' as test_type, acadsoc_level,count(*) as questions FROM [dbo].[VocabularyTestQuestion] GROUP BY acadsoc_level
+) level_grped ORDER BY test_type, acadsoc_level
+GO
+
+
+1，ci-cd增加lib修改后构建和部署依赖该lib的app工程。
+
+                            if [ "$IMAGE_ARC_CATEGORY" = "lib" ];then
+                                whodeps=`cat whodeps.json`
+                                while read name giturl kustpath ; do
+                                    echo "$name"
+                                    echo "$giturl"
+                                    echo "$kustpath"
+                                    docker login ${dockerRegistryUrl} -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_PASSWORD}
+                                    docker build ${addHost} -t ${imageRepoPath}:${imageTag} .
+                                    docker push ${imageRepoPath}:${imageTag}
+                                    docker rmi ${imageRepoPath}:${imageTag}
+                                done < <(echo "$whodeps" | jq -r '.who[]|"\(.name) \(.giturl) \(.kustpath)"')
+                            else
+                                docker login ${dockerRegistryUrl} -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_PASSWORD}
+                                docker build ${addHost} -t ${imageRepoPath}:${imageTag} .
+                                docker push ${imageRepoPath}:${imageTag}
+                                docker rmi ${imageRepoPath}:${imageTag}
+                            fi
+
+
+
+    {
+      "wdname": "usertestsys-general"
+    },
+    {
+      "wdname": "usertestsys-grammarevaluation"
+    }
+
+                            /opt/whodeps-docker-kustomize.sh
+
+mount \\192.168.0.62\data\cdhdata1\bigopera\pypi\codekoala-dev x:
+
+
+#避免转venv里的格式没必要而且耗时间
+mv venv ../
+#把文件都转unix格式
+find . -name "*.py"|xargs dos2unix
+dos2unix requirements.txt
+mv ../venv ./
+
+\\acadsoc.com\files server\Public\总经办\数据组\8-开发软件包\ide-settings
+
+
+helm repo add loki https://grafana.github.io/loki/charts
+helm repo update
+helm upgrade --install loki loki/loki-stack --namespace monitoring --setting volumeMounts/cdhdata1/docker/containers
+helm upgrade --install loki ./loki-stack --namespace monitoring --setting volumeMounts/var/lib/docker/containers
+#helm upgrade --install loki grafana/loki-stack --set grafana.enabled=false,prometheus.enabled=false,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false --namespace monitoring
+"""
+Release "loki" does not exist. Installing it now.
+NAME: loki
+LAST DEPLOYED: Tue Mar  9 18:56:11 2021
+NAMESPACE: monitoring
+STATUS: deployed
+REVISION: 1
+NOTES:
+The Loki stack has been deployed to your cluster. Loki can now be added as a datasource in Grafana.
+
+See http://docs.grafana.org/features/datasources/loki/ for more detail.
+"""
+helm uninstall loki --namespace monitoring
+
+git clone https://github.com/gjmzj/kubeasz/
+cd kubeasz-2.2.4/manifests/prometheus/
+helm install monitor ./prometheus \
+        --namespace monitoring \
+        -f prom-settings.yaml \
+        -f prom-alertsmanager.yaml \
+        -f prom-alertrules.yaml
+
+ selector:
+  matchLables:
+   myapp: node-exporter
+
+        myapp: node-exporter
+
+		
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm fetch prometheus-community/kube-prometheus-stack
+helm install monitor ./kube-prometheus-stack --namespace monitoring
+#helm install monitor prometheus-community/kube-prometheus-stack \
+        --namespace monitoring --wait \
+        -f prom-settings.yaml \
+        -f prom-alertsmanager.yaml \
+        -f prom-alertrules.yaml
+#helm install \
+        monitor \
+        --namespace monitoring \
+        -f prom-settings.yaml \
+        -f prom-alertsmanager.yaml \
+        -f prom-alertrules.yaml \
+        prometheus
+"""
+NAME: monitor
+LAST DEPLOYED: Tue Mar  9 18:17:58 2021
+NAMESPACE: monitoring
+STATUS: deployed
+REVISION: 1
+NOTES:
+kube-prometheus-stack has been installed. Check its status by running:
+  kubectl --namespace monitoring get pods -l "release=monitor"
+
+Visit https://github.com/prometheus-operator/kube-prometheus for instructions on how to create & configure Alertmanager and Prometheus instances using the Operator.
+"""		
+helm uninstall monitor --namespace monitoring	
+kubectl get pod -n monitoring
+
+#grafana管理员密码
+grafana:
+  adminPassword: prom-operator
+
+docker pull quay.io/coreos/kube-state-metrics:v1.9.8
+docker tag quay.io/coreos/kube-state-metrics:v1.9.8 k8s.gcr.io/kube-state-metrics/kube-state-metrics:v1.9.8
+kubectl get pod monitor-kube-state-metrics-75c9d49644-2x2cf -n monitoring -o yaml | kubectl replace --force -f -
+
+#kubectl apply -f -n mornitoring monitor-grafana-external.yaml
+kubectl edit svc -n monitoring monitor-grafana
+    targetPort: 3000
+    nodePort: 30300
+  selector:
+    app.kubernetes.io/instance: monitor
+    app.kubernetes.io/name: grafana
+  sessionAffinity: None
+  type: NodePort
+  
+kubectl -n monitoring exec -it monitor-grafana-6d5b56d9db-ptd6d -c grafana grafana-cli plugins install grafana-piechart-panel  
+kubectl get pod monitor-grafana-6d5b56d9db-ptd6d -n monitoring -o yaml | kubectl replace --force -f -
+
+spec:
+  nodeSelector:
+      non-root-docker: 1
+
+      smtp_smarthost: 'smtp.mxhichina.com:465'
+      smtp_from: 'HadoopWarnMsg@acadsoc.com'
+      smtp_auth_username: 'HadoopWarnMsg@acadsoc.com'
+      smtp_auth_password: 'Aks@2019Acs2011'
+      smtp_require_tls: false	
+
+
+
+
+sudo chmod a+r /etc/kubernetes/pki/etcd/healthcheck-client.key
+kubectl create secret generic etcd-certs -n monitoring \
+  --from-file=/etc/kubernetes/pki/etcd/healthcheck-client.crt \
+  --from-file=/etc/kubernetes/pki/etcd/healthcheck-client.key \
+  --from-file=/etc/kubernetes/pki/etcd/ca.crt
+
+容器内库的地址：
+/usr/local/lib/python3.7/site-packages/libadsusertestsys
+
+helm install monitor ./prometheus-operator --namespace monitoring
+
+
+ns_start=`date +%s%N`
+curl  -X POST -H "Accept:application/json" -H  "Content-Type:application/json" http://10.1.0.13:4343/api/query  -d '
+             {
+                 "start": "1474387200000", 
+                 "end": "1586707200000",
+                 "queries": [
+                     {    
+                         "aggregator": "last",
+                         "downsample": "0all-last",
+                         "metric": "all_302206_8",
+                         "tags": {
+                             "field": "deal_close"
+                         }
+                     }
+                 ]
+             }
+             '
+let "ms_consumed=(`date +%s%N`-${ns_start})/1000000"
+echo "ms_consumed:$ms_consumed"
+
+kubectl run curl-json -it --image=radial/busyboxplus:curl --restart=Never --rm -- curl -i -X DELETE -H "Accept:application/json" -H "Content-Type:application/json" myconnsvc.mqstr-mysqlsrc-cptrd-2-2-4-0-0-7-5-3:8083/connectors/2_2_4_0_0_7_5_3-deb-connector
+kubectl run curl-json -it --image=radial/busyboxplus:curl --restart=Never --rm -- curl mymetrics-usertestsys-general.servpy:8090
+
+kubectl run test-metrics -it --rm --image=radial/busyboxplus
+
+curl -k -H "Content-Type: application/json" -X PUT --data-binary @"cattle-global-data.json" "http://127.0.0.1:8081/api/v1/namespaces/cattle-global-data/finalize"
+
+kubectl get namespace "namespacetodelete" -o json | tr -d "\n" | sed "s/\"finalizers\": \[[^]]\+\]/\"finalizers\": []/" | kubectl replace --raw /api/v1/namespaces/namespacetodelete/finalize -f -
+
+kubectl get namespace "cattle-global-data" -o json | tr -d "\n" | sed "s/\"finalizers\": \[[^]]\+\]/\"finalizers\": []/" | kubectl replace --raw /api/v1/namespaces/cattle-global-data/finalize -f -
+
+export PYTHONUNBUFFERED=1
+export DB_HOST=192.168.0.85
+export DB_DATABASE=AcadsocDataAnalysisAlgorithm_rel_202103062043
+export DB_USER=sa
+export DB_PASSWD=Aks@12345
+export DEBUG_SWITCH=off
+export SERV_NAME=usertestsys-readingevaluation
+export REDIS_HOST=192.168.0.85
+export REDIS_PORT=16379
+export REDIS_PASSWD=12345
+export REDIS_MAX_CONN=10
+export FILES_URL_PREFIX=http://192.168.0.85:21080
+
+kubectl describe nodes hadoop-pre001|grep -E '(Roles|Taints)'
+
+96*3/3=96 32*3/3=32
+
+96, 32
+12, 4
+6, 2
+
+1,1,1,1,1,3
+
+2,2,2,2,2,6
+6G, 2CPU
+
+6*16, 2*16
+
+4, 1
+12, 3
+96, 24
+
+from multiprocessing import Process
+
+
+    for i in range(2):
+        p = Process(target=wsgi_server.serve_forever())
+        p.start()
+
+
+kubectl -n default run test-redis -ti --image=redis --rm=true --restart=Never -- redis-cli -h 192.168.0.22 -p 6379 -a "Acadsoc@2020@Online"
+
+kubectl -n default exec test-redis -ti -- /bin/sh
+
+nohup docker build ./ --add-host pypi.my.org:192.168.0.62 -f Dockerfile-alpine-py37-crypto-pns-serv-mssql -t harbor.my.org:1080/library/ci/python:3.7-alpine-crypto-pns-serv-mssql > build-Dockerfile-alpine-py37-crypto-pns-serv-mssql.log 2>&1 &
+
+cd /cdhdata1/bigopera/
+nohup socat TCP4-LISTEN:30500,reuseaddr,fork TCP4:192.168.3.139:1433 > socat.log 2>&1 &
+sudo netstat -nlap|grep 30500
+ps -ef|grep socat
+
+prod调试环境变量：
+PYTHONUNBUFFERED=1;DB_HOST=192.168.0.62:30500;DB_DATABASE=AcadsocDataAnalysisAlgorithm_rel_202103171015;DB_USER=AcadsocDataAnalysis;DB_PASSWD=jS&D6v7jT9jpI7L@;DEBUG_SWITCH=on;SERV_NAME=usertestsys-vocabularysizeestimation;REDIS_HOST=192.168.0.22;REDIS_PORT=6379;REDIS_PASSWD=Acadsoc@2020@Online;REDIS_MAX_CONN=10;FILES_URL_PREFIX=https://dstrserv.acadsoc.com.cn/file;DEFAULT_QUESTION_REV=rel_202103200355
+beta调试环境变量：
+PYTHONUNBUFFERED=1;DB_HOST=192.168.0.85;DB_DATABASE=AcadsocDataAnalysisAlgorithm_rel_202103062043;DB_USER=sa;DB_PASSWD=Aks@12345;DEBUG_SWITCH=on;SERV_NAME=usertestsys-speakingevaluation;REDIS_HOST=192.168.0.85;REDIS_PORT=16379;REDIS_PASSWD=12345;REDIS_MAX_CONN=10;XUNFEI_APPID=60509e14;XUNFEI_APISECRET=6b7cceea56d107c9db59d25432460927;XUNFEI_APIKEY=bf4c141bd77174c81d0d64d784273a66;FILES_URL_PREFIX=http://192.168.0.120/file;PATH=/c/ffmpeg/bin;DEFAULT_QUESTION_REV=rel_202103200355
+
+
+ 1) "\x80\x03clibadsusertestsys.entity.evaluation_entity\nEntityTestQuestionAndAnswer\nq\x00)\x81q\x01}q\x02(X\b\x00\x00\x00questionq\x03cevaluation.entity.evaluation_entity\nGrammarMultipleChoiceTestQuestion\nq\x04)\x81q\x05}q\x06(X\x0b\x00\x00\x00question_idq\aK\xb5X\x04\x00\x00\x00stemq\bX$\x00\x00\x00- Which one is the fastest? \n- _____q\tX\x06\x00\x00\x00bucketq\nK\x04X\b\x00\x00\x00analysisq\x0bNX\x0e\x00\x00\x00correct_answerq\x0cX\x1b\x00\x00\x00The cheetah is the fastest.q\rX\n\x00\x00\x00confusionsq\x0e]q\x0f(X0\x00\x00\x00The cheetah is the more fastest than polar bear.q\x10X\x18\x00\x00\x00The cheetah is fastest. q\x11eX\x0b\x00\x00\x00option_typeq\x12X\x04\x00\x00\x00textq\x13X\x0e\x00\x00\x00default_optionq\x14X\x18\x00\x00\x00\xe4\xbb\xa5\xe4\xb8\x8a\xe9\x80\x89\xe9\xa1\xb9\xe9\x83\xbd\xe4\xb8\x8d\xe6\xad\xa3\xe7\xa1\xaeq\x15X\x14\x00\x00\x00correct_option_indexq\x16K\x01X\x0e\x00\x00\x00correct_optionq\x17h\rX\a\x00\x00\x00optionsq\x18]q\x19(h\x10h\rh\x15eX\x10\x00\x00\x00illustration_picq\x1aX\x00\x00\x00\x00q\x1bubX\x06\x00\x00\x00answerq\x1cX\x18\x00\x00\x00\xe4\xbb\xa5\xe4\xb8\x8a\xe9\x80\x89\xe9\xa1\xb9\xe9\x83\xbd\xe4\xb8\x8d\xe6\xad\xa3\xe7\xa1\xaeq\x1dub."
+ 2) "\x80\x03clibadsusertestsys.entity.evaluation_entity\nEntityTestQuestionAndAnswer\nq\x00)\x81q\x01}q\x02(X\b\x00\x00\x00questionq\x03cevaluation.entity.evaluation_entity\nGrammarMultipleChoiceTestQuestion\nq\x04)\x81q\x05}q\x06(X\x0b\x00\x00\x00question_idq\aK\xafX\x04\x00\x00\x00stemq\bX*\x00\x00\x00- How many blueberries are there?\n- _____ q\tX\x06\x00\x00\x00bucketq\nK\x04X\b\x00\x00\x00analysisq\x0bNX\x0e\x00\x00\x00correct_answerq\x0cX\x1c\x00\x00\x00There are a few blueberries.q\rX\n\x00\x00\x00confusionsq\x0e]q\x0f(X\x1f\x00\x00\x00There are a little blueberries.q\x10X\x1b\x00\x00\x00There is a few blueberries.q\x11eX\x0b\x00\x00\x00option_typeq\x12X\x04\x00\x00\x00textq\x13X\x0e\x00\x00\x00default_optionq\x14X\x18\x00\x00\x00\xe4\xbb\xa5\xe4\xb8\x8a\xe9\x80\x89\xe9\xa1\xb9\xe9\x83\xbd\xe4\xb8\x8d\xe6\xad\xa3\xe7\xa1\xaeq\x15X\x14\x00\x00\x00correct_option_indexq\x16K\x01X\x0e\x00\x00\x00correct_optionq\x17h\rX\a\x00\x00\x00optionsq\x18]q\x19(h\x11h\rh\x15eX\x10\x00\x00\x00illustration_picq\x1aX\x00\x00\x00\x00q\x1bubX\x06\x00\x00\x00answerq\x1cNub."
+ 3) "\x80\x03clibadsusertestsys.entity.evaluation_entity\nEntityTestQuestionAndAnswer\nq\x00)\x81q\x01}q\x02(X\b\x00\x00\x00questionq\x03cevaluation.entity.evaluation_entity\nGrammarMultipleChoiceTestQuestion\nq\x04)\x81q\x05}q\x06(X\x0b\x00\x00\x00question_idq\aK\xb9X\x04\x00\x00\x00stemq\bX\x1e\x00\x00\x00- What was Lily doing?\n- _____q\tX\x06\x00\x00\x00bucketq\nK\x04X\b\x00\x00\x00analysisq\x0bNX\x0e\x00\x00\x00correct_answerq\x0cX\x19\x00\x00\x00She was walking the dogs.q\rX\n\x00\x00\x00confusionsq\x0e]q\x0f(X\x14\x00\x00\x00She walked the dogs.q\x10X\x13\x00\x00\x00She walks the dogs.q\x11eX\x0b\x00\x00\x00option_typeq\x12X\x04\x00\x00\x00textq\x13X\x0e\x00\x00\x00default_optionq\x14X\x18\x00\x00\x00\xe4\xbb\xa5\xe4\xb8\x8a\xe9\x80\x89\xe9\xa1\xb9\xe9\x83\xbd\xe4\xb8\x8d\xe6\xad\xa3\xe7\xa1\xaeq\x15X\x14\x00\x00\x00correct_option_indexq\x16K\x00X\x0e\x00\x00\x00correct_optionq\x17h\rX\a\x00\x00\x00optionsq\x18]q\x19(h\rh\x11h\x15eX\x10\x00\x00\x00illustration_picq\x1aX\x00\x00\x00\x00q\x1bubX\x06\x00\x00\x00answerq\x1cX\x19\x00\x00\x00She was walking the dogs.q\x1dub."
+ 4) "\x80\x03clibadsusertestsys.entity.evaluation_entity\nEntityTestQuestionAndAnswer\nq\x00)\x81q\x01}q\x02(X\b\x00\x00\x00questionq\x03cevaluation.entity.evaluation_entity\nGrammarMultipleChoiceTestQuestion\nq\x04)\x81q\x05}q\x06(X\x0b\x00\x00\x00question_idq\aK\xc6X\x04\x00\x00\x00stemq\bX\x1d\x00\x00\x00- How does Ajay read?\n- _____q\tX\x06\x00\x00\x00bucketq\nK\x04X\b\x00\x00\x00analysisq\x0bNX\x0e\x00\x00\x00correct_answerq\x0cX\x13\x00\x00\x00He reads carefully.q\rX\n\x00\x00\x00confusionsq\x0e]q\x0f(X\x12\x00\x00\x00He read carefully.q\x10X\x11\x00\x00\x00He read careful. q\x11eX\x0b\x00\x00\x00option_typeq\x12X\x04\x00\x00\x00textq\x13X\x0e\x00\x00\x00default_optionq\x14X\x18\x00\x00\x00\xe4\xbb\xa5\xe4\xb8\x8a\xe9\x80\x89\xe9\xa1\xb9\xe9\x83\xbd\xe4\xb8\x8d\xe6\xad\xa3\xe7\xa1\xaeq\x15X\x14\x00\x00\x00correct_option_indexq\x16K\x00X\x0e\x00\x00\x00correct_optionq\x17h\rX\a\x00\x00\x00optionsq\x18]q\x19(h\rh\x10h\x15eX\x10\x00\x00\x00illustration_picq\x1aX\x00\x00\x00\x00q\x1bubX\x06\x00\x00\x00answerq\x1cX\x19\x00\x00\x00She was walking the dogs.q\x1dub."
+ 5) "\x80\x03clibadsusertestsys.entity.evaluation_entity\nEntityTestQuestionAndAnswer\nq\x00)\x81q\x01}q\x02(X\b\x00\x00\x00questionq\x03cevaluation.entity.evaluation_entity\nGrammarMultipleChoiceTestQuestion\nq\x04)\x81q\x05}q\x06(X\x0b\x00\x00\x00question_idq\aK\xddX\x04\x00\x00\x00stemq\bX+\x00\x00\x00- May I have a taste of your juice?\n- _____q\tX\x06\x00\x00\x00bucketq\nK\x04X\b\x00\x00\x00analysisq\x0bNX\x0e\x00\x00\x00correct_answerq\x0cX\x1a\x00\x00\x00Yes. It tastes delicious. q\rX\n\x00\x00\x00confusionsq\x0e]q\x0f(X\x13\x00\x00\x00I like apple juice.q\x10X\x13\x00\x00\x00No, it looks awful.q\x11eX\x0b\x00\x00\x00option_typeq\x12X\x04\x00\x00\x00textq\x13X\x0e\x00\x00\x00default_optionq\x14X\x18\x00\x00\x00\xe4\xbb\xa5\xe4\xb8\x8a\xe9\x80\x89\xe9\xa1\xb9\xe9\x83\xbd\xe4\xb8\x8d\xe6\xad\xa3\xe7\xa1\xaeq\x15X\x14\x00\x00\x00correct_option_indexq\x16K\x02X\x0e\x00\x00\x00correct_optionq\x17h\x15X\a\x00\x00\x00optionsq\x18]q\x19(h\x10h\x11h\x15eX\x10\x00\x00\x00illustration_picq\x1aX\x00\x00\x00\x00q\x1bubX\x06\x00\x00\x00answerq\x1cNub."
+ 6) "\x80\x03clibadsusertestsys.entity.evaluation_entity\nEntityTestQuestionAndAnswer\nq\x00)\x81q\x01}q\x02(X\b\x00\x00\x00questionq\x03cevaluation.entity.evaluation_entity\nGrammarMultipleChoiceTestQuestion\nq\x04)\x81q\x05}q\x06(X\x0b\x00\x00\x00question_idq\aK\xe7X\x04\x00\x00\x00stemq\bX\x1f\x00\x00\x00- Can you speak France?\n- _____q\tX\x06\x00\x00\x00bucketq\nK\x04X\b\x00\x00\x00analysisq\x0bNX\x0e\x00\x00\x00correct_answerq\x0cX\x0b\x00\x00\x00Yes, I can.q\rX\n\x00\x00\x00confusionsq\x0e]q\x0f(X\x15\x00\x00\x00I can speak Chinese. q\x10X!\x00\x00\x00No, I don\xe2\x80\x99t like French foods. q\x11eX\x0b\x00\x00\x00option_typeq\x12X\x04\x00\x00\x00textq\x13X\x0e\x00\x00\x00default_optionq\x14X\x18\x00\x00\x00\xe4\xbb\xa5\xe4\xb8\x8a\xe9\x80\x89\xe9\xa1\xb9\xe9\x83\xbd\xe4\xb8\x8d\xe6\xad\xa3\xe7\xa1\xaeq\x15X\x14\x00\x00\x00correct_option_indexq\x16K\x00X\x0e\x00\x00\x00correct_optionq\x17h\rX\a\x00\x00\x00optionsq\x18]q\x19(h\rh\x11h\x15eX\x10\x00\x00\x00illustration_picq\x1aX\x00\x00\x00\x00q\x1bubX\x06\x00\x00\x00answerq\x1cX\x0b\x00\x00\x00Yes, I can.q\x1dub."
+ 7) "\x80\x03clibadsusertestsys.entity.evaluation_entity\nEntityTestQuestionAndAnswer\nq\x00)\x81q\x01}q\x02(X\b\x00\x00\x00questionq\x03cevaluation.entity.evaluation_entity\nGrammarMultipleChoiceTestQuestion\nq\x04)\x81q\x05}q\x06(X\x0b\x00\x00\x00question_idq\aK\xdaX\x04\x00\x00\x00stemq\bX>\x00\x00\x00- Which do you like better, salty food and sweet food?\n- _____q\tX\x06\x00\x00\x00bucketq\nK\x04X\b\x00\x00\x00analysisq\x0bNX\x0e\x00\x00\x00correct_answerq\x0cX\x1a\x00\x00\x00I like salty food better. q\rX\n\x00\x00\x00confusionsq\x0e]q\x0f(X\x12\x00\x00\x00I like salty food.q\x10X\x1b\x00\x00\x00I don\xe2\x80\x99t like salty food. q\x11eX\x0b\x00\x00\x00option_typeq\x12X\x04\x00\x00\x00textq\x13X\x0e\x00\x00\x00default_optionq\x14X\x18\x00\x00\x00\xe4\xbb\xa5\xe4\xb8\x8a\xe9\x80\x89\xe9\xa1\xb9\xe9\x83\xbd\xe4\xb8\x8d\xe6\xad\xa3\xe7\xa1\xaeq\x15X\x14\x00\x00\x00correct_option_indexq\x16K\x02X\x0e\x00\x00\x00correct_optionq\x17h\x15X\a\x00\x00\x00optionsq\x18]q\x19(h\x10h\x11h\x15eX\x10\x00\x00\x00illustration_picq\x1aX\x00\x00\x00\x00q\x1bubX\x06\x00\x00\x00answerq\x1cX\x0c\x00\x00\x00Yes, I have.q\x1dub."
+ 8) "\x80\x03clibadsusertestsys.entity.evaluation_entity\nEntityTestQuestionAndAnswer\nq\x00)\x81q\x01}q\x02(X\b\x00\x00\x00questionq\x03cevaluation.entity.evaluation_entity\nGrammarMultipleChoiceTestQuestion\nq\x04)\x81q\x05}q\x06(X\x0b\x00\x00\x00question_idq\aK\xc5X\x04\x00\x00\x00stemq\bX\x1d\x00\x00\x00- How does Ann paint?\n- _____q\tX\x06\x00\x00\x00bucketq\nK\x04X\b\x00\x00\x00analysisq\x0bNX\x0e\x00\x00\x00correct_answerq\x0cX\x18\x00\x00\x00She paints beautifully. q\rX\n\x00\x00\x00confusionsq\x0e]q\x0f(X\x11\x00\x00\x00She painted ugly.q\x10X\x15\x00\x00\x00She paints beautiful.q\x11eX\x0b\x00\x00\x00option_typeq\x12X\x04\x00\x00\x00textq\x13X\x0e\x00\x00\x00default_optionq\x14X\x18\x00\x00\x00\xe4\xbb\xa5\xe4\xb8\x8a\xe9\x80\x89\xe9\xa1\xb9\xe9\x83\xbd\xe4\xb8\x8d\xe6\xad\xa3\xe7\xa1\xaeq\x15X\x14\x00\x00\x00correct_option_indexq\x16K\x01X\x0e\x00\x00\x00correct_optionq\x17h\rX\a\x00\x00\x00optionsq\x18]q\x19(h\x11h\rh\x15eX\x10\x00\x00\x00illustration_picq\x1aX\x00\x00\x00\x00q\x1bubX\x06\x00\x00\x00answerq\x1cX\x1d\x00\x00\x00What will you do after class?q\x1dub."
+ 9) "\x80\x03clibadsusertestsys.entity.evaluation_entity\nEntityTestQuestionAndAnswer\nq\x00)\x81q\x01}q\x02(X\b\x00\x00\x00questionq\x03cevaluation.entity.evaluation_entity\nGrammarMultipleChoiceTestQuestion\nq\x04)\x81q\x05}q\x06(X\x0b\x00\x00\x00question_idq\aK\xbeX\x04\x00\x00\x00stemq\bX'\x00\x00\x00- Where was Alice this morning?\n- _____q\tX\x06\x00\x00\x00bucketq\nK\x04X\b\x00\x00\x00analysisq\x0bNX\x0e\x00\x00\x00correct_answerq\x0cX\x10\x00\x00\x00She was at home.q\rX\n\x00\x00\x00confusionsq\x0e]q\x0f(X\x0c\x00\x00\x00She at home.q\x10X\x15\x00\x00\x00She is playing music.q\x11eX\x0b\x00\x00\x00option_typeq\x12X\x04\x00\x00\x00textq\x13X\x0e\x00\x00\x00default_optionq\x14X\x18\x00\x00\x00\xe4\xbb\xa5\xe4\xb8\x8a\xe9\x80\x89\xe9\xa1\xb9\xe9\x83\xbd\xe4\xb8\x8d\xe6\xad\xa3\xe7\xa1\xaeq\x15X\x14\x00\x00\x00correct_option_indexq\x16K\x01X\x0e\x00\x00\x00correct_optionq\x17h\rX\a\x00\x00\x00optionsq\x18]q\x19(h\x10h\rh\x15eX\x10\x00\x00\x00illustration_picq\x1aX\x00\x00\x00\x00q\x1bubX\x06\x00\x00\x00answerq\x1cX\n\x00\x00\x00${answer1}q\x1dub."
+10) "\x80\x03clibadsusertestsys.entity.evaluation_entity\nEntityTestQuestionAndAnswer\nq\x00)\x81q\x01}q\x02(X\b\x00\x00\x00questionq\x03cevaluation.entity.evaluation_entity\nGrammarMultipleChoiceTestQuestion\nq\x04)\x81q\x05}q\x06(X\x0b\x00\x00\x00question_idq\aK\xd9X\x04\x00\x00\x00stemq\bX#\x00\x00\x00- How does the lemon taste?\n- _____q\tX\x06\x00\x00\x00bucketq\nK\x04X\b\x00\x00\x00analysisq\x0bNX\x0e\x00\x00\x00correct_answerq\x0cX\x0f\x00\x00\x00It tastes sour.q\rX\n\x00\x00\x00confusionsq\x0e]q\x0f(X\x0e\x00\x00\x00It looks ugly.q\x10X\x0f\x00\x00\x00It taste sour. q\x11eX\x0b\x00\x00\x00option_typeq\x12X\x04\x00\x00\x00textq\x13X\x0e\x00\x00\x00default_optionq\x14X\x18\x00\x00\x00\xe4\xbb\xa5\xe4\xb8\x8a\xe9\x80\x89\xe9\xa1\xb9\xe9\x83\xbd\xe4\xb8\x8d\xe6\xad\xa3\xe7\xa1\xaeq\x15X\x14\x00\x00\x00correct_option_indexq\x16K\x00X\x0e\x00\x00\x00correct_optionq\x17h\rX\a\x00\x00\x00optionsq\x18]q\x19(h\rh\x10h\x15eX\x10\x00\x00\x00illustration_picq\x1aX\x00\x00\x00\x00q\x1bubX\x06\x00\x00\x00answerq\x1cX\x13\x00\x00\x00Yes, I took it off.q\x1dub."
+11) "\x80\x03clibadsusertestsys.entity.evaluation_entity\nEntityTestQuestionAndAnswer\nq\x00)\x81q\x01}q\x02(X\b\x00\x00\x00questionq\x03cevaluation.entity.evaluation_entity\nGrammarMultipleChoiceTestQuestion\nq\x04)\x81q\x05}q\x06(X\x0b\x00\x00\x00question_idq\aK\xdeX\x04\x00\x00\x00stemq\bX\x19\x00\x00\x00- What\xe2\x80\x99s wrong?\n- _____q\tX\x06\x00\x00\x00bucketq\nK\x04X\b\x00\x00\x00analysisq\x0bNX\x0e\x00\x00\x00correct_answerq\x0cX\x0f\x00\x00\x00I have no idea.q\rX\n\x00\x00\x00confusionsq\x0e]q\x0f(X\x1f\x00\x00\x00I feel like trying one of them.q\x10X\x11\x00\x00\x00He read careful. q\x11eX\x0b\x00\x00\x00option_typeq\x12X\x04\x00\x00\x00textq\x13X\x0e\x00\x00\x00default_optionq\x14X\x18\x00\x00\x00\xe4\xbb\xa5\xe4\xb8\x8a\xe9\x80\x89\xe9\xa1\xb9\xe9\x83\xbd\xe4\xb8\x8d\xe6\xad\xa3\xe7\xa1\xaeq\x15X\x14\x00\x00\x00correct_option_indexq\x16K\x02X\x0e\x00\x00\x00correct_optionq\x17h\x15X\a\x00\x00\x00optionsq\x18]q\x19(h\x10h\x11h\x15eX\x10\x00\x00\x00illustration_picq\x1aX\x00\x00\x00\x00q\x1bubX\x06\x00\x00\x00answerq\x1cX\x0b\x00\x00\x00I\xe2\x80\x99m six. q\x1dub."
+
+
+无性能跟踪
+2021-03-12 07:38:50	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:459
+2021-03-12 07:38:50	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:38:50	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f615c786250>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615505929.938511', 'is_nonsense': False, 'accuracy_score': 44.926880000000004, 'standard_score': 57.400600000000004, 'fluency_score': 75.90446, 'integrity_score': 100.0, 'total_score': 54.22016000000001}}
+2021-03-12 07:38:50	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:392
+2021-03-12 07:39:41	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:462
+2021-03-12 07:39:41	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:39:41	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f615ca7de10>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615505981.1472077', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 07:39:41	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:405
+2021-03-12 07:40:30	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:442
+2021-03-12 07:40:30	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:40:30	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f615c93ef90>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615506030.0260556', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 07:40:30	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:387
+2021-03-12 07:41:11	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:439
+2021-03-12 07:41:11	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:41:11	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f615c92d890>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615506071.3492742', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 07:41:11	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:377
+2021-03-12 07:41:46	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:431
+2021-03-12 07:41:46	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:41:46	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f615c76f050>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615506106.00651', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 07:41:46	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:374
+
+有性能跟踪，不跟踪/update/answer
+2021-03-12 07:06:24	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:441
+2021-03-12 07:06:24	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:06:24	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f75fcb43090>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615503983.7531083', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 07:06:24	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:376
+2021-03-12 07:27:03	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:561
+2021-03-12 07:27:03	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:27:03	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f47b6a2d0d0>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615505222.5654325', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 07:27:03	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:494
+2021-03-12 07:27:47	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:578
+2021-03-12 07:27:47	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:27:47	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f4773fcab50>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615505266.520295', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 07:27:47	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:522
+2021-03-12 07:28:41	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:444
+2021-03-12 07:28:41	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:28:41	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f477423f510>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615505320.9149187', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 07:28:41	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:386
+2021-03-12 07:29:26	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:565
+2021-03-12 07:29:26	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:29:26	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f47742605d0>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615505366.1634784', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 07:29:26	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:506
+
+有性能跟踪，跟踪/update/answer
+2021-03-12 07:18:47	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:695
+2021-03-12 07:18:47	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:18:47	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f9ffd0d2f10>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615504727.0497332', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 07:18:47	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:625
+2021-03-12 07:19:47	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:552
+2021-03-12 07:19:47	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:19:47	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f9ffcdbcd50>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615504787.26665', 'is_nonsense': False, 'accuracy_score': 100.0, 'standard_score': 69.4755, 'fluency_score': 99.68776, 'integrity_score': 33.33334, 'total_score': 23.787219999999998}}
+2021-03-12 07:19:47	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:494
+2021-03-12 07:20:32	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:538
+2021-03-12 07:20:32	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:20:32	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f9ffcdc9e10>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615504831.4735973', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 07:20:32	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:482
+
+
+无性能跟踪，调高requests 内存/cpu
+2021-03-12 07:47:57	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:558
+2021-03-12 07:47:57	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:47:57	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f51b80d4dd0>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615506477.1484535', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 07:47:57	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:492
+2021-03-12 07:49:16	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:449
+2021-03-12 07:49:16	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:49:16	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f51b80ecb50>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615506556.185359', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 07:49:16	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:393
+2021-03-12 07:49:52	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:441
+2021-03-12 07:49:52	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:49:52	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f51b7f3e990>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615506591.7303517', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 07:49:52	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:383
+2021-03-12 07:51:00	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:471
+2021-03-12 07:51:00	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:51:00	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f51b7f60cd0>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615506660.2393553', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 07:51:00	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:414
+2021-03-12 07:51:27	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:429
+2021-03-12 07:51:27	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:51:27	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f51b7f83e50>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615506687.5004', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 07:51:27	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:374
+
+性能跟踪只保留接口lag，再次调高requests
+2021-03-12 07:58:21	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:461
+2021-03-12 07:58:21	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:58:21	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f1b8f60c990>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615507101.1879818', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 07:58:21	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:395
+2021-03-12 07:59:23	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:436
+2021-03-12 07:59:23	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 07:59:23	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f1b8f60c290>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615507162.6469088', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 07:59:23	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:380
+2021-03-12 08:00:06	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:426
+2021-03-12 08:00:06	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 08:00:06	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f1ba0485c50>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615507206.3286748', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 08:00:06	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:370
+2021-03-12 08:02:28	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:444
+2021-03-12 08:02:28	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 08:02:28	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f1ba0495650>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615507347.8698845', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 08:02:28	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:387
+
+
+
+性能跟踪只保留接口lag，requests调回原样
+2021-03-12 08:04:30	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:566
+2021-03-12 08:04:30	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 08:04:30	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f4dd6415ed0>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615507470.3656974', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 08:04:30	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:502
+2021-03-12 08:05:06	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:455
+2021-03-12 08:05:06	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 08:05:06	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f4dd5d87c90>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615507506.1742144', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 08:05:06	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:402
+2021-03-12 08:05:41	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:464
+2021-03-12 08:05:41	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 08:05:41	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7f4dd5da83d0>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615507541.3802571', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 08:05:41	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:406
+
+
+
+性能跟踪只保留接口lag，requests里CPU调到double
+2021-03-12 08:09:49	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:451
+2021-03-12 08:09:49	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 08:09:49	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7fd54efae750>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615507789.520249', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 08:09:49	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:385
+2021-03-12 08:10:28	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:429
+2021-03-12 08:10:28	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 08:10:28	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7fd54ec65e90>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615507828.381068', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 08:10:28	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:375
+2021-03-12 08:10:58	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:542
+2021-03-12 08:10:58	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 08:10:58	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7fd54ec85110>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615507857.604994', 'is_nonsense': False, 'accuracy_score': 44.926880000000004, 'standard_score': 57.400600000000004, 'fluency_score': 75.90446, 'integrity_score': 100.0, 'total_score': 54.22016000000001}}
+2021-03-12 08:10:58	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:488
+2021-03-12 08:12:08	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:442
+2021-03-12 08:12:08	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 08:12:08	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7fd58e0b1690>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615507928.205747', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 08:12:08	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:387
+2021-03-12 08:12:43	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 212 - REST /update/answer lag:407
+2021-03-12 08:12:43	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 210 - rspdata:{'_d': {'openid': '13'}}
+2021-03-12 08:12:43	
+MainProcess - MainThread - evaluation_service - _req_fn_user_req - 207 - user_last_question:{'question': <evaluation.entity.evaluation_entity.SpeakingDirectAnswerTestQuestion object at 0x7fd58e0cdf90>, 'answer': {'category': 'read_sentence', 'test_user_audio_path': '/13/2021312/13_1615507962.661584', 'is_nonsense': True, 'accuracy_score': 0.0, 'standard_score': 0.0, 'fluency_score': 0.0, 'integrity_score': 0.0, 'total_score': 0.0}}
+2021-03-12 08:12:43	
+MainProcess - MainThread - placement_test_speaking_estimator - get_result_by_auto_recog_service - 111 - xunfei inf lag:352
+
+

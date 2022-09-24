@@ -1,0 +1,9 @@
+FROM harbor.my.org:1080/base/py/usertestsys
+
+ADD requirements.txt /data1/www
+
+RUN pip install scipy==1.6.0
+RUN pip install scikit-learn==0.24.1
+
+RUN pip install -r requirements.txt
+

@@ -1,0 +1,28 @@
+FROM harbor.my.org:1080/base/py/python:3.7-alpine
+
+WORKDIR /data1/www
+ADD requirements.txt /data1/www
+
+RUN apk update \
+    && apk add --upgrade --no-cache \
+        libffi-dev \
+        ca-certificates openssl \
+                g++ make \
+        build-base libpng-dev freetype-dev libexecinfo-dev openblas-dev libgomp lapack-dev \
+                libgcc libquadmath musl  \
+                libgfortran \
+                lapack-dev \
+		freetds-dev \
+        &&  pip install --no-cache-dir --upgrade pip
+
+RUN pip install numpy==1.19.5
+RUN pip install pandas==1.2.1
+RUN pip install pycryptodome==3.10.1
+
+RUN pip3 install xlrd==2.0.1 prometheus_client==0.9.0
+RUN pip3 install scikit-learn==0.24.1 beautifulsoup4==4.9.3
+RUN pip3 install plotly==5.1.0
+
+RUN pip install -r requirements.txt
+
+

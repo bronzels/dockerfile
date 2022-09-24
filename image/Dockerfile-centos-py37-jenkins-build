@@ -1,0 +1,44 @@
+FROM xiaojianzheng/python-37-centos7
+
+RUN rm -f /etc/yum.repos.d/CentOS-Base.repo
+COPY Centos-7.repo /etc/yum.repos.d/Centos-7.repo
+COPY epel-7.repo /etc/yum.repos.d/epel-7.repo
+RUN yum clean all && yum makecache && yum -y update
+
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+RUN echo 'Asia/Shanghai' >/etc/timezone
+
+RUN yum install -y jq
+
+RUN mkdir /root/.pip
+COPY pip.conf /root/.pip/pip.conf
+RUN ls /root/.pip/
+RUN cat /root/.pip/pip.conf
+RUN pip config list
+
+RUN rm -f /usr/bin/python && ln -s /usr/local/python3/bin/python3.7 /usr/bin/python
+RUN rm -f /usr/bin/pip && ln -s /usr/local/python3/bin/pip3 /usr/bin/pip
+
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install cryptography==3.3.1
+RUN pip install twine
+
+RUN pip install pandas==1.2.1
+RUN pip install numpy==1.19.5
+
+RUN pip install alembic==1.5.4 Flask-Script==2.0.6 gevent==21.1.2 Mako==1.1.4 MarkupSafe==1.1.1 pymssql==2.1.5 SQLAlchemy==1.3.23 zope.interface==5.2.0
+
+RUN pip install pycryptodome==3.10.1
+
+RUN pip install typing
+RUN pip install grpcio-tools==1.37.0 protobuf==3.15.8 grpcio==1.37.0
+
+RUN pip install tensorflow==2.4.1 Keras==2.3.1 bert4keras==0.10.5 tensorboard-data-server==0.6.0
+
+RUN pip install pyspark==3.0.2 pyarrow==4.0.0
+
+RUN pip install scipy==1.6.2
+
+RUN pip install scikit-learn==0.24.1
+
+RUN pip install cachetools==4.2.1 cffi==1.14.4 google-auth==1.29.0 pytz==2020.5 urllib3==1.26.3 xlrd==2.0.1 zhconv==1.4.1 certifi==2020.12.5 importlib-metadata==4.0.1 chardet==4.0.0 idna==2.10 pycparser==2.20 pytz==2020.5 requests==2.25.1 six==1.15.0 urllib3==1.26.3 xlrd==2.0.1

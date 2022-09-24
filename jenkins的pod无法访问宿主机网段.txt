@@ -1,0 +1,6 @@
+hadoop-pre001:
+sudo /sbin/iptables -t nat -I POSTROUTING -s 192.168.152.0/24 -j MASQUERADE
+hadoop-pre002:
+sudo /sbin/iptables -t nat -I POSTROUTING -s 192.168.214.0/24 -j MASQUERADE
+hadoop-pre003:
+sudo /sbin/iptables -t nat -I POSTROUTING -s 192.168.43.0/24 -j MASQUERADE

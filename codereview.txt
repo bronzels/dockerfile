@@ -1,0 +1,512 @@
+mv gerrit tmp/
+mkdir -p {etc,git,db,index,cache,logs,ldap/var,ldap/etc}
+chmod -R 777 ./
+
+mv {etc,git,db,index,cache,logs,ldap} ../tmp/0104-13
+
+wget http://mirrors.aliyun.com/repo/Centos-8.repo
+
+https://github.com/GerritCodeReview/docker-gerrit/blob/master/centos/8/Dockerfile
+https://github.com/GerritCodeReview/docker-gerrit/blob/master/centos/8/entrypoint.sh
+
+# Add Gerrit packages repository
+RUN mv /etc/yum.repos.d /etc/yum.repos.d.bk
+RUN mkdir /etc/yum.repos.d
+COPY Centos-8.repo /etc/yum.repos.d/
+RUN yum -y update
+RUN yum install -y https://mirrors.aliyun.com/epel/epel-release-latest-8.noarch.rpm
+RUN sed -i 's|^#baseurl=https://download.fedoraproject.org/pub|baseurl=https://mirrors.aliyun.com|' /etc/yum.repos.d/epel*
+RUN sed -i 's|^metalink|#metalink|' /etc/yum.repos.d/epel*
+RUN yum -y update
+RUN rpm -i https://gerritforge.com/gerritforge-repo-1-2.noarch.rpm
+
+RUN echo "root:root" | chpasswd
+USER gerrit
+
+#meta server
+docker exec -it `docker ps  |grep mysql_atlas | awk '{print $1}'` bash
+  mysql -P3306 -uroot -proot
+      FLUSH PRIVILEGES;
+      USE mysql;
+	  CREATE DATABASE reviewdb;
+      ALTER USER 'gerrit'@'%' IDENTIFIED BY 'gerrit';
+      GRANT ALL PRIVILEGES ON reviewdb.* TO 'gerrit'@'%' IDENTIFIED BY 'gerrit' WITH GRANT OPTION;
+      FLUSH PRIVILEGES;
+docker exec -it mysql_atlas /usr/bin/mysql -h 192.168.0.150 -P3306 -uroot -proot -e "SHOW DATABASES"
+
+    -e WEBURL=http://192.168.16.200:8080 \
+
+
+docker run -d \
+    --name gerrit \
+    --restart unless-stopped \
+    -p 20080:8080 \
+    -p 29418:29418 \
+    -v /cdhdata1/bigopera/gerrit/gerrit_volume:/var/gerrit/review_site \
+    -v /etc/localtime:/etc/localtime \
+	-e CANONICAL_WEB_URL=http://192.168.0.62:20080 \
+	--network gerrit \
+    gerritcodereview/gerrit
+	
+yum install passwd openssl openssh-server -y
+ssh-keygen -q -t rsa -b 2048 -f /etc/ssh/ssh_host_rsa_key -N ''
+ssh-keygen -q -t ecdsa -f /etc/ssh/ssh_host_ecdsa_key -N ''
+ssh-keygen -t dsa -f /etc/ssh/ssh_host_ed25519_key -N ''
+yum install -y net-tools telnet
+/usr/sbin/sshd -D &
+
+yum -y install gitweb
+
+
+docker run -d \
+    --name gerrit \
+	--privileged=true \
+    --restart unless-stopped \
+    -p 20080:8080 \
+    -p 29418:29418 \
+    -v /cdhdata1/bigopera/gerrit/gerrit_volume:/var/gerrit/review_site \
+    -v /etc/localtime:/etc/localtime \
+	-e CANONICAL_WEB_URL=http://192.168.0.62:20080 \
+	--network gerrit \
+    gerritcodereview_gerrit
+
+/usr/sbin/sshd -D &	
+ssh-keygen -t rsa -m PEM
+#root
+ssh-keygen -t rsa -m PEM
+
+bash-4.4$ cat /var/gerrit/.ssh/id_rsa.pub 
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDG/GLd1hcNF/amNBvfrYfWUR8LSQFPf8CCaLPJzFK9v169CQIzK3vcPAdknHjHcuusjkxHBiR3nR9hUwkhrROLPX6t/luN7oVJc6IXkXL6mEbdTJOXef57g1633+bBOT2/FAjkB5geXphf133/E92B6emhMAyGsVeKebTcUouHc2BXciBYHL056n6NsLJJFVkUKvqFXvVjLcwVeDdN8ox1e4qKHhwljfoCf+Cp6355JawxziAz6dXOWTBF4EBDX6ZhGoE+8VNlDXAwOO8Y7meBnPUEgIFSQOGFFtpJ8DcDS5aYFCOMgNYlXph4NsZ0Alo4T1bqAg2YeuqOM0wrIsSTqUSajaMwr8gyryf6KspKzmrD/kQ7hWdRg/uZCZNfcZDmiNsgp6OB1JR/HOOvrCxhnFZBrrj5XeTBHYY0UDt79SSSBZW1YlLQAvFxkTOWofQepBfAwigvXtqvxj44COOYIHkzO8nvui+rMbap//c+9ARDEm1Vt7PKnwyKps6GEO0= gerrit@f8abb1f7ce5a
+bash-4.4$ su
+Password: 
+[root@f8abb1f7ce5a gerrit]# cat /root/.ssh/id_rsa.pub
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDLyjZZMn0bWIJql9MCSIbBI5NHrPGme9hPeXOp1XgCo+J3XCcGpw1YIVMiFuhZXf0JN9XKy25mpi6aRrS57gSMZyPYDHSJbZdPFJVk/IqJoqPJjF757B6+kjl/EGfqu8+lu2JF77IiISKflXba7BuUEykpCGBOndtFf60VB+nD/YqPWHpbjaRLAMxeUGfBl1F3o6wQ+d0iexKxuwrQqzM55dEbJBPEvgmAsy0I+AQ1911kHKbeTzbuCqj+83SDWOW5Okaa1DWbn3b9G+6Ygoc3S635LsOAksfzl8MMOKtaj2FJHrJRs8l2RTaiAiLXi3ZbFoFq0O093X/d5IC5Q+ze5YUe3dDB3LDR3UkovOAU7O56JWM8vUE5WSGuUvTJGWSjwkjXmQDSYH6Gpj1NivjsB7l0Qml1CKVbdcEdCX65ca4vjaw0vS8xyz6NSxmbgFCEkCOaUcmqc0TYHHO32CvjEl3mC4gcB7mUeBg1OwRtMR1iyYxLIU+0kB4DuLMsHzk= root@f8abb1f7ce5a
+
+git config --file /var/gerrit/etc/gerrit.config gitweb.cgi /var/www/git/gitweb.cgi
+git config --file /var/gerrit/etc/gerrit.config --unset gitweb.url
+cp /etc/gitweb.conf /etc/gitweb.conf.bk
+sed -i 's/#our $projectroot = "\/var\/lib\/git";/our $projectroot = "\/var\/gerrit\/git";/g' /etc/gitweb.conf
+修改/var/gerrit/etc/gerrit.config，增加：（安装gitweb时会自动修改，但是没有type = gitweb不行）
+[gitweb]
+        type = gitweb
+        cgi = /var/www/git/gitweb.cgi
+重启gerrit容器
+验证gitweb集成成功，访问地址http://192.168.0.62:20080/gitweb?p=All-Projects.git;a=summary
+
+mkdir {config,logs,data}
+
+docker run -d --hostname 192.168.0.62 \
+    -p 10443:443 -p 10080:80 -p 10022:22 \
+    --name gitlab \
+	--privileged=true \
+    --restart unless-stopped \
+    -v /cdhdata1/bigopera/gitlab/config:/etc/gitlab \
+    -v /cdhdata1/bigopera/gitlab/logs:/var/log/gitlab \
+    -v /cdhdata1/bigopera/gitlab/data:/var/opt/gitlab \
+    -v /etc/localtime:/etc/localtime \
+	--network gerrit \
+    gitlab/gitlab-ce:latest
+	
+echo "root:root" | chpasswd
+sed -i 's@#   PasswordAuthentication yes@   PasswordAuthentication yes@g' /etc/ssh/ssh_config
+sed -i 's@#PasswordAuthentication yes@PasswordAuthentication yes@g' /etc/ssh/sshd_config
+/usr/sbin/sshd -D -f /etc/ssh/sshd_config -e &
+
+
+git clone https://github.com/sameersbn/docker-gitlab.git
+docker-compose up -d/
+networks:
+  default:
+    external:
+      name: my-pre-existing-network
+apt-get install net-tools
+
+cp /etc/apt/sources.list /etc/apt/sources.list.bk
+sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
+sed -i 's/security.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
+apt-get update
+apt-get install -y net-tools vim
+echo "root:root" | chpasswd
+ssh-keygen -t rsa
+
+gitlab:
+root/dtstrGit9876
+
+
+ssh -p 29418 admin@gerrit gerrit plugin ls |grep replication
+ssh -p 29418 admin@gerrit gerrit plugin reload replication
+
+
+docker exec -it docker-gitlab-master_gitlab_1 /bin/bash
+
+gerrit:
+admin/EjQoAM+mUCwswbNQt4Y+HE3E3zTEChowZMWMycBlhA
+
+gitlab:
+root/dtstrGit9876
+
+ssh-keygen -t rsa
+ssh-copy-id -i /root/.ssh/id_rsa.pub root@gerrit
+
+git clone "ssh://admin@192.168.0.62:29418/testrepo" && scp -p -P 29418 admin@192.168.0.62:hooks/commit-msg "testrepo/.git/hooks/"
+#修改
+git commit -a -m "commit测试1"
+git push -u origin HEAD:refs/for/master
+
+  gerrit:
+    image: openfrontier/gerrit
+    container_name: gerrit
+    ports:
+      - "29418:29418"
+      - "20080:8080"
+    depends_on:
+      - ldap
+    environment:
+      - WEBURL=http://192.168.0.62:20080
+      - DATABASE_TYPE=mysql
+      - DATABASE_HOSTNAME=192.168.0.150
+      - DATABASE_PORT=3306
+      - DATABASE_USERNAME=gerrit
+      - DATABASE_PASSWORD=gerrit
+      - AUTH_TYPE=LDAP
+      - LDAP_SERVER=ldap://ldap
+      - LDAP_USERNAME=cn=admin,dc=example,dc=org
+      - LDAP_ACCOUNTBASE=dc=example,dc=org
+      - LDAP_ACCOUNTPATTERN=(&(objectClass=person)(uid=${username}))
+      - LDAP_ACCOUNTFULLNAME=displayName
+      - USER_NAME=alexliu
+      - USER_EMAIL=alexliu@acadsoc.com
+      - AUTH_TYPE=HTTP
+      - SMTP_SERVER=smtp.163.com
+      - SMTP_SERVER_PORT=465
+      - SMTP_ENCRYPTION=ssl
+      - SMTP_USER=bronzels@163.com
+      - SMTP_CONNCT_TIMEOUT=30sec
+      - SMTP_FROM=bronzels@163.com
+      - SMTP_PASS=XJOLNHXIPTYILTGK
+	  
+	  
+	  
+mkdir repos
+chmod 777 repos	  
+docker run \
+    --name phabricator \
+    --restart unless-stopped \
+    -p 10080:80 -p 10443:443 -p 10022:22 \
+    --env PHABRICATOR_HOST=phabricator.my.org:10080 \
+    --env MYSQL_HOST=192.168.0.150 \
+    --env MYSQL_USER=root \
+    --env MYSQL_PASS=root \
+    --env PHABRICATOR_REPOSITORY_PATH=/repos \
+    -v /cdhdata1/bigopera/phabricator/repos:/repos \
+    -d redpointgames/phabricator
+
+version: '2'
+services:
+  mariadb:
+    image: 'docker.io/bitnami/mariadb:10.3-debian-10'
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - MARIADB_EXTRA_FLAGS=--local-infile=0
+    volumes:
+      - ./mariadb_data:/bitnami
+  phabricator:
+    image: 'docker.io/bitnami/phabricator:2020-debian-10'
+    container_name: phabricator.my.org
+    environment:
+      - PHABRICATOR_HOST=http://phabricator.my.org:11080
+    ports:
+      - '11080:80'
+      - '11443:443'
+    volumes:
+      - ./phabricator_data:/bitnami
+      - ./phabricator_logs:/bitnami/phabricator/logs
+    depends_on:
+      - mariadb
+volumes:
+  mariadb_data:
+    driver: local
+  phabricator_data:
+    driver: local
+networks:
+ default:
+  external:
+   name: cicd
+
+mkdir mariadb_data
+mkdir phabricator_data
+mkdir phabricator_logs
+chmod 777 -R mariadb_data
+chmod 777 -R phabricator_data
+chmod 777 -R phabricator_logs
+docker-compose up -d
+docker cp phabricator.my.org:/opt/bitnami/phabricator/conf/local/local.json ./
+sed -i 's/"phabricator.base-uri": "http:\/\/127.0.0.1"/"phabricator.base-uri": "phabricator.my.org:11080"/g' local.json
+docker cp local.json phabricator.my.org:/opt/bitnami/phabricator/conf/local/
+docker restart phabricator.my.org
+
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC9baVWRzSwE2+JXif1h/pnbcq5S58Tg3SY3BqJp3JV8rcpHH/BrWYUjuD0Q21hEFJ9vk8NZIpjd5xKojrm84te+AxOfSHqums+aB1bhB9TPBQLX+ogiBWTYvAe3d3mwDpw1NEH1OuHx3PtfGpCXF59O9N6ibUWAaG6w2wZsW3Jzml0YXCIoeiRoW4K15Fk0RKTKSmQqeB9dI4HiFyIfzoh4k43wiEnVK9QONjda3UpxW+qZqzMyCBjg6jim7CGUBYUzBvse0UtOx6nhWKzBEcgYKXR2MB2/HEgqMxm4u9G1otd/Br4cDnH47htLZAyMA9vxuzF/sZMsTMX+ksciiLn jenkins@f46b14c812a0
+
+Connection refused fatal: Could not read from remote repository. Please make sure you have the correct access rights and the repository exists.
+
+登录
+alexliu/MeReco6ms
+git：
+alexliu/MeReco6msjw
+
+/tmp/phabricator.php.log
+
+find / -type f --name *.log | xargs grep 'Unable to find `git-http-backend`'
+
+ln -s /usr/lib/git/git-http-fetch /usr/bin/git-http-fetch
+ln -s /usr/lib/git/git-http-push /usr/bin/git-http-push
+ln -s /usr/lib/git/git-http-backend /usr/bin/git-http-backend
+
+/srv/phabricator/phabricator/bin/remove destroy R3
+
+php.ini
+[PHP]
+extension=C:\php-7.2.34-Win32-VC15-x64\ext\php_curl.dll
+
+把.arcconfig放到clone下来的工程目录
+
+执行arc install-certificate
+打开页面http://phabricator.my.org:10080/conduit/login/
+复制token，填入Paste API Token from that page: 后
+arc diff前commit -a -m ''
+完全空的工程，执行arc diff时会找不到HEAD失败，可以先放一个README.md，add/commit/push以后再arc diff
+arc diff时，务必要填写reviewers，用逗号分隔开的phabricator的账号名
+
+设置邮箱：
+/srv/phabricator/phabricator/bin/config set phpmailer.mailer smtp
+/srv/phabricator/phabricator/bin/config set phpmailer.smtp-host smtp.163.com
+/srv/phabricator/phabricator/bin/config set phpmailer.smtp-port 465
+/srv/phabricator/phabricator/bin/config set phpmailer.smtp-protocol SSL
+/srv/phabricator/phabricator/bin/config set phpmailer.smtp-user bronzels@163.com
+/srv/phabricator/phabricator/bin/config set phpmailer.smtp-password XJOLNHXIPTYILTGK
+
+cat /srv/phabricator/phabricator/conf/local/local.json
+
+/srv/phabricator/phabricator/bin/mail list-outbound
+
+/srv/phabricator/phabricator/bin/remove destroy R8
+
+
+git clone https://github.com/codekoala/docker-pypi.git
+exec /usr/bin/pypi-server \
+    --fallback-url https://pypi.doubanio.com/simple/ \
+    --port ${PYPI_PORT} \
+    --passwords "${PYPI_PASSWD_FILE}" \
+    --authenticate "${PYPI_AUTHENTICATE}" \
+    ${_extra} \
+    "${PYPI_ROOT}"
+
+docker build ./ -t harbor.my.org:1080/library/ci/codekoala/pypi
+docker push harbor.my.org:1080/library/ci/codekoala/pypi
+
+	
+cd /cdhdata1/bigopera/pypi/codekoala
+sudo touch .htpasswd
+sudo chown bigopera:bigopera .htpasswd
+htpasswd -s .htpasswd pypiadmin
+#pypiadmin/pypiadmin123
+
+docker run -itd --restart unless-stopped \
+    -h pypi.my.org \
+    -v /cdhdata1/bigopera/pypi/codekoala:/srv/pypi:rw \
+    -p 18080:80 \
+    --name pypi.my.org \
+    harbor.my.org:1080/library/ci/codekoala/pypi
+
+docker run -itd --restart unless-stopped \
+    -h pypi-dev.my.org \
+    -v /cdhdata1/bigopera/pypi/codekoala-dev:/srv/pypi:rw \
+    -p 18180:80 \
+    --name pypi-dev.my.org \
+    harbor.my.org:1080/library/ci/codekoala/pypi	
+
+开发机器安装Python3.5
+		pip(下载执行python setup.py install)
+		requests(pip install requests)
+
+1，lib工程请参考
+1，设置开发环境
+a，把安装的python 3.5的这2个目录设置到Path中
+	C:\Users\xbli06\AppData\Local\Programs\Python\Python35
+	C:\Users\xbli06\AppData\Local\Programs\Python\Python35\Scripts
+b，/etc/hosts(linux), C:\Windows\System32\drivers\etc\hosts(windows)增加
+	192.168.0.62 pypi.my.org
+c，设置镜像源，C:\Users\xbli06\pip\pip.ini或者~/.pip/pip.conf	
+[global]
+index-url = https://mirrors.aliyun.com/pypi/simple/
+extra-index-url = http://pypi.my.org:18080
+                  https://pypi.tuna.tsinghua.edu.cn/simple
+
+[install]
+trusted-host = mirrors.aliyun.com
+               pypi.my.org
+			   pypi.tuna.tsinghua.edu.cn
+d，(twine上传模式不需要.pypirc)修改 ~/.pypirc
+[distutils]
+index-servers =
+    pypi
+    internal
+	
+[pypi]
+username:pypiadmin
+password:pypiadmin123
+
+[internal]
+repository: http://pypi.my.org:18080
+username:pypiadmin
+password:pypiadmin123
+2，更新requirements.txt
+  venv\Scripts\activate.bat
+  pip freeze >requirements.txt
+3，上传内部库包（参考工程62的/cdhdata1/venvs/pypi_test/lgp-library）
+#setup.py模式
+	python setup.py sdist upload -r internal --username pypiadmin --password pypiadmin123
+#twine模式
+  #注意setup.py和twine执行依赖较多包，应该使用开发机器环境的python环境，而不是lib工程的virtualenv
+  venv\Scripts\deactivate.bat
+  pip install requests
+  pip install twine
+  pip install pyinstaller
+  pip install wheel 
+  pip install requests twine pyinstaller wheel 
+  python setup.py sdist bdist_wheel
+  twine upload --repository-url http://pypi.my.org:18080 --username pypiadmin --password pypiadmin123 dist/*
+4，安装内部库包到运行环境
+#setup.py模式
+  pip install -i http://pypi.my.org:18080 --trusted-host pypi.my.org  demo_library
+#twine模式
+  pip install demo_library
+
+pip freeze>requirements.txt
+
+
+easy_install --upgrade pip
+
+1，如果库工程有修改需要更新pip，但是不想更改版本号（不是大的feature，只是bug fix），直接删除pypi server的包
+HadoopDev001
+cd /cdhdata1/bigopera/pypi/codekoala/
+cd /cdhdata1/bigopera/pypi
+mkdir ../tmp/0129-4
+mv codekoala/libadsusertestsys-0.0.2* ../tmp/0129-4
+2，如果库版本升级，在使用库的app工程里：
+venv\Scripts\activate.bat
+RUN pip uninstall -y libadsusertestsys
+RUN pip install libadsusertestsys
+
+  
+token：
+dfdHJGJGJ536
+
+
+
+version: '3'
+services:
+  postgres:
+    image: postgres:12
+    restart: always
+    container_name: postgres_sonar
+    volumes:
+      - ./postgres/postgresql/:/var/lib/postgresql
+      - ./postgres/data/:/var/lib/postgresql/data
+    environment:
+      TZ: Asia/Shanghai
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonar
+
+  sonar:
+    image: sonarqube:7.9-community
+    container_name: sonar.my.org
+    depends_on:
+      - postgres
+    volumes:
+      - ./sonar/data/:/opt/sonarqube/data
+      - ./sonar/log/:/opt/sonarqube/log
+      - ./sonar/extensions/:/opt/sonarqube/extensions
+      - ./sonar/conf/:/opt/sonarqube/conf
+    ports:
+      - 19000:9000
+    environment:
+      SONARQUBE_JDBC_USERNAME: sonar
+      SONARQUBE_JDBC_PASSWORD: sonar
+      SONARQUBE_JDBC_URL: jdbc:postgresql://postgres:5432/sonar
+networks:
+ default:
+  external:
+   name: cicd
+   
+mkdir -p ./postgres/postgresql
+mkdir -p ./postgres/data
+
+mkdir -p ./sonar/data 
+mkdir -p ./sonar/log 
+mkdir -p ./sonar/extensions/plugins
+#put phdiff jarj5
+mkdir -p ./sonar/conf
+sudo chmod 777 -R sonar   
+
+cp sonar.conf/* sonar/conf/
+cp sonar.extentions.plugin/phdiff-0.1.1.jar sonar/extensions/plugins/
+chmod 777 sonar/extensions/plugins/phdiff-0.1.1.jar
+
+docker cp sonar.my.org:/opt/sonarqube/conf/wrapper.conf sonar/conf
+docker cp sonar.my.org:/opt/sonarqube/conf/sonar.properties sonar/conf
+
+docker logs -f -t --since="2017-05-31" --tail=10 sonar.my.org
+
+账号密码：
+admin/admin
+admin/sonar098
+
+安装插件:
+Chinese Pack
+
+
+修改jenkins中的/usr/share/maven/conf/settings.xml，增加sonar引用
+<profile>
+	<id>sonar</id>
+	<properties>
+		<sonar.host.url>http://sonar.my.org:9000</sonar.host.url>
+		<sonar.login>admin</sonar.login>
+		<sonar.password>sonar098</sonar.password>
+		<sonar.inclusions>**/*.java,**/*.scala,**/*.xml</sonar.inclusions>
+	</properties>
+</profile>
+增加
+  <activeProfiles>
+    <activeProfile>sonar</activeProfile>
+  </activeProfiles>
+6.7
+       <profile>
+                <id>sonar</id>
+                <activation>
+                        <activeByDefault>true</activeByDefault>
+                </activation>
+                <properties>
+                        <!-- Optional URL to server. Default value is http://localhost:9000 -->
+                        <sonar.host.url>http://sonar.my.org:9000</sonar.host.url>
+                        <sonar.jdbc.url>jdbc:postgresql://postgres_sonar:5432/sonar</sonar.jdbc.url>
+                        <sonar.jdbc.driver>org.postgresql.Driver</sonar.jdbc.driver>
+                        <sonar.jdbc.username>sonar</sonar.jdbc.username>
+                        <sonar.jdbc.password>sonar</sonar.jdbc.password>
+                </properties>
+        </profile>
+		
+docker run -itd --restart unless-stopped \
+    -h pypi-local.my.org \
+    -v pypirepo:/srv/pypi:rw \
+    -p 9090:80 \
+    --name pypi-local.my.org \
+    harbor.my.org:1080/library/ci/codekoala/pypi	
+
+#本地windows启动pypiserver要把docker engine的Use the WSL 2 based engine给uncheck，不然报告403错误
+#windows cmd执行
+docker run  -itd --restart unless-stopped     -h pypi-local.my.org     -v e:\pypirepo:/srv/pypi:rw     -p 9090:80     --name pypi-local.my.org     harbor.my.org:1080/library/ci/codekoala/pypi
+
+
+

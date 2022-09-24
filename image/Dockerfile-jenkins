@@ -1,0 +1,73 @@
+FROM jenkins/jenkins:2.263.1-lts-centos7
+USER root
+
+RUN yum -y install gcc gcc-c++ make automake 
+RUN yum -y install libxml2-devel openssl-devel curl-devel libjpeg-devel libpng-devel libicu-devel freetype-devel openldap-devel openldap openldap-devel
+RUN yum -y install sqlite-devel bzip2-devel.x86_64 libxslt-devel
+COPY libzip-1.2.0.tar.gz /
+RUN tar -zxvf libzip-1.2.0.tar.gz
+WORKDIR /libzip-1.2.0
+RUN ./configure
+RUN make && make install
+ENV PKG_CONFIG_PATH="/usr/local/lib/pkgconfig/"
+WORKDIR /
+RUN yum -y install http://down.24kplus.com/linux/oniguruma/oniguruma-6.7.0-1.el7.x86_64.rpm
+RUN yum -y install http://down.24kplus.com/linux/oniguruma/oniguruma-devel-6.7.0-1.el7.x86_64.rpm
+COPY php-7.4.7.tar.gz /
+RUN tar -zxvf php-7.4.7.tar.gz
+WORKDIR /php-7.4.7
+RUN ./configure \
+--prefix=/usr/local/php \
+--with-config-file-path=/usr/local/php/etc \
+--with-fpm-user=www \
+--with-fpm-group=www \
+--with-curl \
+--with-MySQL=/usr/local/mysql \
+--with-freetype-dir=/user/local/freetype \
+--enable-gd \
+--with-gettext \
+--with-iconv-dir \
+--with-kerberos \
+--with-libdir=lib64 \
+--with-libxml-dir \
+--with-mysqli \
+--with-openssl \
+--with-pcre-regex \
+--with-pdo-mysql \
+--with-pdo-sqlite \
+--with-pear \
+--with-png-dir=/user/local/libpng \
+--with-jpeg-dir=/user/local/libjpeg \
+--with-xmlrpc \
+--with-xsl \
+--with-zlib \
+--with-zlib-dir=/user/local/zlib \
+--with-bz2 \
+--with-mhash \
+--with-zip \
+--enable-fpm \
+--enable-bcmath \
+--enable-libxml \
+--enable-inline-optimization \
+--enable-mbregex \
+--enable-mbstring \
+--enable-opcache \
+--enable-pcntl \
+--enable-shmop \
+--enable-soap \
+--enable-sockets \
+--enable-sysvsem \
+--enable-sysvshm \
+--enable-xml \
+--enable-zip \
+--enable-fpm
+
+RUN make
+RUN make install
+RUN /usr/local/php/bin/php -v
+RUN ln -s /usr/local/php/bin/php /usr/bin/php
+RUN echo "root:root" | chpasswd
+
+WORKDIR /
+USER jenkins
+
