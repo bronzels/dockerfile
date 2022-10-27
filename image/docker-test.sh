@@ -53,10 +53,10 @@ nohup docker build ./ --add-host pypi.my.org:192.168.0.62 -f Dockerfile-centos-p
 tail -f build-Dockerfile-centos-py37-jenkins-build.log
 docker push harbor.my.org:1080/library/ci/python:3.7-centos-jenkins-build
 
-nohup docker build ./ -f Dockerfile-centos7-py38-netutil -t harbor.my.org:1080/py/python:3.8-centos7-netutil > build-Dockerfile-centos7-py38-netutil.log 2>&1 &
+nohup docker build ./ -f Dockerfile-centos7-py38-netutil -t harbor.my.org:1080/base/python:3.8-centos7-netutil > build-Dockerfile-centos7-py38-netutil.log 2>&1 &
 tail -f build-Dockerfile-centos7-py38-netutil.log
-docker push harbor.my.org:1080/py/python:3.8-centos7-netutil
-docker tag harbor.my.org:1080/py/python:3.8-centos7-netutil harbor.my.org:1080/pysec/python:3.8-centos7-netutil
-docker push harbor.my.org:1080/pysec/python:3.8-centos7-netutil
+docker push harbor.my.org:1080/base/python:3.8-centos7-netutil
+docker tag harbor.my.org:1080/base/python:3.8-centos7-netutil harbor.my.org:1080/basesec/python:3.8-centos7-netutil
+docker push harbor.my.org:1080/basesec/python:3.8-centos7-netutil
 
 echo -n '' | base64
