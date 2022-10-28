@@ -3,12 +3,12 @@ component:
   master: true
   datanode: true
   metanode: true
-  objectnode: false
+  objectnode: true
   client: true
   provisioner: true
   monitor: true
   console: true
-  ingress: false
+  ingress: true
 
 image:
   server: chubaofs/cfs-server:2.4.0
@@ -24,12 +24,12 @@ image:
 
 # store data,log and other data 
 path:
-  data: /chubaofs/data
-  log: /chubaofs/log
+  data: /var/lib/chubaofs
+  log: /var/log/chubaofs
   monitor: /var/lib/chubaofs_prometheus
 
 master:
-  replicas: 3
+  replicas: 4
   cluster: my-cluster
   labels:
     node_selector_key: chubaofs-master
@@ -39,22 +39,22 @@ master:
   port: 17010 
   prof: 17020 
   exporter_port: 9500 
-  metanode_reserved_mem: "16777216"
+  metanode_reserved_mem: "67108864"
   resources:
     enabled: false
     requests:
-      memory: "2Gi"
-      cpu: "1000m"
-    limits:
-      memory: "4Gi"
+      memory: "8Gi"
       cpu: "2000m"
+    limits:
+      memory: "32Gi"
+      cpu: "8000m"
 
 metanode:
   labels:
     node_selector_key: chubaofs-metanode
     node_selector_value: enabled
   log_level: error
-  total_mem: "2684354560"
+  total_mem: "26843545600"
   port: 17210 
   prof: 17220 
   raft_heartbeat: 17230 
@@ -63,11 +63,11 @@ metanode:
   resources:
     enabled: true
     requests:
-      memory: "3Gi"
-      cpu: "1000m"
-    limits:
-      memory: "6Gi"
+      memory: "32Gi"
       cpu: "2000m"
+    limits:
+      memory: "256Gi"
+      cpu: "8000m"
 
 datanode:
   labels:
@@ -80,15 +80,16 @@ datanode:
   raft_replica: 17340 
   exporter_port: 9520
   disks:
-    - /data0:214748364800
+    - /data0:21474836480
+    - /data1:21474836480
   resources:
     enabled: false
     requests:
-      memory: "4Gi"
+      memory: "8Gi"
       cpu: "2000m"
     limits:
-      memory: "8Gi"
-      cpu: "4000m"
+      memory: "32Gi"
+      cpu: "8000m"
 
 objectnode:
   replicas: 3
@@ -174,4 +175,4 @@ prometheus:
       cpu: "1000m"
 
 storageClass:
-  default: true
+  default: false
