@@ -1,12 +1,14 @@
 git clone https://github.com/cubefs/cubefs-helm
+cd cubefs-helm/
 cp ~/.kube/config chubaofs/config/kubeconfig
 
-file=~/chubaofs.yaml
+file=./chubaofs.yaml
 cat << \EOF > $file
 component:
   provisioner: true
   monitor: true
   ingress: false
+  objectnode: false
 
 path:
   data: /chubaofs/data
@@ -57,13 +59,6 @@ kubectl label node dtpct chubaofs-objectnode=enabled
 kubectl label node mdlapubu chubaofs-objectnode=enabled
 kubectl label node mdubu chubaofs-objectnode=enabled
 
-kubectl label node mdubu chubaofs-consul=enabled
-kubectl label node mdubu chubaofs-console=enabled
-kubectl label node mdubu chubaofs-client=enabled
-kubectl label node mdubu chubaofs-grafana=enabled
-kubectl label node mdubu chubaofs-prometheus=enabled
-
-
 #每个数据节点节点
 lsblk
 umount -l /dev/sdb5
@@ -76,8 +71,10 @@ mount|grep data0
 #/dev/disk/by-uuid/0f57c0db-9adc-4ae9-8348-3bba4d5579eb /data0 xfs defaults 0 1
 
 kubectl create ns chubaofs
-helm install chubaofs ./chubaofs -f ~/chubaofs.yaml -n chubaofs
+helm install chubaofs ./chubaofs -f ./chubaofs.yaml -n chubaofs
 #helm uninstall chubaofs -n chubaofs
+
+k get pod -n chubaofs
 
 docker save -o quay.io_k8scsi_csi-node-driver-registrar_v1.3.0.tar.gz quay.io/k8scsi/csi-node-driver-registrar:v1.3.0
 docker load -i quay.io_k8scsi_csi-node-driver-registrar_v1.3.0.tar.gz
