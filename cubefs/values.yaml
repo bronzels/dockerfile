@@ -12,7 +12,8 @@ component:
 
 image:
   server: chubaofs/cfs-server:2.4.0
-  client: chubaofs/cfs-client:2.4.0
+  #client: chubaofs/cfs-client:2.4.0
+  client: registry.cn-hangzhou.aliyuncs.com/bronzels/chubaofs-cfs-client-2.4.0:1.0
   csi_driver: chubaofs/cfs-csi-driver:2.4.0.110.4
   csi_provisioner: quay.io/k8scsi/csi-provisioner:v1.6.0
   driver_registrar: quay.io/k8scsi/csi-node-driver-registrar:v1.3.0
@@ -22,7 +23,7 @@ image:
   consul: consul:1.6.1
   pull_policy: "IfNotPresent"
 
-# store data,log and other data 
+# store data,log and other data
 path:
   data: /chubaofs/data
   log: /chubaofs/log

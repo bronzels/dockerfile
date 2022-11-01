@@ -1,0 +1,29 @@
+FROM harbor.my.org:1080/base/python:3.8-centos7-netutil
+
+RUN yum install -y centos-release-scl
+RUN yum install -y devtoolset-7-gcc devtoolset-7-make
+RUN yum install -y devtoolset-7-gcc-c++ devtoolset-7-gcc-gfortran
+RUN scl enable devtoolset-7 bash
+
+RUN yum install -y  automake autoconf libtool
+
+#RUN yum install -y gcc make
+#RUN yum install -y gcc-c++ gcc-gfortran
+RUN yum install -y kernel-devel tar wget
+
+RUN gcc --version
+ENV PATH /opt/rh/devtoolset-7/root/usr/bin:$PATH
+RUN make --version
+RUN make --version
+
+RUN yum install -y zip unzip
+
+
+RUN wget -c https://go.dev/dl/go1.19.2.linux-amd64.tar.gz
+RUN tar xzvf go1.19.2.linux-amd64.tar.gz
+RUN mv go /usr/local/
+ENV PATH /usr/local/go/bin:$PATH
+ENV GOPATH /root/workspace/gopath
+ENV GOPROXY https://goproxy.cn
+
+WORKDIR /root/workspace

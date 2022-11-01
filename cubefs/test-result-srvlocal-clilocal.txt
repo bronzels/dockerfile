@@ -1,0 +1,272 @@
+root@dtpct:/data0# fio -directory=/data0/iotest \
+    -ioengine=psync \
+    -rw=randread \
+    -bs=4k \
+    -direct=1 \
+    -group_reporting=1 \
+    -fallocate=none \
+    -time_based=1 \
+    -runtime=120 \
+    -name=test_file_c \
+    -numjobs=1 \
+    -nrfiles=1 \
+    -size=10G
+test_file_c: (g=0): rw=randread, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=psync, iodepth=1
+fio-3.32
+Starting 1 process
+test_file_c: Laying out IO file (1 file / 10240MiB)
+Jobs: 1 (f=1): [r(1)][100.0%][r=13.4MiB/s][r=3422 IOPS][eta 00m:00s]
+test_file_c: (groupid=0, jobs=1): err= 0: pid=3622364: Mon Oct 31 16:47:10 2022
+  read: IOPS=3292, BW=12.9MiB/s (13.5MB/s)(1543MiB/120001msec)
+    clat (usec): min=181, max=31542, avg=302.76, stdev=197.10
+     lat (usec): min=181, max=31543, avg=302.84, stdev=197.11
+    clat percentiles (usec):
+     |  1.00th=[  265],  5.00th=[  273], 10.00th=[  273], 20.00th=[  273],
+     | 30.00th=[  285], 40.00th=[  285], 50.00th=[  293], 60.00th=[  293],
+     | 70.00th=[  293], 80.00th=[  302], 90.00th=[  310], 95.00th=[  314],
+     | 99.00th=[  375], 99.50th=[ 1254], 99.90th=[ 2606], 99.95th=[ 3458],
+     | 99.99th=[ 7439]
+   bw (  KiB/s): min=11072, max=14024, per=100.00%, avg=13173.51, stdev=561.03, samples=239
+   iops        : min= 2768, max= 3506, avg=3293.38, stdev=140.26, samples=239
+  lat (usec)   : 250=0.65%, 500=98.69%, 750=0.01%, 1000=0.10%
+  lat (msec)   : 2=0.20%, 4=0.32%, 10=0.03%, 20=0.01%, 50=0.01%
+  cpu          : usr=0.76%, sys=4.53%, ctx=395141, majf=0, minf=10
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued rwts: total=395124,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=1
+
+Run status group 0 (all jobs):
+   READ: bw=12.9MiB/s (13.5MB/s), 12.9MiB/s-12.9MiB/s (13.5MB/s-13.5MB/s), io=1543MiB (1618MB), run=120001-120001msec
+
+Disk stats (read/write):
+  sdc: ios=394917/2900, merge=0/585, ticks=116255/6709, in_queue=127013, util=99.94%
+
+root@dtpct:/data0# fio -directory=/data0/iotest \
+    -ioengine=psync \
+    -rw=randread \
+    -bs=4k \
+    -direct=1 \
+    -group_reporting=1 \
+    -fallocate=none \
+    -time_based=1 \
+    -runtime=120 \
+    -name=test_file_c \
+    -numjobs=4 \
+    -nrfiles=1 \
+    -size=10G
+test_file_c: (g=0): rw=randread, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=psync, iodepth=1
+...
+fio-3.32
+Starting 4 processes
+test_file_c: Laying out IO file (1 file / 10240MiB)
+test_file_c: Laying out IO file (1 file / 10240MiB)
+test_file_c: Laying out IO file (1 file / 10240MiB)
+Jobs: 4 (f=4): [r(4)][100.0%][r=24.2MiB/s][r=6189 IOPS][eta 00m:00s]
+test_file_c: (groupid=0, jobs=4): err= 0: pid=3633178: Mon Oct 31 17:16:04 2022
+  read: IOPS=5992, BW=23.4MiB/s (24.5MB/s)(2809MiB/120001msec)
+    clat (usec): min=284, max=25901, avg=666.44, stdev=327.64
+     lat (usec): min=284, max=25901, avg=666.54, stdev=327.65
+    clat percentiles (usec):
+     |  1.00th=[  502],  5.00th=[  537], 10.00th=[  545], 20.00th=[  553],
+     | 30.00th=[  562], 40.00th=[  570], 50.00th=[  578], 60.00th=[  594],
+     | 70.00th=[  652], 80.00th=[  725], 90.00th=[  857], 95.00th=[  963],
+     | 99.00th=[ 1827], 99.50th=[ 3097], 99.90th=[ 4113], 99.95th=[ 4686],
+     | 99.99th=[ 8455]
+   bw (  KiB/s): min=21240, max=25336, per=100.00%, avg=23979.70, stdev=193.84, samples=956
+   iops        : min= 5308, max= 6334, avg=5994.90, stdev=48.46, samples=956
+  lat (usec)   : 500=0.98%, 750=81.69%, 1000=13.24%
+  lat (msec)   : 2=3.19%, 4=0.80%, 10=0.10%, 20=0.01%, 50=0.01%
+  cpu          : usr=0.41%, sys=2.34%, ctx=719188, majf=0, minf=50
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued rwts: total=719131,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=1
+
+Run status group 0 (all jobs):
+   READ: bw=23.4MiB/s (24.5MB/s), 23.4MiB/s-23.4MiB/s (24.5MB/s-24.5MB/s), io=2809MiB (2946MB), run=120001-120001msec
+
+Disk stats (read/write):
+  sdc: ios=718969/2943, merge=0/507, ticks=471604/8725, in_queue=484887, util=99.98%
+
+root@dtpct:/data0# dd if=/dev/zero of=/data0/test-dd-w.dbf bs=2M count=1000 oflag=direct
+1000+0 records in
+1000+0 records out
+2097152000 bytes (2.1 GB, 2.0 GiB) copied, 62.1127 s, 33.8 MB/s
+
+root@dtpct:/data0# dd if=/dev/sdc4 of=/dev/null bs=4k
+^C867745+0 records in
+867744+0 records out
+3554279424 bytes (3.6 GB, 3.3 GiB) copied, 87.4977 s, 40.6 MB/s
+
+root@dtpct:/data0# dd if=/dev/sdc4 of=/data0/test-dd-rw.dbf bs=4k count=100000
+100000+0 records in
+100000+0 records out
+409600000 bytes (410 MB, 391 MiB) copied, 0.25942 s, 1.6 GB/s
+
+root@dtpct:/data0# dd if=/data0/test-dd-w.dbf of=/data0/test-dd-rw.dbf bs=4k
+^C458041+0 records in
+458040+0 records out
+1876131840 bytes (1.9 GB, 1.7 GiB) copied, 46.1835 s, 40.6 MB/s
+
+root@dtpct:/data0# TARGET_PATH="/data0/test-mdtest"
+FILE_SIZE=1024
+mdtest -n 1000 -w $i -e $FILE_SIZE -y -u -i 3 -N 1 -F -R -d $TARGET_PATH
+-- started at 11/01/2022 14:26:43 --
+
+mdtest-1.9.3 was launched with 1 total task(s) on 1 node(s)
+Command line used: mdtest -n 1000 -w -e 1024 -y -u -i 3 -N 1 -F -R -d /data0/test-mdtest
+Path: /data0
+FS: 374.7 GiB   Used FS: 26.7%   Inodes: 187.4 Mi   Used Inodes: 0.0%
+random seed: 1667284003
+
+1 tasks, 1000 files
+
+SUMMARY: (of 3 iterations)
+   Operation                      Max            Min           Mean        Std Dev
+   ---------                      ---            ---           ----        -------
+   File creation     :        147.932        142.909        145.377          2.051
+   File stat         :     156802.273     153817.808     155608.901       1289.628
+   File read         :      98229.560      94326.092      96021.750       1634.216
+   File removal      :      25824.928      25064.264      25323.864        354.383
+   Tree creation     :      77672.296      25115.593      45817.186      22859.753
+   Tree removal      :       1594.792       1349.953       1441.030        109.342
+
+-- finished at 11/01/2022 14:27:04 --
+
+root@dtpct:/data0# fio -directory=/data0/iotest \
+    -ioengine=psync \
+    -rw=read \
+    -bs=4k \
+    -direct=1 \
+    -group_reporting=1 \
+    -fallocate=none \
+    -time_based=1 \
+    -runtime=120 \
+    -name=test_file_c \
+    -numjobs=1 \
+    -nrfiles=1 \
+    -size=10G
+fio -directory=/data0/iotest \
+    -ioengine=psync \
+    -rw=write \
+    -bs=4k \
+    -direct=1 \
+    -group_reporting=1 \
+    -fallocate=none \
+    -time_based=1 \
+    -runtime=120 \
+    -name=test_file_c \
+    -numjobs=4 \
+    -nrfiles=1 \
+    -size=10G
+fio -directory=/data0/iotest \
+    -ioengine=psync \
+    -rw=randwrite \
+    -bs=4k \
+    -direct=1 \
+    -group_reporting=1 \
+    -fallocate=none \
+    -time_based=1 \
+    -runtime=120 \
+    -name=test_file_c \
+    -numjobs=4 \
+    -nrfiles=1 \
+    -size=10G
+test_file_c: (g=0): rw=read, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=psync, iodepth=1
+fio-3.32
+Starting 1 process
+Jobs: 1 (f=1): [R(1)][100.0%][r=96KiB/s][r=24 IOPS][eta 00m:00s]
+test_file_c: (groupid=0, jobs=1): err= 0: pid=4122864: Tue Nov  1 15:00:02 2022
+  read: IOPS=3332, BW=13.0MiB/s (13.6MB/s)(1562MiB/120020msec)
+    clat (usec): min=136, max=774509, avg=299.15, stdev=2726.36
+     lat (usec): min=136, max=774510, avg=299.26, stdev=2726.38
+    clat percentiles (usec):
+     |  1.00th=[  176],  5.00th=[  186], 10.00th=[  192], 20.00th=[  210],
+     | 30.00th=[  215], 40.00th=[  221], 50.00th=[  225], 60.00th=[  227],
+     | 70.00th=[  227], 80.00th=[  229], 90.00th=[  235], 95.00th=[  243],
+     | 99.00th=[  441], 99.50th=[ 2245], 99.90th=[24249], 99.95th=[47449],
+     | 99.99th=[90702]
+   bw (  KiB/s): min=    8, max=18520, per=100.00%, avg=13499.17, stdev=6596.74, samples=237
+   iops        : min=    2, max= 4630, avg=3374.79, stdev=1649.19, samples=237
+  lat (usec)   : 250=95.68%, 500=3.40%, 750=0.06%, 1000=0.12%
+  lat (msec)   : 2=0.23%, 4=0.34%, 10=0.05%, 20=0.03%, 50=0.06%
+  lat (msec)   : 100=0.03%, 250=0.01%, 500=0.01%, 750=0.01%, 1000=0.01%
+  cpu          : usr=0.68%, sys=4.32%, ctx=399935, majf=0, minf=15
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued rwts: total=399927,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=1
+
+Run status group 0 (all jobs):
+   READ: bw=13.0MiB/s (13.6MB/s), 13.0MiB/s-13.0MiB/s (13.6MB/s-13.6MB/s), io=1562MiB (1638MB), run=120020-120020msec
+
+Disk stats (read/write):
+  sdc: ios=400704/7909, merge=4/684, ticks=221859/164629, in_queue=395657, util=99.80%
+test_file_c: (g=0): rw=write, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=psync, iodepth=1
+...
+fio-3.32
+Starting 4 processes
+Jobs: 4 (f=4): [W(4)][100.0%][w=112KiB/s][w=28 IOPS][eta 00m:00s]
+test_file_c: (groupid=0, jobs=4): err= 0: pid=4123625: Tue Nov  1 15:02:03 2022
+  write: IOPS=77, BW=311KiB/s (319kB/s)(36.5MiB/120043msec); 0 zone resets
+    clat (usec): min=318, max=890607, avg=51415.38, stdev=108470.14
+     lat (usec): min=318, max=890607, avg=51416.08, stdev=108470.34
+    clat percentiles (usec):
+     |  1.00th=[   685],  5.00th=[   725], 10.00th=[   742], 20.00th=[   766],
+     | 30.00th=[  3064], 40.00th=[  5997], 50.00th=[  8979], 60.00th=[ 14615],
+     | 70.00th=[ 21890], 80.00th=[ 47973], 90.00th=[187696], 95.00th=[304088],
+     | 99.00th=[509608], 99.50th=[566232], 99.90th=[759170], 99.95th=[801113],
+     | 99.99th=[893387]
+   bw (  KiB/s): min=   32, max= 6928, per=100.00%, avg=320.06, stdev=148.92, samples=932
+   iops        : min=    8, max= 1732, avg=80.00, stdev=37.23, samples=932
+  lat (usec)   : 500=0.03%, 750=15.68%, 1000=10.48%
+  lat (msec)   : 2=2.39%, 4=2.78%, 10=21.24%, 20=15.28%, 50=12.52%
+  lat (msec)   : 100=5.35%, 250=7.56%, 500=5.60%, 750=0.97%, 1000=0.11%
+  cpu          : usr=0.03%, sys=0.09%, ctx=9393, majf=0, minf=49
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued rwts: total=0,9338,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=1
+
+Run status group 0 (all jobs):
+  WRITE: bw=311KiB/s (319kB/s), 311KiB/s-311KiB/s (319kB/s-319kB/s), io=36.5MiB (38.2MB), run=120043-120043msec
+
+Disk stats (read/write):
+  sdc: ios=21120/16407, merge=95/477, ticks=4071873/979481, in_queue=5085861, util=99.68%
+test_file_c: (g=0): rw=randwrite, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=psync, iodepth=1
+...
+fio-3.32
+Starting 4 processes
+Jobs: 4 (f=4): [w(4)][100.0%][w=616KiB/s][w=154 IOPS][eta 00m:00s]
+test_file_c: (groupid=0, jobs=4): err= 0: pid=4124395: Tue Nov  1 15:04:03 2022
+  write: IOPS=62, BW=249KiB/s (255kB/s)(29.1MiB/120021msec); 0 zone resets
+    clat (usec): min=267, max=977552, avg=64356.96, stdev=125648.77
+     lat (usec): min=267, max=977554, avg=64357.68, stdev=125649.12
+    clat percentiles (usec):
+     |  1.00th=[   570],  5.00th=[   594], 10.00th=[   676], 20.00th=[   758],
+     | 30.00th=[  1369], 40.00th=[  2409], 50.00th=[  5080], 60.00th=[  9110],
+     | 70.00th=[ 11076], 80.00th=[125305], 90.00th=[261096], 95.00th=[367002],
+     | 99.00th=[509608], 99.50th=[583009], 99.90th=[641729], 99.95th=[725615],
+     | 99.99th=[977273]
+   bw (  KiB/s): min=   32, max= 5664, per=100.00%, avg=254.88, stdev=140.82, samples=935
+   iops        : min=    8, max= 1416, avg=63.72, stdev=35.20, samples=935
+  lat (usec)   : 500=0.25%, 750=18.61%, 1000=10.15%
+  lat (msec)   : 2=9.01%, 4=7.11%, 10=21.50%, 20=7.80%, 50=2.33%
+  lat (msec)   : 100=2.32%, 250=10.56%, 500=9.33%, 750=0.98%, 1000=0.04%
+  cpu          : usr=0.02%, sys=0.07%, ctx=7530, majf=0, minf=53
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued rwts: total=0,7459,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=1
+
+Run status group 0 (all jobs):
+  WRITE: bw=249KiB/s (255kB/s), 249KiB/s-249KiB/s (255kB/s-255kB/s), io=29.1MiB (30.6MB), run=120021-120021msec
+
+Disk stats (read/write):
+  sdc: ios=21578/11927, merge=113/917, ticks=5224370/813250, in_queue=6071968, util=99.69%

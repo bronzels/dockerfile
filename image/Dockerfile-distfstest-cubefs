@@ -1,0 +1,60 @@
+FROM registry.cn-hangzhou.aliyuncs.com/bronzels/chubaofs-cfs-client-2.4.0:1.0
+
+COPY Centos-7.repo /etc/yum.repos.d/CentOS-Base.repo
+COPY epel-7.repo /etc/yum.repos.d/epel-7.repo
+RUN yum clean all && yum makecache && yum -y update
+
+#RUN yum clean all && yum makecache && yum -y update
+#RUN wget -c https://www.softwarecollections.org/repos/rhscl/devtoolset-3/epel-6-x86_64/noarch/rhscl-devtoolset-3-epel-6-x86_64-1-2.noarch.rpm
+#RUN rpm -ivh ./rhscl-devtoolset-3-epel-6-x86_64-1-2.noarch.rpm
+#RUN yum install -y centos-release-scl-rh centos-release-scl
+#RUN yum check-update
+#RUN yum install -y devtoolset-3-gcc devtoolset-3-binutils devtoolset-3-gcc-c++"
+
+RUN yum install -y centos-release-scl
+RUN yum install -y devtoolset-7-gcc devtoolset-7-make
+RUN yum install -y devtoolset-7-gcc-c++ devtoolset-7-gcc-gfortran
+RUN scl enable devtoolset-7 bash
+
+RUN yum install -y  automake autoconf libtool
+
+#RUN yum install -y gcc make
+#RUN yum install -y gcc-c++ gcc-gfortran
+RUN yum install -y kernel-devel tar wget
+
+RUN gcc --version
+ENV PATH="/opt/rh/devtoolset-7/root/usr/bin:$PATH"
+RUN echo "export PATH=$PATH" > /etc/profile
+RUN make --version
+RUN make --version
+
+RUN yum install -y zip unzip
+
+RUN yum install -y libaio-devel
+
+WORKDIR /
+COPY iotest/mpich-3.2.tar.gz /mpich-3.2.tar.gz
+RUN tar -xzvf mpich-3.2.tar.gz
+WORKDIR /mpich-3.2
+RUN ./configure
+RUN make
+RUN make install
+RUN mpicc || :
+ENV MPI_CC=mpicc
+
+WORKDIR /
+COPY iotest/mdtest-master.zip /mdtest-master.zip
+RUN unzip mdtest-master.zip
+WORKDIR /mdtest-master
+RUN make
+RUN mv mdtest /usr/local/bin
+RUN mdtest || :
+
+WORKDIR /
+COPY iotest/fio-fio-3.32.zip /fio-fio-3.32.zip
+RUN unzip fio-fio-3.32.zip
+WORKDIR fio-fio-3.32
+RUN ./configure
+RUN make
+RUN make install
+RUN fio || :

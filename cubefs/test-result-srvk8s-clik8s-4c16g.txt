@@ -1,0 +1,98 @@
+[root@client-57595d6659-kg5xq ~]# fio -directory=/cfs/mnt \
+>     -ioengine=psync \
+>     -rw=randread \
+>     -bs=4k \
+>     -direct=1 \
+>     -group_reporting=1 \
+>     -fallocate=none \
+>     -time_based=1 \
+>     -runtime=120 \
+>     -name=test_file_c \
+>     -numjobs=1 \
+>     -nrfiles=1 \
+>     -size=10G
+test_file_c: (g=0): rw=randread, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=psync, iodepth=1
+fio-3.32
+Starting 1 process
+Jobs: 1 (f=1): [r(1)][100.0%][r=3599KiB/s][r=899 IOPS][eta 00m:00s]
+test_file_c: (groupid=0, jobs=1): err= 0: pid=53: Mon Oct 31 21:26:14 2022
+  read: IOPS=1265, BW=5063KiB/s (5185kB/s)(593MiB/120001msec)
+    clat (usec): min=116, max=26359, avg=786.46, stdev=422.59
+     lat (usec): min=116, max=26359, avg=786.80, stdev=422.69
+    clat percentiles (usec):
+     |  1.00th=[  149],  5.00th=[  182], 10.00th=[  225], 20.00th=[  510],
+     | 30.00th=[  619], 40.00th=[  685], 50.00th=[  742], 60.00th=[  824],
+     | 70.00th=[  930], 80.00th=[ 1074], 90.00th=[ 1270], 95.00th=[ 1418],
+     | 99.00th=[ 1778], 99.50th=[ 2024], 99.90th=[ 3916], 99.95th=[ 5211],
+     | 99.99th=[ 8979]
+   bw (  KiB/s): min= 2696, max= 8368, per=100.00%, avg=5069.69, stdev=1568.06, samples=239
+   iops        : min=  674, max= 2092, avg=1267.43, stdev=392.01, samples=239
+  lat (usec)   : 250=11.74%, 500=7.40%, 750=32.22%, 1000=23.74%
+  lat (msec)   : 2=24.39%, 4=0.41%, 10=0.09%, 20=0.01%, 50=0.01%
+  cpu          : usr=1.13%, sys=2.67%, ctx=151989, majf=0, minf=10
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued rwts: total=151892,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=1
+
+Run status group 0 (all jobs):
+   READ: bw=5063KiB/s (5185kB/s), 5063KiB/s-5063KiB/s (5185kB/s-5185kB/s), io=593MiB (622MB), run=120001-120001msec
+[root@client-57595d6659-kg5xq ~]# fio -directory=/cfs/mnt \
+>     -ioengine=psync \
+>     -rw=randread \
+>     -bs=4k \
+>     -direct=1 \
+>     -group_reporting=1 \
+>     -fallocate=none \
+>     -time_based=1 \
+>     -runtime=120 \
+>     -name=test_file_c \
+>     -numjobs=4 \
+>     -nrfiles=1 \
+>     -size=10G
+test_file_c: (g=0): rw=randread, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=psync, iodepth=1
+...
+fio-3.32
+Starting 4 processes
+Jobs: 4 (f=4): [r(4)][100.0%][r=18.2MiB/s][r=4672 IOPS][eta 00m:00s]
+test_file_c: (groupid=0, jobs=4): err= 0: pid=65: Mon Oct 31 21:28:14 2022
+  read: IOPS=5222, BW=20.4MiB/s (21.4MB/s)(2448MiB/120002msec)
+    clat (usec): min=116, max=47010, avg=763.62, stdev=470.83
+     lat (usec): min=116, max=47011, avg=763.84, stdev=470.83
+    clat percentiles (usec):
+     |  1.00th=[  149],  5.00th=[  190], 10.00th=[  233], 20.00th=[  469],
+     | 30.00th=[  562], 40.00th=[  627], 50.00th=[  693], 60.00th=[  758],
+     | 70.00th=[  930], 80.00th=[ 1090], 90.00th=[ 1303], 95.00th=[ 1450],
+     | 99.00th=[ 1827], 99.50th=[ 2409], 99.90th=[ 4490], 99.95th=[ 6456],
+     | 99.99th=[ 9241]
+   bw (  KiB/s): min=14504, max=24448, per=100.00%, avg=20907.88, stdev=572.09, samples=956
+   iops        : min= 3626, max= 6112, avg=5226.97, stdev=143.02, samples=956
+  lat (usec)   : 250=11.99%, 500=10.22%, 750=36.85%, 1000=13.81%
+  lat (msec)   : 2=26.39%, 4=0.60%, 10=0.13%, 20=0.01%, 50=0.01%
+  cpu          : usr=0.60%, sys=1.55%, ctx=626870, majf=0, minf=48
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued rwts: total=626674,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=1
+
+Run status group 0 (all jobs):
+   READ: bw=20.4MiB/s (21.4MB/s), 20.4MiB/s-20.4MiB/s (21.4MB/s-21.4MB/s), io=2448MiB (2567MB), run=120002-120002msec
+
+[root@client-57595d6659-kg5xq ~]# dd if=/dev/zero of=/cfs/mnt/test-dd-w.dbf bs=2M count=1000 oflag=direct
+1000+0 records in
+1000+0 records out
+2097152000 bytes (2.1 GB) copied, 242.661 s, 8.6 MB/s
+
+[root@client-57595d6659-kg5xq fio-fio-3.32]# dd if=/cfs/mnt/test-dd-w.dbf of=/dev/null bs=4k
+^C149532+0 records in
+149531+0 records out
+612478976 bytes (612 MB) copied, 18.4677 s, 33.2 MB/s
+
+[root@client-57595d6659-kg5xq fio-fio-3.32]# dd if=/cfs/mnt/test-dd-w.dbf of=/cfs/mnt/test-dd-rw.dbf bs=4k
+
+^C204828+0 records in
+204827+0 records out
+838971392 bytes (839 MB) copied, 74.6152 s, 11.2 MB/s
+

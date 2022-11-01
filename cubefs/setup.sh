@@ -65,3 +65,5 @@ tail -f /cfs/logs/client/output.log
 EOF
 
 curl -v "http://master-0.master-service:17010/admin/createVol?name=test&capacity=100&owner=cfs&mpCount=3"
+
+

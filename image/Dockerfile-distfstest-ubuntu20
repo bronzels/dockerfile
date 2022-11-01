@@ -1,0 +1,43 @@
+FROM harbor.my.org:1080/base/ubuntu20
+
+RUN apt install -y gcc-7 g++-7
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 100
+RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 100
+
+RUN apt install -y automake autoconf libtool
+
+RUN apt install -y tar
+
+RUN gcc --version
+RUN make --version
+
+RUN apt install -y zip unzip
+
+apt-get install -y libaio1
+
+WORKDIR /
+COPY iotest/mpich-3.2.tar.gz /mpich-3.2.tar.gz
+RUN tar -xzvf mpich-3.2.tar.gz
+WORKDIR /mpich-3.2
+RUN ./configure --disable-fortran
+RUN make
+RUN make install
+RUN mpicc || :
+ENV MPI_CC=mpicc
+
+WORKDIR /
+COPY iotest/mdtest-master.zip /mdtest-master.zip
+RUN unzip mdtest-master.zip
+WORKDIR /mdtest-master
+RUN make
+RUN mv mdtest /usr/local/bin
+RUN mdtest || :
+
+WORKDIR /
+COPY iotest/fio-fio-3.32.zip /fio-fio-3.32.zip
+RUN unzip fio-fio-3.32.zip
+WORKDIR fio-fio-3.32
+RUN ./configure
+RUN make
+RUN make install
+RUN fio || :
