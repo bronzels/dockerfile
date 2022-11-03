@@ -13,7 +13,8 @@ component:
 image:
   server: chubaofs/cfs-server:2.4.0
   #client: chubaofs/cfs-client:2.4.0
-  client: registry.cn-hangzhou.aliyuncs.com/bronzels/chubaofs-cfs-client-2.4.0:1.0
+  #client: registry.cn-hangzhou.aliyuncs.com/bronzels/chubaofs-cfs-client-2.4.0:1.0
+  client: harbor.my.org:1080/test/distfstest-cubefs
   csi_driver: chubaofs/cfs-csi-driver:2.4.0.110.4
   csi_provisioner: quay.io/k8scsi/csi-provisioner:v1.6.0
   driver_registrar: quay.io/k8scsi/csi-node-driver-registrar:v1.3.0
@@ -44,8 +45,10 @@ master:
   resources:
     enabled: false
     requests:
-      memory: "2Gi"
-      cpu: "1000m"
+      #memory: "2Gi"
+      #cpu: "1000m"
+      memory: "4Gi"
+      cpu: "2000m"
     limits:
       memory: "4Gi"
       cpu: "2000m"
@@ -64,8 +67,10 @@ metanode:
   resources:
     enabled: true
     requests:
-      memory: "3Gi"
-      cpu: "1000m"
+      #memory: "3Gi"
+      #cpu: "1000m"
+      memory: "6Gi"
+      cpu: "2000m"
     limits:
       memory: "6Gi"
       cpu: "2000m"
@@ -85,8 +90,10 @@ datanode:
   resources:
     enabled: false
     requests:
-      memory: "4Gi"
-      cpu: "2000m"
+      #memory: "4Gi"
+      #cpu: "2000m"
+      memory: "6Gi"
+      cpu: "3000m"
     limits:
       memory: "8Gi"
       cpu: "4000m"
@@ -119,11 +126,15 @@ client:
   resources:
     enabled: false
     requests:
-      memory: "512Mi"
-      cpu: "500m"
+      #memory: "512Mi"
+      #cpu: "500m"
+      memory: "2Gi"
+      cpu: "2000m"
     limits:
-      memory: "1024Mi"
-      cpu: "1000m"
+      #memory: "1024Mi"
+      #cpu: "1000m"
+      memory: "4Gi"
+      cpu: "4000m"
 
 provisioner:
   dirver_name: csi.chubaofs.com

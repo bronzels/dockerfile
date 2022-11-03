@@ -1,0 +1,13 @@
+FROM harbor.my.org:1080/base/python:3.8-centos7-netutil-ccplus7-go
+
+RUN yum install -y libaio-devel
+
+WORKDIR /
+COPY iotest/openmpi-4.1.4.tar.gz /openmpi-4.1.4.tar.gz
+RUN tar -xzvf openmpi-4.1.4.tar.gz
+WORKDIR /openmpi-4.1.4
+RUN ./configure
+RUN make all install
+RUN mpirun || :
+RUN mpicc || :
+ENV MPI_CC=mpicc

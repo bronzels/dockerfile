@@ -27,3 +27,22 @@ ENV GOPATH /root/workspace/gopath
 ENV GOPROXY https://goproxy.cn
 
 WORKDIR /root/workspace
+
+RUN yum install -y openssl openssh-server openssh-clients
+RUN yum install -y ansible sshpass
+
+ENV file=/etc/ssh/sshd_config
+RUN cp ${file} ${file}.bk
+RUN sed -i 's@#PermitRootLogin prohibit-password@PermitRootLogin yes@g' ${file}
+RUN sed -i 's@#PubkeyAuthentication yes@PubkeyAuthentication yes@g' ${file}
+RUN sed -i 's@PasswordAuthentication no@PasswordAuthentication yes@g' ${file}
+
+COPY ssh_config /etc/ssh/ssh_config
+
+COPY systemctl /usr/bin/systemctl
+RUN chmod a+x /usr/bin/systemctl
+RUN systemctl enable sshd.service
+
+RUN echo "root:1234" | chpasswd
+
+RUN ssh-keygen -A

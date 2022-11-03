@@ -13,8 +13,6 @@ RUN make --version
 
 RUN apt install -y zip unzip
 
-apt-get install -y libaio1
-
 WORKDIR /
 COPY iotest/mpich-3.2.tar.gz /mpich-3.2.tar.gz
 RUN tar -xzvf mpich-3.2.tar.gz
@@ -33,6 +31,8 @@ RUN make
 RUN mv mdtest /usr/local/bin
 RUN mdtest || :
 
+RUN apt-get install -y libaio-dev
+
 WORKDIR /
 COPY iotest/fio-fio-3.32.zip /fio-fio-3.32.zip
 RUN unzip fio-fio-3.32.zip
@@ -41,3 +41,4 @@ RUN ./configure
 RUN make
 RUN make install
 RUN fio || :
+

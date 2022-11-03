@@ -38,7 +38,7 @@ cp ../../values.yaml ./
 helm install chubaofs ./ -n chubaofs
 #helm uninstall chubaofs -n chubaofs
 
-k get pod -n chubaofs
+kubectl get pod -n chubaofs
 
 docker save -o quay.io_k8scsi_csi-node-driver-registrar_v1.3.0.tar.gz quay.io/k8scsi/csi-node-driver-registrar:v1.3.0
 docker load -i quay.io_k8scsi_csi-node-driver-registrar_v1.3.0.tar.gz

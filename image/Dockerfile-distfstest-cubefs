@@ -50,6 +50,8 @@ RUN make
 RUN mv mdtest /usr/local/bin
 RUN mdtest || :
 
+RUN yum install -y libaio-devel
+
 WORKDIR /
 COPY iotest/fio-fio-3.32.zip /fio-fio-3.32.zip
 RUN unzip fio-fio-3.32.zip
@@ -58,3 +60,19 @@ RUN ./configure
 RUN make
 RUN make install
 RUN fio || :
+
+RUN yum install -y openssl openssh-server openssh-clients
+RUN yum install -y ansible sshpass
+
+ENV file=/etc/ssh/sshd_config
+RUN cp ${file} ${file}.bk
+RUN sed -i 's@#PermitRootLogin prohibit-password@PermitRootLogin yes@g' ${file}
+RUN sed -i 's@#PubkeyAuthentication yes@PubkeyAuthentication yes@g' ${file}
+RUN sed -i 's@PasswordAuthentication no@PasswordAuthentication yes@g' ${file}
+
+COPY ssh_config /etc/ssh/ssh_config
+
+COPY systemctl /usr/bin/systemctl
+RUN chmod a+x /usr/bin/systemctl
+RUN systemctl enable sshd.service
+RUN ssh-keygen -A
