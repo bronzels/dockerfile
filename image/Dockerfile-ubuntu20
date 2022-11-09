@@ -6,7 +6,7 @@ SHELL ["/bin/bash", "-c"]
 RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 COPY timesyncd.conf /etc/systemd/timesyncd.conf
 
-COPY sources.list /etc/apt/sources.list
+COPY sources-20.04.list /etc/apt/sources.list
 RUN apt-get update
 RUN apt-get install -y net-tools inetutils-ping telnet
 
