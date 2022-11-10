@@ -1,0 +1,6 @@
+FROM java:8
+CMD ["mkdir", "-p", "/root/db_tools"]
+WORKDIR /root/db_tools
+ADD database-tools-1.0-SNAPSHOT.tar .
+RUN ["chmod", "+x", "./database-tools-1.0-SNAPSHOT/bin/database-tools"]
+CMD ["./database-tools-1.0-SNAPSHOT/bin/database-tools"]

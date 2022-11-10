@@ -1,0 +1,130 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hive-metastore-database
+  labels:
+    app: hive
+data:
+  execute.sql: |-
+    -- create database
+    CREATE DATABASE metastore DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
+    -- create user and grant authorization
+    GRANT ALL ON metastore.* TO 'hive'@'%' IDENTIFIED BY '${IDENTIFIED}';
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hive-metastore-secret
+  labels:
+    app: hive
+type: Opaque
+data:
+  database-dba-password: RGFtZW5nQDc3Nw==
+  database-user-password: RGFtZW5nQDc3Nw==
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hive-serv
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: hive
+  template:
+    metadata:
+      labels:
+        app: hive
+    spec:
+      initContainers:
+        - name: init-dababase
+          image:  harbor.my.org:1080/bronzels/database-tools:1.0-SNAPSHOT
+          env:
+            - name: DRIVER_NAME
+              value: "com.mysql.jdbc.Driver"
+            - name: URL
+              value: "jdbc:mysql://hive-metadata-mysql-service:3306/mysql?useUnicode=true&characterEncoding=utf8&useSSL=false"
+            - name: USERNAME
+              value: "root"
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: hive-metastore-secret
+                  key: database-dba-password
+            - name: IDENTIFIED
+              valueFrom:
+                secretKeyRef:
+                  name: hive-metastore-secret
+                  key: database-user-password
+          volumeMounts:
+            - name: init-dababase-volume
+              mountPath: /root/db_tools/script
+      containers:
+        - name: hive
+          image: harbor.my.org:1080/bronzels/hive-ubu16ssh:0.1
+          command: ["bash", "-c", "cp /root/bootstrap/bootstrap.sh /tmp/ && chmod +x /tmp/bootstrap.sh && /tmp/bootstrap.sh"]
+          ports:
+            - containerPort: 10000
+            - containerPort: 10002
+            - containerPort: 9083
+          env:
+            - name: HIVE_METADATA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: hive-metastore-secret
+                  key: database-user-password
+          volumeMounts:
+            - name: hadoop-config-volume
+              mountPath: /usr/local/hadoop/etc/hadoop
+            - name: hive-custom-config-volume
+              mountPath: /root/bootstrap
+          readinessProbe:
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            tcpSocket:
+#              port: 10000
+              port: 9083
+      volumes:
+        - name: hadoop-config-volume
+          configMap:
+            name: myhdp-hadoop
+        - name: hive-custom-config-volume
+          configMap:
+            name: hive-custom-config-cm
+        - name: init-dababase-volume
+          configMap:
+            name: hive-metastore-database
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    app: hive
+  name: hive-service
+spec:
+  selector:
+    app: hive
+  ports:
+    - port: 9083
+      targetPort: 9083
+      name: metastore
+#    - port: 10000
+#      targetPort: 10000
+#      name: thrift
+#---
+#kind: Service
+#apiVersion: v1
+#metadata:
+#  labels:
+#    app: hive
+#  name: hive-service-web
+#spec:
+#  ports:
+#    - port: 10002
+#      targetPort: 10002
+#      name: webui
+#      nodePort: 30002
+#  selector:
+#    app: hive
+#  type: NodePort
