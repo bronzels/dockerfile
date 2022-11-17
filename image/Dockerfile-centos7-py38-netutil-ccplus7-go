@@ -4,6 +4,7 @@ RUN yum install -y centos-release-scl
 RUN yum install -y devtoolset-7-gcc devtoolset-7-make
 RUN yum install -y devtoolset-7-gcc-c++ devtoolset-7-gcc-gfortran
 RUN scl enable devtoolset-7 bash
+RUN echo "source scl_source enable devtoolset-7" >> /root/.bashrc
 
 RUN yum install -y  automake autoconf libtool
 

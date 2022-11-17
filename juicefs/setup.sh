@@ -19,17 +19,21 @@ juicefs format \
     miniofs
 EOF
 
-nohup docker build ./ --progress=plain -t harbor.my.org:1080/chenseanxy/hadoop-juicefs:3.2.1-nolib > build-Dockerfile-hadoop-juicefs.log 2>&1 &
-tail -f build-Dockerfile-hadoop-juicefs.log
-docker push harbor.my.org:1080/chenseanxy/hadoop-juicefs:3.2.1-nolib
+nohup docker build ./ --progress=plain -t harbor.my.org:1080/chenseanxy/hadoop-ubu-juicefs:3.2.1-nolib > build-Dockerfile-hadoop-ubu-juicefs.log 2>&1 &
+tail -f build-Dockerfile-hadoop-ubu-juicefs.log
+docker push harbor.my.org:1080/chenseanxy/hadoop-ubu-juicefs:3.2.1-nolib
 
-kubectl run juicefs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-juicefs:3.2.1-nolib --restart=Never --rm -- /bin/bash
-#tail -f /dev/null
-kubectl run juicefs-test
+#kubectl run juicefs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubu-juicefs:3.2.1-nolib --image-pull-policy="Always" --restart=Never --rm -- /bin/bash
+kubectl run juicefs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubu-juicefs:3.2.1-nolib --restart=Never --rm -- /bin/bash
+  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local QR9RXSLIPZCLQCHB240V ThPMZakACdQ42AU4a8A3HgGJAotvm148hW4jpv4m
+  mc mb minio/jfs
+  mc ls minio/jfs
   juicefs format \
       --storage minio \
-      --bucket https://minio.minio-tenant-1.svc.cluster.local/rtc \
+      --bucket https://minio.minio-tenant-1.svc.cluster.local/jfs?tls-insecure-skip-verify=true \
       --access-key QR9RXSLIPZCLQCHB240V \
       --secret-key ThPMZakACdQ42AU4a8A3HgGJAotvm148hW4jpv4m \
       "redis://my-redis-ha.redis.svc.cluster.local:6379/1" \
       miniofs
+  mkdir jfsmnt
+  juicefs mount "redis://my-redis-ha.redis.svc.cluster.local:6379/1" jfsmnt

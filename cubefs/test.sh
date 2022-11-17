@@ -15,6 +15,8 @@ nohup docker build ./ --progress=plain -f Dockerfile-distfstest-ubuntu20 -t harb
 tail -f build-Dockerfile-distfstest-ubuntu20.log
 docker push harbor.my.org:1080/test/distfstest-ubuntu20
 
+docker run --privileged --name distfstest-ubuntu20 -itd harbor.my.org:1080/test/distfstest-ubuntu20 tail -f /dev/null
+
 #!/bin/bash
 set -e
 TARGET_PATH="/cfs/mnt" # mount point of CubeFS volume

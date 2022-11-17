@@ -9,7 +9,7 @@ cp -r helm-hadoop-3 helm-hadoop-3.bk
 if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "Mac detected."
     #mac
-    HDPHOME=/Volumes/data/workspace/cluster-sh-k8s/hadoop/helm-hadoop-3
+    HDPHOME=/Volumes/data/workspace/dockerfile/hadoop/helm-hadoop-3
     SED=gsed
 else
     echo "Assuming linux by default."
@@ -55,6 +55,7 @@ docker push harbor.my.org:1080/chenseanxy/hadoop:${HADOOPREV}-nolib
 cp ../../../../dockerfile/image/sources-16.04.list sources.list
 file=Dockerfile
 cp ${file}.template ${file}
+$SED -i '/FROM java:8-jre/a\USER root' ${file}
 $SED -i 's@FROM java:8-jre@FROM paulosalgado\/oracle-java8-ubuntu-16@g' ${file}
 
 #cp ~/source.list.ubuntu.16.04 source.list
