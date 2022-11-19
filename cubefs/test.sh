@@ -48,14 +48,14 @@ fio -directory=/cfs/mnt \
     -group_reporting=1 \
     -fallocate=none \
     -time_based=1 \
-    -runtime=120 \
+    -runtime=120 \dd if=/cfs/mnt/test-dd-w.dbf of=/dev/null status=progress bs=2M
     -name=test_file_c \
     -numjobs=4 \
     -nrfiles=1 \
     -size=10G
-dd if=/dev/zero of=/cfs/mnt/test-dd-w.dbf bs=2M count=1000 oflag=direct
-dd if=/cfs/mnt/test-dd-w.dbf of=/dev/null bs=4k
-dd if=/cfs/mnt/test-dd-w.dbf of=/cfs/mnt/test-dd-rw.dbf bs=4k
+dd if=/dev/zero of=/cfs/mnt/test-dd-w.dbf status=progress bs=2M count=1000 oflag=direct
+dd if=/cfs/mnt/test-dd-w.dbf of=/dev/null status=progress bs=2M
+dd if=/cfs/mnt/test-dd-w.dbf of=/cfs/mnt/test-dd-rw.dbf status=progress bs=4k
 TARGET_PATH="/cfs/mnt/test-mdtest"
 FILE_SIZE=1024
 mdtest -n 1000 -w $i -e $FILE_SIZE -y -u -i 3 -N 1 -F -R -d $TARGET_PATH
@@ -135,9 +135,9 @@ fio -directory=/cfs/mnt \
     -numjobs=4 \
     -nrfiles=1 \
     -size=10G
-dd if=/dev/zero of=/cfs/mnt/test-dd-w.dbf bs=2M count=1000 oflag=direct
-dd if=/cfs/mnt/test-dd-w.dbf of=/dev/null bs=4k
-dd if=/cfs/mnt/test-dd-w.dbf of=/cfs/mnt/test-dd-rw.dbf bs=4k
+dd if=/dev/zero of=/cfs/mnt/test-dd-w.dbf status=progress bs=2M count=1000 oflag=direct
+dd if=/cfs/mnt/test-dd-w.dbf of=/dev/null status=progress bs=4k
+dd if=/cfs/mnt/test-dd-w.dbf of=/cfs/mnt/test-dd-rw.dbf status=progress bs=4k
 
 #srvk8s-clik8s
 fio -directory=/cfs/mnt \
@@ -166,9 +166,9 @@ fio -directory=/cfs/mnt \
     -numjobs=4 \
     -nrfiles=1 \
     -size=10G
-dd if=/dev/zero of=/cfs/mnt/test-dd-w.dbf bs=2M count=1000 oflag=direct
-dd if=/cfs/mnt/test-dd-w.dbf of=/dev/null bs=4k
-dd if=/cfs/mnt/test-dd-w.dbf of=/cfs/mnt/test-dd-rw.dbf bs=4k
+dd if=/dev/zero of=/cfs/mnt/test-dd-w.dbf status=progress bs=2M count=1000 oflag=direct
+dd if=/cfs/mnt/test-dd-w.dbf of=/dev/null status=progress bs=4k
+dd if=/cfs/mnt/test-dd-w.dbf of=/cfs/mnt/test-dd-rw.dbf status=progress bs=4k
 TARGET_PATH="/cfs/mnt/test-mdtest"
 FILE_SIZE=1024
 mdtest -n 1000 -w $i -e $FILE_SIZE -y -u -i 3 -N 1 -F -R -d $TARGET_PATH
@@ -244,4 +244,4 @@ fio -directory=/cfs/mnt \
     -numjobs=4 \
     -nrfiles=1 \
     -size=10G
-dd if=/dev/zero of=/cfs/mnt/test-dd-w.dbf bs=2M count=1000 oflag=direct
+dd if=/dev/zero of=/cfs/mnt/test-dd-w.dbf status=progress bs=2M count=1000 oflag=direct
