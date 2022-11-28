@@ -45,14 +45,14 @@ dracut -v /boot/initramfs-$(uname -r).img $(uname -r)
 sync;reboot now
 lsmod | grep nouveau
 
-
+ls
 #编译工具devtoolset gcc/gcc-c++/make, tar已安装
 yum install -y gcc gcc-c++ make
 gcc -v
 yum install -y kernel-devel-$(uname -r) kernel-headers-$(uname -r)
 rpm -qa|grep kernel
 
-ansible nvidia -m copy "src= dest="
+ansible nvidia -m copy -a"src= dest=/root/"
 
 #下载驱动
 #！！！要根据detect结果在nvidia网站搜索下载完全符合的版本，以下网页下载的最新版本装上cuda以后nvidia-smi死机
