@@ -59,9 +59,13 @@ docker push harbor.my.org:1080/base/python:3.8-centos7-netutil
 docker tag harbor.my.org:1080/base/python:3.8-centos7-netutil harbor.my.org:1080/basesec/python:3.8-centos7-netutil
 docker push harbor.my.org:1080/basesec/python:3.8-centos7-netutil
 
-nohup docker build ./ -f Dockerfile-ubuntu20 -t harbor.my.org:1080/base/ubuntu20 > build-Dockerfile-ubuntu20-base.log 2>&1 &
+nohup docker build ./ --progress=plain -f Dockerfile-ubuntu20 -t harbor.my.org:1080/base/ubuntu20 > build-Dockerfile-ubuntu20-base.log 2>&1 &
 tail -f build-Dockerfile-ubuntu20.log
 docker push harbor.my.org:1080/base/ubuntu20
+
+nohup docker build ./ --progress=plain -f Dockerfile-ubuntu22-openjdk8 -t harbor.my.org:1080/base/ubuntu22-openjdk8 > build-Dockerfile-ubuntu22-openjdk8-base.log 2>&1 &
+tail -f build-Dockerfile-ubuntu22-openjdk8.log
+docker push harbor.my.org:1080/base/ubuntu22-openjdk8
 
 nohup docker build ./ --progress=plain -f Dockerfile-centos7-py38-netutil-ccplus7-go -t harbor.my.org:1080/base/python:3.8-centos7-netutil-ccplus7-go > build-Dockerfile-centos7-py38-netutil-ccplus7-go.log 2>&1 &
 tail -f build-Dockerfile-centos7-py38-netutil-ccplus7-go.log

@@ -6,9 +6,12 @@ RUN apt-get install -y python3 python3-pip ninja-build
 RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN ln -s /usr/bin/pip3 /usr/bin/pip
 RUN pip install meson
-RUN meson ..
+RUN apt-get install -y udev pkg-config
+RUN meson .. --prefix=/usr
 RUN ninja
 RUN python3 -m pytest test/
 RUN ninja install
+RUN ln -s /usr/bin/fusermount3 /usr/bin/fusermount
+RUN ln -s /usr/sbin/mount.fuse3 /usr/sbin/mount.fuse
 
 

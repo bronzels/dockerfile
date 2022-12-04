@@ -19,6 +19,7 @@ kubectl get pv -n hadoop | grep hdfs | awk '{print $1}' | xargs kubectl delete p
 ansible all -m shell -a"rm -rf /data0/hdfs"
 ansible all -m shell -a"mkdir -p /data0/hdfs/pvdn"
 sudo ssh dtpct mkdir -p /data0/hdfs/pvnn
+ansible all -m shell -a"ls /data0/hdfs"
 kubectl apply -f hdfs-pv-nn.yaml
 kubectl apply -f pvs/
 kubectl get pv
@@ -26,8 +27,8 @@ kubectl get pv
 #chmod a+x tools/calc_resources.sh
 #helm install myhadoop $(tools/calc_resources.sh 50) -n hadoop -f values.yaml \
 helm install myhdp -n hadoop -f values.yaml \
-  --set hdfs.dataNode.replicas=2 \
-  --set yarn.nodeManager.replicas=2 \
+  --set hdfs.dataNode.replicas=3 \
+  --set yarn.nodeManager.replicas=3 \
   --set persistence.nameNode.enabled=true \
   --set persistence.nameNode.storageClass=hdfs-local-storage-nn \
   --set persistence.dataNode.enabled=true \
