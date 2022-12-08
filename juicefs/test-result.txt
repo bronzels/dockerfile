@@ -1,0 +1,61 @@
+root@juicefs-test:/usr/local/hadoop-3.2.1#   dd if=/dev/zero of=/usr/local/hadoop/jfsmnt/test-dd-w.dbf status=progress bs=2M count=1000 oflag=direct
+2040528896 bytes (2.0 GB, 1.9 GiB) copied, 18.0557 s, 113 MB/s
+1000+0 records in
+1000+0 records out
+2097152000 bytes (2.1 GB, 2.0 GiB) copied, 21.412 s, 97.9 MB/s
+root@juicefs-test:/usr/local/hadoop-3.2.1#   dd if=/usr/local/hadoop/jfsmnt/test-dd-w.dbf of=/dev/null status=progress bs=2M
+2048917504 bytes (2.0 GB, 1.9 GiB) copied, 41.1878 s, 49.7 MB/s
+1000+0 records in
+1000+0 records out
+2097152000 bytes (2.1 GB, 2.0 GiB) copied, 41.935 s, 50.0 MB/s
+root@juicefs-test:/usr/local/hadoop-3.2.1#   dd if=/usr/local/hadoop/jfsmnt/test-dd-w.dbf of=/usr/local/hadoop/jfsmnt/test-dd-rw.dbf status=progress bs=4k
+2094338048 bytes (2.1 GB, 2.0 GiB) copied, 19 s, 110 MB/s
+512000+0 records in
+512000+0 records out
+2097152000 bytes (2.1 GB, 2.0 GiB) copied, 22.1543 s, 94.7 MB/s
+----------------------------------------------------------------------------------------------------------------------------------------
+root@juicefs-test:/usr/local/hadoop-3.2.1#   TARGET_PATH="/usr/local/hadoop/jfsmnt/test-mdtest"
+root@juicefs-test:/usr/local/hadoop-3.2.1#   FILE_SIZE=1024
+root@juicefs-test:/usr/local/hadoop-3.2.1#   mdtest -n 1000 -w $i -e $FILE_SIZE -y -u -i 3 -N 1 -F -R -d $TARGET_PATH
+-- started at 12/08/2022 06:59:02 --
+
+mdtest-1.9.3 was launched with 1 total task(s) on 1 node(s)
+Command line used: mdtest -n 1000 -w -e 1024 -y -u -i 3 -N 1 -F -R -d /usr/local/hadoop/jfsmnt/test-mdtest
+Path: /usr/local/hadoop-3.2.1/jfsmnt
+FS: 1024.0 TiB   Used FS: 0.0%   Inodes: 10.0 Mi   Used Inodes: 0.0%
+random seed: 1670482742
+
+1 tasks, 1000 files
+
+SUMMARY: (of 3 iterations)
+   Operation                      Max            Min           Mean        Std Dev
+   ---------                      ---            ---           ----        -------
+   File creation     :        718.005        628.460        665.085         38.330
+   File stat         :      15604.274       9185.204      11959.122       2692.013
+   File read         :       4714.810       4470.119       4621.128        107.806
+   File removal      :        736.023        674.862        697.496         27.382
+   Tree creation     :        779.466        563.978        693.527         93.220
+   Tree removal      :        635.404        499.500        551.871         59.698
+
+-- finished at 12/08/2022 06:59:11 --
+----------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------
+2022-12-08 04:36:00,228 INFO fs.TestDFSIO: ----- TestDFSIO ----- : write
+2022-12-08 04:36:00,228 INFO fs.TestDFSIO:             Date & time: Thu Dec 08 04:36:00 UTC 2022
+2022-12-08 04:36:00,228 INFO fs.TestDFSIO:         Number of files: 5
+2022-12-08 04:36:00,228 INFO fs.TestDFSIO:  Total MBytes processed: 640
+2022-12-08 04:36:00,228 INFO fs.TestDFSIO:       Throughput mb/sec: 41.36
+2022-12-08 04:36:00,228 INFO fs.TestDFSIO:  Average IO rate mb/sec: 42.23
+2022-12-08 04:36:00,228 INFO fs.TestDFSIO:   IO rate std deviation: 6.08
+2022-12-08 04:36:00,228 INFO fs.TestDFSIO:      Test exec time sec: 59.97
+2022-12-08 04:36:00,228 INFO fs.TestDFSIO:
+2022-12-08 05:55:49,851 INFO fs.TestDFSIO: ----- TestDFSIO ----- : write
+2022-12-08 05:55:49,851 INFO fs.TestDFSIO:             Date & time: Thu Dec 08 05:55:49 UTC 2022
+2022-12-08 05:55:49,851 INFO fs.TestDFSIO:         Number of files: 5
+2022-12-08 05:55:49,851 INFO fs.TestDFSIO:  Total MBytes processed: 640
+2022-12-08 05:55:49,851 INFO fs.TestDFSIO:       Throughput mb/sec: 29.54
+2022-12-08 05:55:49,851 INFO fs.TestDFSIO:  Average IO rate mb/sec: 34.16
+2022-12-08 05:55:49,851 INFO fs.TestDFSIO:   IO rate std deviation: 14.5
+2022-12-08 05:55:49,851 INFO fs.TestDFSIO:      Test exec time sec: 25.99
+2022-12-08 05:55:49,851 INFO fs.TestDFSIO:
+----------------------------------------------------------------------------------------------------------------------------------------
