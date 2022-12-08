@@ -66,10 +66,10 @@ cat << \EOF >> ${file}
 COPY sources.list /etc/apt
 RUN apt-get update
 RUN apt-get install -y openssh-server
-RUN sed -i 's@#PermitRootLogin prohibit-password@PermitRootLogin yes@g' /etc/ssh/sshd_config
+RUN sed -i 's@PermitRootLogin prohibit-password@PermitRootLogin yes@g' /etc/ssh/sshd_config
 RUN sed -i 's@#PubkeyAuthentication yes@PubkeyAuthentication yes@g' /etc/ssh/sshd_config
-RUN sed -i 's@PasswordAuthentication no@PasswordAuthentication yes@g' /etc/ssh/sshd_config
-RUN sed -i 's@#   StrictHostKeyChecking no@StrictHostKeyChecking no@g' /etc/ssh/ssh_config
+RUN sed -i 's@#PasswordAuthentication yes@PasswordAuthentication yes@g' /etc/ssh/sshd_config
+RUN sed -i 's@#   StrictHostKeyChecking ask@StrictHostKeyChecking no@g' /etc/ssh/ssh_config
 RUN usermod --password $(echo root | openssl passwd -1 -stdin) root
 
 EXPOSE 22

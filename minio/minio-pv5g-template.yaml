@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+   name: dtpct-minio-mypv
+   labels:
+     app: minio
+spec:
+   capacity:
+      storage: 5Gi
+   volumeMode: Filesystem
+   accessModes:
+   - ReadWriteOnce
+   persistentVolumeReclaimPolicy: Retain
+   local:
+      path: /data0/minio/mypv
+   nodeAffinity:
+      required:
+         nodeSelectorTerms:
+         - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+              - dtpct

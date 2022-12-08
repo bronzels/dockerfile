@@ -22,13 +22,25 @@ sudo ssh dtpct mkdir -p /data0/hdfs/pvnn
 ansible all -m shell -a"ls /data0/hdfs"
 kubectl apply -f hdfs-pv-nn.yaml
 kubectl apply -f pvs/
-kubectl get pv
+kubectl get pv | grep hdfs
 
 #chmod a+x tools/calc_resources.sh
 #helm install myhadoop $(tools/calc_resources.sh 50) -n hadoop -f values.yaml \
 helm install myhdp -n hadoop -f values.yaml \
-  --set hdfs.dataNode.replicas=3 \
   --set yarn.nodeManager.replicas=3 \
+  --set yarn.nodeManager.resources.requests.memory="2048Mi" \
+  --set yarn.nodeManager.resources.requests.cpu="1000m" \
+  --set yarn.nodeManager.resources.limits.memory="2048Mi" \
+  --set yarn.nodeManager.resources.limits.cpu="1000m" \
+  ./
+:<<EOF
+helm install myhdp -n hadoop -f values.yaml \
+  --set yarn.nodeManager.replicas=3 \
+  --set yarn.nodeManager.resources.requests.memory="2048Mi" \
+  --set yarn.nodeManager.resources.requests.cpu="1000m" \
+  --set yarn.nodeManager.resources.limits.memory="2048Mi" \
+  --set yarn.nodeManager.resources.limits.cpu="1000m" \
+  --set hdfs.dataNode.replicas=3 \
   --set persistence.nameNode.enabled=true \
   --set persistence.nameNode.storageClass=hdfs-local-storage-nn \
   --set persistence.dataNode.enabled=true \
@@ -39,12 +51,8 @@ helm install myhdp -n hadoop -f values.yaml \
   --set hdfs.dataNode.resources.requests.cpu="1000m" \
   --set hdfs.dataNode.resources.limits.memory="2048Mi" \
   --set hdfs.dataNode.resources.limits.cpu="1000m" \
-  --set yarn.nodeManager.resources.requests.memory="2048Mi" \
-  --set yarn.nodeManager.resources.requests.cpu="1000m" \
-  --set yarn.nodeManager.resources.limits.memory="2048Mi" \
-  --set yarn.nodeManager.resources.limits.cpu="1000m" \
   ./
-:<<EOF
+
   --set persistence.dataNode.storageClass=rook-ceph-block \
   --set persistence.nameNode.size=128Gi \
   --set persistence.dataNode.size=512Gi \
