@@ -2,20 +2,16 @@
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
     <property>
-        <name>io.file.buffer.size</name>
-        <value>131072</value>
+        <name>fs.cfs.impl</name>
+        <value>io.cubefs.CubefsFileSystem</value>
     </property>
     <property>
-        <name>fs.jfs.impl</name>
-        <value>io.juicefs.JuiceFileSystem</value>
-    </property>
-    <property>
-        <name>fs.AbstractFileSystem.jfs.impl</name>
-        <value>io.juicefs.JuiceFS</value>
+        <name>cfs.master.address</name>
+        <value>your.master.address[ip:port,ip:port,ip:port]</value>
     </property>
     <property>
         <name>fs.defaultFS</name>
-        <value>jfs://miniofs</value>
+        <value>cfs://miniofs</value>
     </property>
 
     <!--
@@ -34,21 +30,27 @@
     -->
 
     <property>
-        <name>juicefs.meta</name>
-        <value>redis://my-redis-ha.redis.svc.cluster.local:6379/1</value>
+        <name>cfs.log.dir</name>
+        <value>your.log.dir[/tmp/cfs-access-log]</value>
+    </property>
+
+    <property>
+        <name>cfs.log.level</name>
+        <value>INFO</value>
     </property>
     <property>
-        <name>juicefs.cache-dir</name>
-        <value>/jfscache</value>
+        <name>cfs.access.key</name>
+        <value>your.access.key</value>
     </property>
     <property>
-        <name>juicefs.cache-size</name>
-        <value>1024</value>
+        <name>cfs.secret.key</name>
+        <value>your.secret.key</value>
     </property>
     <property>
-        <name>juicefs.access-log</name>
-        <value>/tmp/juicefs.access.log</value>
+        <name>cfs.min.buffersize</name>
+        <value>8388608</value>
     </property>
+
     <property>
         <name>hadoop.tmp.dir</name>
         <value>/usr/local/hadoop/tmpdir</value>

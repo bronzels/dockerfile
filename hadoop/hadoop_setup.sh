@@ -12,7 +12,18 @@ else
 fi
 cd ${HDPHOME}
 
+#hadoop3.sh
+#修改yaml版本问题
 
+#hadoop3-img.sh
+#定制支持distfs fuse或者io测试，还有增加ssh的基础image
+
+#hadoop3-distfs.sh
+#删除hdfs只保留yarn
+#把基础image换成文件系统image
+
+#使用hdfs
+#使用其他分布式文件系统可以跳过
 helm uninstall myhdp -n hadoop
 kubectl get pvc -n hadoop | grep hdfs | awk '{print $1}' | xargs kubectl delete pvc -n hadoop
 kubectl get pv -n hadoop | grep hdfs | awk '{print $1}' | xargs kubectl delete pv
@@ -26,14 +37,7 @@ kubectl get pv | grep hdfs
 
 #chmod a+x tools/calc_resources.sh
 #helm install myhadoop $(tools/calc_resources.sh 50) -n hadoop -f values.yaml \
-helm install myhdp -n hadoop -f values.yaml \
-  --set yarn.nodeManager.replicas=3 \
-  --set yarn.nodeManager.resources.requests.memory="2048Mi" \
-  --set yarn.nodeManager.resources.requests.cpu="1000m" \
-  --set yarn.nodeManager.resources.limits.memory="2048Mi" \
-  --set yarn.nodeManager.resources.limits.cpu="1000m" \
-  ./
-:<<EOF
+#使用hdfs
 helm install myhdp -n hadoop -f values.yaml \
   --set yarn.nodeManager.replicas=3 \
   --set yarn.nodeManager.resources.requests.memory="2048Mi" \
@@ -53,6 +57,15 @@ helm install myhdp -n hadoop -f values.yaml \
   --set hdfs.dataNode.resources.limits.cpu="1000m" \
   ./
 
+#使用其他分布式文件系统
+helm install myhdp -n hadoop -f values.yaml \
+  --set yarn.nodeManager.replicas=3 \
+  --set yarn.nodeManager.resources.requests.memory="2048Mi" \
+  --set yarn.nodeManager.resources.requests.cpu="1000m" \
+  --set yarn.nodeManager.resources.limits.memory="2048Mi" \
+  --set yarn.nodeManager.resources.limits.cpu="1000m" \
+  ./
+:<<EOF
   --set persistence.dataNode.storageClass=rook-ceph-block \
   --set persistence.nameNode.size=128Gi \
   --set persistence.dataNode.size=512Gi \

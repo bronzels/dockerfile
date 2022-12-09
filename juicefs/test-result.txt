@@ -39,26 +39,6 @@ SUMMARY: (of 3 iterations)
 
 -- finished at 12/08/2022 06:59:11 --
 ----------------------------------------------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------------------------------------
-2022-12-08 04:36:00,228 INFO fs.TestDFSIO: ----- TestDFSIO ----- : write
-2022-12-08 04:36:00,228 INFO fs.TestDFSIO:             Date & time: Thu Dec 08 04:36:00 UTC 2022
-2022-12-08 04:36:00,228 INFO fs.TestDFSIO:         Number of files: 5
-2022-12-08 04:36:00,228 INFO fs.TestDFSIO:  Total MBytes processed: 640
-2022-12-08 04:36:00,228 INFO fs.TestDFSIO:       Throughput mb/sec: 41.36
-2022-12-08 04:36:00,228 INFO fs.TestDFSIO:  Average IO rate mb/sec: 42.23
-2022-12-08 04:36:00,228 INFO fs.TestDFSIO:   IO rate std deviation: 6.08
-2022-12-08 04:36:00,228 INFO fs.TestDFSIO:      Test exec time sec: 59.97
-2022-12-08 04:36:00,228 INFO fs.TestDFSIO:
-2022-12-08 05:55:49,851 INFO fs.TestDFSIO: ----- TestDFSIO ----- : write
-2022-12-08 05:55:49,851 INFO fs.TestDFSIO:             Date & time: Thu Dec 08 05:55:49 UTC 2022
-2022-12-08 05:55:49,851 INFO fs.TestDFSIO:         Number of files: 5
-2022-12-08 05:55:49,851 INFO fs.TestDFSIO:  Total MBytes processed: 640
-2022-12-08 05:55:49,851 INFO fs.TestDFSIO:       Throughput mb/sec: 29.54
-2022-12-08 05:55:49,851 INFO fs.TestDFSIO:  Average IO rate mb/sec: 34.16
-2022-12-08 05:55:49,851 INFO fs.TestDFSIO:   IO rate std deviation: 14.5
-2022-12-08 05:55:49,851 INFO fs.TestDFSIO:      Test exec time sec: 25.99
-2022-12-08 05:55:49,851 INFO fs.TestDFSIO:
-----------------------------------------------------------------------------------------------------------------------------------------
 ioengine:psync
 iotest:read
 numjobs:1
@@ -582,3 +562,21 @@ test_file_c: (groupid=0, jobs=4): err= 0: pid=368: Thu Dec  8 15:07:45 2022
 Run status group 0 (all jobs):
   WRITE: bw=253KiB/s (259kB/s), 253KiB/s-253KiB/s (259kB/s-259kB/s), io=32.4MiB (34.0MB), run=131327-131327msec
 ----------------------------------------------------------------------------------------------------------------------------------------
+2022-12-08 04:36:00,228 INFO fs.TestDFSIO: ----- TestDFSIO ----- : write
+2022-12-08 04:36:00,228 INFO fs.TestDFSIO:             Date & time: Thu Dec 08 04:36:00 UTC 2022
+2022-12-08 04:36:00,228 INFO fs.TestDFSIO:         Number of files: 5
+2022-12-08 04:36:00,228 INFO fs.TestDFSIO:  Total MBytes processed: 640
+2022-12-08 04:36:00,228 INFO fs.TestDFSIO:       Throughput mb/sec: 41.36
+2022-12-08 04:36:00,228 INFO fs.TestDFSIO:  Average IO rate mb/sec: 42.23
+2022-12-08 04:36:00,228 INFO fs.TestDFSIO:   IO rate std deviation: 6.08
+2022-12-08 04:36:00,228 INFO fs.TestDFSIO:      Test exec time sec: 59.97
+2022-12-08 04:36:00,228 INFO fs.TestDFSIO:
+2022-12-08 05:55:49,851 INFO fs.TestDFSIO: ----- TestDFSIO ----- : write
+2022-12-08 05:55:49,851 INFO fs.TestDFSIO:             Date & time: Thu Dec 08 05:55:49 UTC 2022
+2022-12-08 05:55:49,851 INFO fs.TestDFSIO:         Number of files: 5
+2022-12-08 05:55:49,851 INFO fs.TestDFSIO:  Total MBytes processed: 640
+2022-12-08 05:55:49,851 INFO fs.TestDFSIO:       Throughput mb/sec: 29.54
+2022-12-08 05:55:49,851 INFO fs.TestDFSIO:  Average IO rate mb/sec: 34.16
+2022-12-08 05:55:49,851 INFO fs.TestDFSIO:   IO rate std deviation: 14.5
+2022-12-08 05:55:49,851 INFO fs.TestDFSIO:      Test exec time sec: 25.99
+2022-12-08 05:55:49,851 INFO fs.TestDFSIO:

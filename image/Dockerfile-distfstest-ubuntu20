@@ -3,15 +3,13 @@ FROM harbor.my.org:1080/base/ubuntu20
 RUN apt install -y gcc-7 g++-7
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 100
 RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 100
-
-RUN apt install -y automake autoconf libtool
-
-RUN apt install -y tar
-
 RUN gcc --version
 RUN make --version
 
-RUN apt install -y zip unzip
+RUN apt install -y automake autoconf libtool
+
+RUN apt install -y tar zip unzip
+RUN apt install -y git
 
 WORKDIR /
 COPY iotest/mpich-3.2.tar.gz /mpich-3.2.tar.gz

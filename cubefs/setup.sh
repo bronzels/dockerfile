@@ -1,3 +1,34 @@
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "Mac detected."
+    #mac
+    MVNREPOHOME=/Volumes/data/m2/repository
+    SED=gsed
+else
+    echo "Assuming linux by default."
+    #linux
+    MVNREPOHOME=~/m2repository
+    SED=sed
+fi
+
+git clone https://github.com/cubefs/cubefs-hadoop.git
+#in idea
+mvn package -Dmaven.test.skip=true
+
+wget -c https://github.com/cubefs/cubefs/releases/download/v2.4.0/chubaofs-v2.4.0-x86_64-linux.tar.gz -P ../cubefs-img-files/
+wget -c https://github.com/cubefs/cubefs/archive/refs/tags/v2.4.0.tar.gz -P ../cubefs-img-files/
+cp ${MVNREPOHOME}/net/java/dev/jna/jna/5.6.0/jna-5.6.0.jar ../cubefs-img-files/
+
+mv ../cubefs-img-files ./
+
+nohup docker build ./ --progress=plain -t harbor.my.org:1080/chenseanxy/hadoop-ubussh-cubefs:3.2.1-nolib > build-Dockerfile-hadoop-ubussh-cubefs.log 2>&1 &
+tail -f build-Dockerfile-hadoop-ubussh-cubefs.log
+#docker build ./ --progress=plain -t harbor.my.org:1080/chenseanxy/hadoop-ubussh-cubefs:3.2.1-nolib
+docker push harbor.my.org:1080/chenseanxy/hadoop-ubussh-cubefs:3.2.1-nolib
+
+docker run --privileged --name cubefs-hadoop-client -it --rm -v /Volumes/data/workspace:/root/workspace harbor.my.org:1080/chenseanxy/hadoop-ubussh-cubefs:3.2.1-nolib /bin/bash
+
+mv ./cubefs-img-files ../
+
 git clone https://github.com/cubefs/cubefs-helm
 cd cubefs-helm/chubaofs
 cp ~/.kube/config config/kubeconfig
@@ -65,5 +96,4 @@ tail -f /cfs/logs/client/output.log
 EOF
 
 curl -v "http://master-0.master-service:17010/admin/createVol?name=test&capacity=100&owner=cfs&mpCount=3"
-
 
