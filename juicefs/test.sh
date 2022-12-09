@@ -50,8 +50,11 @@ helm install myhdp -n hadoop -f values.yaml \
 kubectl exec -it -n hadoop myhdp-hadoop-yarn-rm-0 -- /bin/bash
   su hdfs
     /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-3.2.1-tests.jar TestDFSIO -write -nrFiles 5 -fileSize 128MB -resFile /tmp/TestDFSIOwrite.txt
+    /usr/local/hadoop/bin/hdfs dfs -rm -r -f /teragen
     /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.1.jar teragen -Dmapred.map.tasks=20 10000000 /teragen/out
+    /usr/local/hadoop/bin/hdfs dfs -rm -r -f /terasort
     /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.1.jar terasort -Dmapred.map.tasks=20 /teragen/out /terasort/out
+echo "----------------------------------------------------------------------------------------------------------------------------------------"
 helm install myhdp -n hadoop -f values.yaml \
   --set yarn.nodeManager.replicas=3 \
   --set yarn.nodeManager.resources.requests.memory="4096Mi" \

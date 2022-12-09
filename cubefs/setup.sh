@@ -30,28 +30,28 @@ docker run --privileged --name cubefs-hadoop-client -it --rm -v /Volumes/data/wo
 mv ./cubefs-img-files ../
 
 git clone https://github.com/cubefs/cubefs-helm
-cd cubefs-helm/chubaofs
+cd cubefs-helm/cubefs
 cp ~/.kube/config config/kubeconfig
 
-kubectl label node dtpct chubaofs-master=enabled
-kubectl label node mdlapubu chubaofs-master=enabled
-kubectl label node mdubu chubaofs-master=enabled
+kubectl label node dtpct component.cubefs.io/master=enabled
+kubectl label node mdlapubu component.cubefs.io/master=enabled
+kubectl label node mdubu component.cubefs.io/master=enabled
 
-kubectl label node dtpct chubaofs-metanode=enabled
-kubectl label node mdlapubu chubaofs-metanode=enabled
-kubectl label node mdubu chubaofs-metanode=enabled
+kubectl label node dtpct component.cubefs.io/metanode=enabled
+kubectl label node mdlapubu component.cubefs.io/metanode=enabled
+kubectl label node mdubu component.cubefs.io/metanode=enabled
 
-kubectl label node dtpct chubaofs-datanode=enabled
-kubectl label node mdlapubu chubaofs-datanode=enabled
-kubectl label node mdubu chubaofs-datanode=enabled
+kubectl label node dtpct component.cubefs.io/datanode=enabled
+kubectl label node mdlapubu component.cubefs.io/datanode=enabled
+kubectl label node mdubu component.cubefs.io/datanode=enabled
 
-kubectl label node dtpct chubaofs-csi-node=enabled
-kubectl label node mdlapubu chubaofs-csi-node=enabled
-kubectl label node mdubu chubaofs-csi-node=enabled
+kubectl label node dtpct component.cubefs.io/objectnode=enabled
+kubectl label node mdlapubu component.cubefs.io/objectnode=enabled
+kubectl label node mdubu component.cubefs.io/objectnode=enabled
 
-kubectl label node dtpct chubaofs-objectnode=enabled
-kubectl label node mdlapubu chubaofs-objectnode=enabled
-kubectl label node mdubu chubaofs-objectnode=enabled
+kubectl label node dtpct cubefs-csi-node=enabled
+kubectl label node mdlapubu cubefs-csi-node=enabled
+kubectl label node mdubu cubefs-csi-node=enabled
 
 #每个数据节点节点
 lsblk
@@ -64,19 +64,19 @@ mount|grep data0
 #/etc/fstab增加挂载
 #/dev/disk/by-uuid/0f57c0db-9adc-4ae9-8348-3bba4d5579eb /data0 xfs defaults 0 1
 
-kubectl create ns chubaofs
+kubectl create ns cubefs
 cp ../../values.yaml ./
-helm install chubaofs ./ -n chubaofs
-#helm uninstall chubaofs -n chubaofs
+helm install mycfs ./ -n cubefs
+#helm uninstall mycfs -n cubefs
 
-kubectl get pod -n chubaofs
+watch kubectl get all -n cubefs
 
 docker save -o quay.io_k8scsi_csi-node-driver-registrar_v1.3.0.tar.gz quay.io/k8scsi/csi-node-driver-registrar:v1.3.0
 docker load -i quay.io_k8scsi_csi-node-driver-registrar_v1.3.0.tar.gz
 
 #command: ["/bin/bash", "-ce", "tail -f /dev/null"]
-kubectl edit deployment client -n chubaofs
-kubectl exec -it clientnew-78b5b5c497-zbdf4 /bin/bash -n chubaofs
+kubectl edit deployment client -n cubefs
+kubectl exec -it clientnew-78b5b5c497-zbdf4 /bin/bash -n cubefs
 /cfs/bin/start.sh
 /cfs/bin/cfs-client -f -c /cfs/conf/fuse.json
 tail -f /cfs/logs/client/output.log

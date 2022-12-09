@@ -84,3 +84,8 @@ kubectl exec -it juicefs-test -- /bin/bash
   export MINIO_ROOT_PASSWORD=12345678
   miniogw gateway juicefs --console-address ':42311' redis://my-redis-ha.redis.svc.cluster.local:6379/1
 kubectl port-forward juicefs-test 42311:42311
+
+kubectl exec -it -n hadoop myhdp-hadoop-yarn-rm-0 -- /bin/bash
+  su hdfs
+    /usr/local/hadoop/bin/hdfs dfs -mkdir -p /jobhistory/logs
+    /usr/local/hadoop/bin/hdfs dfs -mkdir -p /user/hdfs/yarn-logs

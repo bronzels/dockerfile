@@ -268,12 +268,3 @@ data:
         <name>yarn.log-aggregation.retain-seconds</name>
         <value>2592000</value>
       </property>
-      <property>
-        <name>yarn.log.server.url</name>
-        <value>jfs://miniofs/jobhistory/logs</value>
-      </property>
-      <property>
-        <name>yarn.nodemanager.remote-app-log-dir</name>
-        <value>jfs://miniofs/user/hdfs/yarn-logs</value>
-      </property>
-    </configuration>

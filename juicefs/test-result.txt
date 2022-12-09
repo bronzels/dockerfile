@@ -571,6 +571,47 @@ Run status group 0 (all jobs):
 2022-12-08 04:36:00,228 INFO fs.TestDFSIO:   IO rate std deviation: 6.08
 2022-12-08 04:36:00,228 INFO fs.TestDFSIO:      Test exec time sec: 59.97
 2022-12-08 04:36:00,228 INFO fs.TestDFSIO:
+	File System Counters
+		FILE: Number of bytes read=0
+		FILE: Number of bytes written=4546510
+		FILE: Number of read operations=0
+		FILE: Number of large read operations=0
+		FILE: Number of write operations=0
+		JFS: Number of bytes read=1697
+		JFS: Number of bytes written=1000000000
+		JFS: Number of read operations=140
+		JFS: Number of large read operations=0
+		JFS: Number of write operations=62
+	Job Counters
+		Killed map tasks=1
+		Launched map tasks=20
+		Other local map tasks=20
+		Total time spent by all maps in occupied slots (ms)=184472
+		Total time spent by all reduces in occupied slots (ms)=0
+		Total time spent by all map tasks (ms)=184472
+		Total vcore-milliseconds taken by all map tasks=184472
+		Total megabyte-milliseconds taken by all map tasks=188899328
+	Map-Reduce Framework
+		Map input records=10000000
+		Map output records=10000000
+		Input split bytes=1697
+		Spilled Records=0
+		Failed Shuffles=0
+		Merged Map outputs=0
+		GC time elapsed (ms)=4548
+		CPU time spent (ms)=23350
+		Physical memory (bytes) snapshot=8188780544
+		Virtual memory (bytes) snapshot=72586625024
+		Total committed heap usage (bytes)=8291090432
+		Peak Map Physical memory (bytes)=453283840
+		Peak Map Virtual memory (bytes)=3653353472
+	org.apache.hadoop.examples.terasort.TeraGen$Counters
+		CHECKSUM=21472776955442690
+	File Input Format Counters
+		Bytes Read=0
+	File Output Format Counters
+		Bytes Written=1000000000
+----------------------------------------------------------------------------------------------------------------------------------------
 2022-12-08 05:55:49,851 INFO fs.TestDFSIO: ----- TestDFSIO ----- : write
 2022-12-08 05:55:49,851 INFO fs.TestDFSIO:             Date & time: Thu Dec 08 05:55:49 UTC 2022
 2022-12-08 05:55:49,851 INFO fs.TestDFSIO:         Number of files: 5

@@ -48,6 +48,7 @@ cp ../../helm-hadoop-3.bk/image/${file} ${file}
 $SED -i "s@HADOOP_30_VERSION = 3.2.1@HADOOP_30_VERSION = ${HADOOPREV}@g" ${file}
 
 cp ../../hadoop-3.2.1* ./
+
 make
 #helm install错误kubernetes Error: create: failed to create: Request entity too large: limit is 3145728
 #rm hadoop-${HADOOPREV}.tar.gz
@@ -55,9 +56,11 @@ make
 docker tag hadoop:${HADOOPREV}-nolib harbor.my.org:1080/chenseanxy/hadoop:${HADOOPREV}-nolib
 docker push harbor.my.org:1080/chenseanxy/hadoop:${HADOOPREV}-nolib
 
-cp -r ../../../image/iotest ./
-cp -r ../../../image/fuse-2.9.2.tar.gz ./
-cp -r ../../../image/fuse-2.9.2.tar.gz ./
+mkdir files
+cp -r ../../../image/iotest ./files
+cp -r ../../../image/fuse-2.9.2.tar.gz ./files
+cp -r ../../../image/go1.19.2.linux-amd64.tar.gz ./files
+cp -r ../../../image/openssl-1.1.1s.tar.gz ./files
 
 cp ../../sources-16.04.list sources.list
 
@@ -159,6 +162,7 @@ RUN cmake --version
 WORKDIR /usr/local/hadoop/
 
 RUN apt install -y zlib1g-dev libbz2-dev
+RUN apt install -y maven
 EOF
 
 cp Makefile Makefile-ubussh
@@ -172,6 +176,7 @@ docker tag hadoop-ubussh:${HADOOPREV}-nolib harbor.my.org:1080/chenseanxy/hadoop
 docker push harbor.my.org:1080/chenseanxy/hadoop-ubussh:${HADOOPREV}-nolib
 
 rm -f hadoop-${HADOOPREV}*
+rm -rf files
 
 cd $HDPHOME
 file=values.yaml
@@ -180,5 +185,5 @@ $SED -i 's@repository: chenseanxy/hadoop@repository: harbor.my.org:1080/chensean
 $SED -i "s@tag: 3.2.1-nolib@tag: ${HADOOPREV}-nolib@g" ${file}
 $SED -i "s@hadoopVersion: 3.2.1@hadoopVersion: ${HADOOPREV}@g" ${file}
 $SED -i 's@pullPolicy: IfNotPresent@pullPolicy: Always@g' ${file}
-cp ${file} ${file}.common
+cp ${file} ../helm-hadoop-3-templates-distfs/${file}.common
 
