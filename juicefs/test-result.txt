@@ -571,6 +571,7 @@ Run status group 0 (all jobs):
 2022-12-08 04:36:00,228 INFO fs.TestDFSIO:   IO rate std deviation: 6.08
 2022-12-08 04:36:00,228 INFO fs.TestDFSIO:      Test exec time sec: 59.97
 2022-12-08 04:36:00,228 INFO fs.TestDFSIO:
+2022-12-09 15:38:38,984 INFO mapreduce.Job: Counters: 34
 	File System Counters
 		FILE: Number of bytes read=0
 		FILE: Number of bytes written=4546510
@@ -611,13 +612,178 @@ Run status group 0 (all jobs):
 		Bytes Read=0
 	File Output Format Counters
 		Bytes Written=1000000000
+2022-12-09 15:42:12,151 INFO mapreduce.Job: Counters: 54
+	File System Counters
+		FILE: Number of bytes read=1040000018
+		FILE: Number of bytes written=2084803381
+		FILE: Number of read operations=0
+		FILE: Number of large read operations=0
+		FILE: Number of write operations=0
+		JFS: Number of bytes read=1000002060
+		JFS: Number of bytes written=1000000000
+		JFS: Number of read operations=66
+		JFS: Number of large read operations=0
+		JFS: Number of write operations=5
+	Job Counters
+		Killed map tasks=1
+		Launched map tasks=20
+		Launched reduce tasks=1
+		Rack-local map tasks=20
+		Total time spent by all maps in occupied slots (ms)=190983
+		Total time spent by all reduces in occupied slots (ms)=73693
+		Total time spent by all map tasks (ms)=190983
+		Total time spent by all reduce tasks (ms)=73693
+		Total vcore-milliseconds taken by all map tasks=190983
+		Total vcore-milliseconds taken by all reduce tasks=73693
+		Total megabyte-milliseconds taken by all map tasks=195566592
+		Total megabyte-milliseconds taken by all reduce tasks=75461632
+	Map-Reduce Framework
+		Map input records=10000000
+		Map output records=10000000
+		Map output bytes=1020000000
+		Map output materialized bytes=1040000120
+		Input split bytes=2060
+		Combine input records=0
+		Combine output records=0
+		Reduce input groups=10000000
+		Reduce shuffle bytes=1040000120
+		Reduce input records=10000000
+		Reduce output records=10000000
+		Spilled Records=20000000
+		Shuffled Maps =20
+		Failed Shuffles=0
+		Merged Map outputs=20
+		GC time elapsed (ms)=11258
+		CPU time spent (ms)=58000
+		Physical memory (bytes) snapshot=10258526208
+		Virtual memory (bytes) snapshot=77019684864
+		Total committed heap usage (bytes)=12928417792
+		Peak Map Physical memory (bytes)=607895552
+		Peak Map Virtual memory (bytes)=3688038400
+		Peak Reduce Physical memory (bytes)=1184497664
+		Peak Reduce Virtual memory (bytes)=3791622144
+	Shuffle Errors
+		BAD_ID=0
+		CONNECTION=0
+		IO_ERROR=0
+		WRONG_LENGTH=0
+		WRONG_MAP=0
+		WRONG_REDUCE=0
+	File Input Format Counters
+		Bytes Read=1000000000
+	File Output Format Counters
+		Bytes Written=1000000000
+2022-12-09 15:42:12,153 INFO terasort.TeraSort: done
 ----------------------------------------------------------------------------------------------------------------------------------------
-2022-12-08 05:55:49,851 INFO fs.TestDFSIO: ----- TestDFSIO ----- : write
-2022-12-08 05:55:49,851 INFO fs.TestDFSIO:             Date & time: Thu Dec 08 05:55:49 UTC 2022
-2022-12-08 05:55:49,851 INFO fs.TestDFSIO:         Number of files: 5
-2022-12-08 05:55:49,851 INFO fs.TestDFSIO:  Total MBytes processed: 640
-2022-12-08 05:55:49,851 INFO fs.TestDFSIO:       Throughput mb/sec: 29.54
-2022-12-08 05:55:49,851 INFO fs.TestDFSIO:  Average IO rate mb/sec: 34.16
-2022-12-08 05:55:49,851 INFO fs.TestDFSIO:   IO rate std deviation: 14.5
-2022-12-08 05:55:49,851 INFO fs.TestDFSIO:      Test exec time sec: 25.99
-2022-12-08 05:55:49,851 INFO fs.TestDFSIO:
+2022-12-11 08:08:54,245 INFO fs.TestDFSIO: ----- TestDFSIO ----- : write
+2022-12-11 08:08:54,245 INFO fs.TestDFSIO:             Date & time: Sun Dec 11 08:08:54 UTC 2022
+2022-12-11 08:08:54,245 INFO fs.TestDFSIO:         Number of files: 5
+2022-12-11 08:08:54,245 INFO fs.TestDFSIO:  Total MBytes processed: 640
+2022-12-11 08:08:54,245 INFO fs.TestDFSIO:       Throughput mb/sec: 60.61
+2022-12-11 08:08:54,246 INFO fs.TestDFSIO:  Average IO rate mb/sec: 64.22
+2022-12-11 08:08:54,246 INFO fs.TestDFSIO:   IO rate std deviation: 13.19
+2022-12-11 08:08:54,246 INFO fs.TestDFSIO:      Test exec time sec: 28.84
+2022-12-11 08:08:54,246 INFO fs.TestDFSIO:
+2022-12-11 12:45:18,461 INFO mapreduce.Job: Counters: 34
+	File System Counters
+		FILE: Number of bytes read=0
+		FILE: Number of bytes written=4544190
+		FILE: Number of read operations=0
+		FILE: Number of large read operations=0
+		FILE: Number of write operations=0
+		JFS: Number of bytes read=1697
+		JFS: Number of bytes written=1000000000
+		JFS: Number of read operations=140
+		JFS: Number of large read operations=0
+		JFS: Number of write operations=62
+	Job Counters
+		Killed map tasks=1
+		Launched map tasks=20
+		Other local map tasks=20
+		Total time spent by all maps in occupied slots (ms)=186234
+		Total time spent by all reduces in occupied slots (ms)=0
+		Total time spent by all map tasks (ms)=186234
+		Total vcore-milliseconds taken by all map tasks=186234
+		Total megabyte-milliseconds taken by all map tasks=190703616
+	Map-Reduce Framework
+		Map input records=10000000
+		Map output records=10000000
+		Input split bytes=1697
+		Spilled Records=0
+		Failed Shuffles=0
+		Merged Map outputs=0
+		GC time elapsed (ms)=4460
+		CPU time spent (ms)=27960
+		Physical memory (bytes) snapshot=8061640704
+		Virtual memory (bytes) snapshot=72697417728
+		Total committed heap usage (bytes)=9062842368
+		Peak Map Physical memory (bytes)=455430144
+		Peak Map Virtual memory (bytes)=3687186432
+	org.apache.hadoop.examples.terasort.TeraGen$Counters
+		CHECKSUM=21472776955442690
+	File Input Format Counters
+		Bytes Read=0
+	File Output Format Counters
+		Bytes Written=1000000000
+2022-12-11 12:46:41,335 INFO mapreduce.Job: Counters: 54
+	File System Counters
+		FILE: Number of bytes read=1040000018
+		FILE: Number of bytes written=2084801029
+		FILE: Number of read operations=0
+		FILE: Number of large read operations=0
+		FILE: Number of write operations=0
+		JFS: Number of bytes read=1000002060
+		JFS: Number of bytes written=1000000000
+		JFS: Number of read operations=66
+		JFS: Number of large read operations=0
+		JFS: Number of write operations=5
+	Job Counters
+		Killed map tasks=1
+		Launched map tasks=21
+		Launched reduce tasks=1
+		Rack-local map tasks=21
+		Total time spent by all maps in occupied slots (ms)=215996
+		Total time spent by all reduces in occupied slots (ms)=35644
+		Total time spent by all map tasks (ms)=215996
+		Total time spent by all reduce tasks (ms)=35644
+		Total vcore-milliseconds taken by all map tasks=215996
+		Total vcore-milliseconds taken by all reduce tasks=35644
+		Total megabyte-milliseconds taken by all map tasks=221179904
+		Total megabyte-milliseconds taken by all reduce tasks=36499456
+	Map-Reduce Framework
+		Map input records=10000000
+		Map output records=10000000
+		Map output bytes=1020000000
+		Map output materialized bytes=1040000120
+		Input split bytes=2060
+		Combine input records=0
+		Combine output records=0
+		Reduce input groups=10000000
+		Reduce shuffle bytes=1040000120
+		Reduce input records=10000000
+		Reduce output records=10000000
+		Spilled Records=20000000
+		Shuffled Maps =20
+		Failed Shuffles=0
+		Merged Map outputs=20
+		GC time elapsed (ms)=5023
+		CPU time spent (ms)=63900
+		Physical memory (bytes) snapshot=11446894592
+		Virtual memory (bytes) snapshot=77015101440
+		Total committed heap usage (bytes)=13225689088
+		Peak Map Physical memory (bytes)=620044288
+		Peak Map Virtual memory (bytes)=3688067072
+		Peak Reduce Physical memory (bytes)=1383424000
+		Peak Reduce Virtual memory (bytes)=3924385792
+	Shuffle Errors
+		BAD_ID=0
+		CONNECTION=0
+		IO_ERROR=0
+		WRONG_LENGTH=0
+		WRONG_MAP=0
+		WRONG_REDUCE=0
+	File Input Format Counters
+		Bytes Read=1000000000
+	File Output Format Counters
+		Bytes Written=1000000000
+2022-12-11 12:46:41,337 INFO terasort.TeraSort: done

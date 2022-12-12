@@ -68,24 +68,28 @@ kubectl apply -f juicefs-test.yaml
 kubectl delete -f juicefs-test.yaml
 kubectl exec -it juicefs-test -- /bin/bash
 #kubectl run juicefs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib --restart=Never --rm -- /bin/bash
-  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local WS26W3ADFQ0G95MSS29F ZycLlyACsr7pVSsmcGL8AsNGnr1TWg21T6o18i8q
+  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local EUQPL08FI26I3SC1QHB3 FrQ17BqUELW7kWhzVk9udlM278U9sWv98CRJlcm5
   mc mb minio/jfs
   mc ls minio/jfs
   juicefs format \
       --storage minio \
       --bucket https://minio.minio-tenant-1.svc.cluster.local/jfs?tls-insecure-skip-verify=true \
-      --access-key WS26W3ADFQ0G95MSS29F \
-      --secret-key ZycLlyACsr7pVSsmcGL8AsNGnr1TWg21T6o18i8q \
-      "redis://my-redis-ha.redis.svc.cluster.local:6379/1" \
+      --access-key EUQPL08FI26I3SC1QHB3 \
+      --secret-key FrQ17BqUELW7kWhzVk9udlM278U9sWv98CRJlcm5 \
+      "redis://:redis@my-redis-master.redis.svc.cluster.local:6379/1" \
       miniofs
   mkdir jfsmnt
   juicefs mount "redis://my-redis-ha.redis.svc.cluster.local:6379/1" jfsmnt
   export MINIO_ROOT_USER=admin
   export MINIO_ROOT_PASSWORD=12345678
-  miniogw gateway juicefs --console-address ':42311' redis://my-redis-ha.redis.svc.cluster.local:6379/1
-kubectl port-forward juicefs-test 42311:42311
+  miniogw gateway juicefs --console-address ':42311' redis://my-redis-ha.redis.svc.cluster.local:6379/1 &
+kubectl port-forward juicefs-test 42311:42311 &
 
 kubectl exec -it -n hadoop myhdp-hadoop-yarn-rm-0 -- /bin/bash
   su hdfs
-    /usr/local/hadoop/bin/hdfs dfs -mkdir -p /jobhistory/logs
-    /usr/local/hadoop/bin/hdfs dfs -mkdir -p /user/hdfs/yarn-logs
+    hdfs dfs -mkdir -p /jobhistory/logs
+    hdfs dfs -mkdir -p /user/hdfs/yarn-logs
+kubectl port-forward -n hadoop myhdp-hadoop-yarn-rm-0 42311:42311 &
+
+
+redis-cli -n 1 flushdb

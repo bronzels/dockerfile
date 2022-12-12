@@ -25,6 +25,9 @@ tail -f build-Dockerfile-hadoop-ubussh-cubefs.log
 #docker build ./ --progress=plain -t harbor.my.org:1080/chenseanxy/hadoop-ubussh-cubefs:3.2.1-nolib
 docker push harbor.my.org:1080/chenseanxy/hadoop-ubussh-cubefs:3.2.1-nolib
 
+ansible all -m shell -a"crictl images|grep hadoop-ubussh-cubefs"
+ansible all -m shell -a"crictl images|grep hadoop-ubussh-cubefs|awk '{print \$3}'|xargs crictl rmi"
+
 docker run --privileged --name cubefs-hadoop-client -it --rm -v /Volumes/data/workspace:/root/workspace harbor.my.org:1080/chenseanxy/hadoop-ubussh-cubefs:3.2.1-nolib /bin/bash
 
 mv ./cubefs-img-files ../
@@ -64,10 +67,11 @@ mount|grep data0
 #/etc/fstab增加挂载
 #/dev/disk/by-uuid/0f57c0db-9adc-4ae9-8348-3bba4d5579eb /data0 xfs defaults 0 1
 
+ansible all -m shell -a"mkdir /data0/cubefs"
 kubectl create ns cubefs
 cp ../../values.yaml ./
 helm install mycfs ./ -n cubefs
-#helm uninstall mycfs -n cubefs
+helm uninstall mycfs -n cubefs
 
 watch kubectl get all -n cubefs
 
@@ -76,7 +80,11 @@ docker load -i quay.io_k8scsi_csi-node-driver-registrar_v1.3.0.tar.gz
 
 #command: ["/bin/bash", "-ce", "tail -f /dev/null"]
 kubectl edit deployment client -n cubefs
-kubectl exec -it clientnew-78b5b5c497-zbdf4 /bin/bash -n cubefs
+kubectl exec -it client-78b5b5c497-zbdf4 /bin/bash -n cubefs
+/cfs/bin/cfs-cli config set --addr master-service.cubefs:17010
+/cfs/bin/cfs-cli user create hdfs --password hdfs --access-key=hdfs --secret-key=12345678 -y
+curl -v "http://master-0.master-service:17010/admin/createVol?name=hdfs&capacity=100&owner=hdfs&mpCount=3"
+
 /cfs/bin/start.sh
 /cfs/bin/cfs-client -f -c /cfs/conf/fuse.json
 tail -f /cfs/logs/client/output.log

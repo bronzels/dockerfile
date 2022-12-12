@@ -1,13 +1,13 @@
-helm repo add stable https://charts.helm.sh/stable
+helm repo add stable-azure http://mirror.azure.cn/kubernetes/charts/
 helm repo update
 kubectl create ns redis
-helm install my stable/redis-ha --set persistentVolume.storageClass=nfs-client -n redis
+helm install my stable-azure/redis-ha --set persistentVolume.storageClass=nfs-client -n redis
 helm uninstall my -n redis
 kubectl get pvc -n redis | grep redis | awk '{print $1}' | xargs kubectl delete pvc -n redis
 :<<EOF
 WARNING: This chart is deprecated
 NAME: my
-LAST DEPLOYED: Thu Nov 10 14:47:27 2022
+LAST DEPLOYED: Sun Dec 11 17:26:50 2022
 NAMESPACE: redis
 STATUS: deployed
 REVISION: 1
@@ -24,7 +24,7 @@ To connect to your Redis server:
 
   redis-cli -h my-redis-ha.redis.svc.cluster.local
 EOF
-kubectl get all -n redis
+watch kubectl get all -n redis
 
 kubectl port-forward -n redis svc/my-redis-ha 6379:6379 &
 

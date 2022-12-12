@@ -10,7 +10,7 @@ data:
   bootstrap.sh: |
     #!/bin/bash
 
-    : ${HADOOP_PREFIX:=/usr/local/hadoop}
+    : ${HADOOP_PREFIX:=/app/hdfs/hadoop}
 
     . $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
 
@@ -230,33 +230,33 @@ data:
       <property>
         <description>List of directories to store localized files in.</description>
         <name>yarn.nodemanager.local-dirs</name>
-        <value>/var/lib/hadoop-yarn/cache/${user.name}/nm-local-dir</value>
+        <value>/app/hdfs/varlib/hadoop-yarn/cache/${user.name}/nm-local-dir</value>
       </property>
 
       <property>
         <description>Where to store container logs.</description>
         <name>yarn.nodemanager.log-dirs</name>
-        <value>/var/log/hadoop-yarn/containers</value>
+        <value>/app/hdfs/varlog/hadoop-yarn/containers</value>
       </property>
 
       <property>
         <description>Where to aggregate logs to.</description>
         <name>yarn.nodemanager.remote-app-log-dir</name>
-        <value>/var/log/hadoop-yarn/apps</value>
+        <value>/app/hdfs/varlog/hadoop-yarn/apps</value>
       </property>
 
       <property>
         <name>yarn.application.classpath</name>
         <value>
-          /usr/local/hadoop/etc/hadoop,
-          /usr/local/hadoop/share/hadoop/common/*,
-          /usr/local/hadoop/share/hadoop/common/lib/*,
-          /usr/local/hadoop/share/hadoop/hdfs/*,
-          /usr/local/hadoop/share/hadoop/hdfs/lib/*,
-          /usr/local/hadoop/share/hadoop/mapreduce/*,
-          /usr/local/hadoop/share/hadoop/mapreduce/lib/*,
-          /usr/local/hadoop/share/hadoop/yarn/*,
-          /usr/local/hadoop/share/hadoop/yarn/lib/*
+          /app/hdfs/hadoop/etc/hadoop,
+          /app/hdfs/hadoop/share/hadoop/common/*,
+          /app/hdfs/hadoop/share/hadoop/common/lib/*,
+          /app/hdfs/hadoop/share/hadoop/hdfs/*,
+          /app/hdfs/hadoop/share/hadoop/hdfs/lib/*,
+          /app/hdfs/hadoop/share/hadoop/mapreduce/*,
+          /app/hdfs/hadoop/share/hadoop/mapreduce/lib/*,
+          /app/hdfs/hadoop/share/hadoop/yarn/*,
+          /app/hdfs/hadoop/share/hadoop/yarn/lib/*
         </value>
       </property>
     

@@ -1,0 +1,10 @@
+#FROM chenseanxy/hadoop:3.2.1-nolib
+FROM harbor.my.org:1080/chenseanxy/hadoop-ubussh:3.2.1-nolib
+USER hdfs
+
+COPY --chown=hdfs:root springboot /app/hdfs/hadoop/springboot
+RUN ls -l /app/hdfs/hadoop/
+WORKDIR /app/hdfs/hadoop/springboot
+RUN mvn -X package -Dmaven.test.skip=true
+RUN ls /app/hdfs/.m2/repository | wc -l
+WORKDIR $HADOOP_HOME

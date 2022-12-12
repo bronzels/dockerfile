@@ -1,24 +1,28 @@
 if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "Mac detected."
     #mac
-    HDPHOME=/Volumes/data/workspace/dockerfile/hadoop/helm-hadoop-3
+    MYHOME=/Volumes/data
     SED=gsed
 else
     echo "Assuming linux by default."
     #linux
-    HDPHOME=~/helm-hadoop-3
+    MYHOME=~
     SED=sed
 fi
 
-cd $HDPHOME
+HDPHOME=${MYHOME}/workspace/dockerfile/hadoop/helm-hadoop-3
 
-cp -f ../helm-hadoop-3-templates-distfs/hadoop-configmap.yaml templates/
-rm -f templates/hdfs-*.yaml
+
+cd $HDPHOME
 
 file=values.yaml
 cp ../helm-hadoop-3-templates-distfs/${file}.common ${file}
+
+rm -f templates/hdfs-*.yaml
+cp -f ../helm-hadoop-3-templates-distfs/hadoop-configmap.yaml templates/
+
 #juicefs
-$SED -i 's@repository: harbor.my.org:1080/chenseanxy/hadoop-ubussh@repository: harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs@g' ${file}
+$SED -i 's@harbor.my.org:1080/chenseanxy/hadoop-ubussh@harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs@g' ${file}
 cat << \EOF >> templates/hadoop-configmap.yaml
       <property>
         <name>yarn.log.server.url</name>
@@ -31,15 +35,15 @@ cat << \EOF >> templates/hadoop-configmap.yaml
     </configuration>
 EOF
 #cubefs
-$SED -i 's@repository: harbor.my.org:1080/chenseanxy/hadoop-ubussh@repository: harbor.my.org:1080/chenseanxy/hadoop-ubussh-cubefs@g' ${file}
+$SED -i 's@harbor.my.org:1080/chenseanxy/hadoop-ubussh@harbor.my.org:1080/chenseanxy/hadoop-ubussh-cubefs@g' ${file}
 cat << \EOF >> templates/hadoop-configmap.yaml
       <property>
         <name>yarn.log.server.url</name>
-        <value>cfs://miniofs/jobhistory/logs</value>
+        <value>cfs://hdfs/jobhistory/logs</value>
       </property>
       <property>
         <name>yarn.nodemanager.remote-app-log-dir</name>
-        <value>cfs://miniofs/user/hdfs/yarn-logs</value>
+        <value>cfs://hdfs/user/hdfs/yarn-logs</value>
       </property>
     </configuration>
 EOF

@@ -35,12 +35,14 @@
 
     <property>
         <name>juicefs.meta</name>
-        <value>redis://my-redis-ha.redis.svc.cluster.local:6379/1</value>
+        <value>redis://:redis@my-redis-master.redis.svc.cluster.local:6379/1</value>
     </property>
+<!--不能配置，会导致teragen/terasort测试不过，可能这个目录如果是root权限创建的，hdfs无法访问，不配置会在hdfs的home的.cache目录存放
     <property>
         <name>juicefs.cache-dir</name>
         <value>/jfscache</value>
     </property>
+-->
     <property>
         <name>juicefs.cache-size</name>
         <value>1024</value>

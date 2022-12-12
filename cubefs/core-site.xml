@@ -7,11 +7,11 @@
     </property>
     <property>
         <name>cfs.master.address</name>
-        <value>your.master.address[ip:port,ip:port,ip:port]</value>
+        <value>master-0.master-service.cubefs:17010.cubefs,master-1.master-service.cubefs:17010,master-2.master-service.cubefs:17010</value>
     </property>
     <property>
         <name>fs.defaultFS</name>
-        <value>cfs://miniofs</value>
+        <value>cfs://hdfs</value>
     </property>
 
     <!--
@@ -22,10 +22,6 @@
         <property>
             <name>fs.AbstractFileSystem.hdfs.impl</name>
             <value>io.juicefs.JuiceFS</value>
-        </property>
-        <property>
-            <name>fs.defaultFS</name>
-            <value>hdfs://</value>
         </property>
     -->
 
@@ -40,11 +36,11 @@
     </property>
     <property>
         <name>cfs.access.key</name>
-        <value>your.access.key</value>
+        <value>hdfs</value>
     </property>
     <property>
         <name>cfs.secret.key</name>
-        <value>your.secret.key</value>
+        <value>12345678</value>
     </property>
     <property>
         <name>cfs.min.buffersize</name>

@@ -5,14 +5,16 @@ cp -r helm-hadoop-3 helm-hadoop-3.bk
 if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "Mac detected."
     #mac
-    HDPHOME=/Volumes/data/workspace/cluster-sh-k8s/hadoop/helm-hadoop-3
+    MYHOME=/Volumes/data
     SED=gsed
 else
     echo "Assuming linux by default."
     #linux
-    HDPHOME=~/helm-hadoop-3
+    MYHOME=~
     SED=sed
 fi
+
+HDPHOME=${MYHOME}/workspace/dockerfile/hadoop/helm-hadoop-3
 
 cd $HDPHOME
 file=values.yaml
