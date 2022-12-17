@@ -85,11 +85,11 @@ kubectl exec -it juicefs-test -- /bin/bash
   miniogw gateway juicefs --console-address ':42311' redis://my-redis-ha.redis.svc.cluster.local:6379/1 &
 kubectl port-forward juicefs-test 42311:42311 &
 
-kubectl exec -it -n hadoop myhdp-hadoop-yarn-rm-0 -- /bin/bash
+kubectl exec -it -n hadoop my-hadoop-yarn-rm-0 -- /bin/bash
   su hdfs
     hdfs dfs -mkdir -p /jobhistory/logs
     hdfs dfs -mkdir -p /user/hdfs/yarn-logs
-kubectl port-forward -n hadoop myhdp-hadoop-yarn-rm-0 42311:42311 &
+kubectl port-forward -n hadoop my-hadoop-yarn-rm-0 42311:42311 &
 
 
 redis-cli -n 1 flushdb

@@ -6,8 +6,12 @@
         <value>io.cubefs.CubefsFileSystem</value>
     </property>
     <property>
+        <name>fs.AbstractFileSystem.cfs.impl</name>
+        <value>io.cubefs.CubefsAbstractFileSystem</value>
+    </property>
+    <property>
         <name>cfs.master.address</name>
-        <value>master-0.master-service.cubefs:17010.cubefs,master-1.master-service.cubefs:17010,master-2.master-service.cubefs:17010</value>
+        <value>master-0.master-service.cubefs:17010,master-1.master-service.cubefs:17010,master-2.master-service.cubefs:17010</value>
     </property>
     <property>
         <name>fs.defaultFS</name>
@@ -27,7 +31,7 @@
 
     <property>
         <name>cfs.log.dir</name>
-        <value>your.log.dir[/tmp/cfs-access-log]</value>
+        <value>/tmp/cfs-access-log</value>
     </property>
 
     <property>
@@ -36,11 +40,11 @@
     </property>
     <property>
         <name>cfs.access.key</name>
-        <value>hdfs</value>
+        <value>7QvXDdpBczgTwZt3</value>
     </property>
     <property>
         <name>cfs.secret.key</name>
-        <value>12345678</value>
+        <value>SFXxvPnmO5eDfsHNirtdJ6bvwBwwwrxT</value>
     </property>
     <property>
         <name>cfs.min.buffersize</name>

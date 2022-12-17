@@ -128,6 +128,8 @@ EXPOSE 8030 8031 8032 8033 8040 8042 8088
 #Other ports
 EXPOSE 49707 2122
 
-USER hdfs
-RUN mkdir -p /app/hdfs/.m2/reposiroty
-COPY files/settings.xml /app/hdfs/.m2/
+#USER hdfs
+#RUN mkdir /app/hdfs/.m2
+#COPY files/settings.xml /app/hdfs/.m2/
+RUN mkdir /root/.m2
+COPY files/settings.xml /root/.m2/

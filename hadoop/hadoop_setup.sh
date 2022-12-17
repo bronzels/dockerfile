@@ -27,7 +27,7 @@ cd ${HDPHOME}
 
 #使用hdfs
 #使用其他分布式文件系统可以跳过
-helm uninstall myhdp -n hadoop
+helm uninstall my -n hadoop
 kubectl get pvc -n hadoop | grep hdfs | awk '{print $1}' | xargs kubectl delete pvc -n hadoop
 kubectl get pv -n hadoop | grep hdfs | awk '{print $1}' | xargs kubectl delete pv
 ansible all -m shell -a"rm -rf /data0/hdfs"
@@ -41,7 +41,7 @@ kubectl get pv | grep hdfs
 #chmod a+x tools/calc_resources.sh
 #helm install myhadoop $(tools/calc_resources.sh 50) -n hadoop -f values.yaml \
 #使用hdfs
-helm install myhdp -n hadoop -f values.yaml \
+helm install my -n hadoop -f values.yaml \
   --set yarn.nodeManager.replicas=3 \
   --set yarn.nodeManager.resources.requests.memory="2048Mi" \
   --set yarn.nodeManager.resources.requests.cpu="1000m" \
@@ -61,7 +61,7 @@ helm install myhdp -n hadoop -f values.yaml \
   ./
 
 #使用其他分布式文件系统
-helm install myhdp -n hadoop -f values.yaml \
+helm install my -n hadoop -f values.yaml \
   --set yarn.nodeManager.replicas=3 \
   --set yarn.nodeManager.resources.requests.memory="2048Mi" \
   --set yarn.nodeManager.resources.requests.cpu="1000m" \
@@ -82,20 +82,20 @@ helm install myhdp -n hadoop -f values.yaml \
   --set yarn.nodeManager.resources.limits.cpu="14000m" \
 EOF
 :<<EOF
-helm uninstall myhdp -n hadoop
+helm uninstall my -n hadoop
 kubectl get pvc -n hadoop | awk '{print $1}' | xargs kubectl delete pvc -n hadoop
 
-kubectl describe pod myhdp-hadoop-hdfs-dn-1 -n hadoop
-kubectl describe pod myhdp-hadoop-yarn-nm-0 -n hadoop
-kubectl exec -it myhdp-hadoop-yarn-rm-0 -n hadoop bash
+kubectl describe pod my-hadoop-hdfs-dn-1 -n hadoop
+kubectl describe pod my-hadoop-yarn-nm-0 -n hadoop
+kubectl exec -it my-hadoop-yarn-rm-0 -n hadoop bash
 
-kubectl get configmap myhdp-hadoop -n hadoop -o yaml
+kubectl get configmap my-hadoop -n hadoop -o yaml
 
 kubectl get pod -n hadoop -o wide
 kubectl get pvc -n hadoop -o wide
 kubectl get svc -n hadoop -o wide
 
-kubectl exec -n hadoop -it myhdp-hadoop-hdfs-nn-0 -- /usr/local/hadoop/bin/hdfs dfs -ls /
+kubectl exec -n hadoop -it my-hadoop-hdfs-nn-0 -- /usr/local/hadoop/bin/hdfs dfs -ls /
 yarn: http://master01:31088/cluster
 hdfs: http://master01:30870/dfshealth.html#tab-overview
 
@@ -104,29 +104,29 @@ EOF
 :<<EOF
 NOTES:
 1. You can check the status of HDFS by running this command:
-   kubectl exec -n hadoop -it myhdp-hadoop-hdfs-nn-0 -- /usr/local/hadoop/bin/hdfs dfsadmin -report
+   kubectl exec -n hadoop -it my-hadoop-hdfs-nn-0 -- /usr/local/hadoop/bin/hdfs dfsadmin -report
 
 2. You can list the yarn nodes by running this command:
-   kubectl exec -n hadoop -it myhdp-hadoop-yarn-rm-0 -- /usr/local/hadoop/bin/yarn node -list
+   kubectl exec -n hadoop -it my-hadoop-yarn-rm-0 -- /usr/local/hadoop/bin/yarn node -list
 
 3. Create a port-forward to the yarn resource manager UI:
-   kubectl port-forward -n hadoop myhdp-hadoop-yarn-rm-0 8088:8088
+   kubectl port-forward -n hadoop my-hadoop-yarn-rm-0 8088:8088
 
    Then open the ui in your browser:
 
    open http://localhost:8088
 
 4. You can run included hadoop tests like this:
-   kubectl exec -n hadoop -it myhdp-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-2.9.0-tests.jar TestDFSIO -write -nrFiles 5 -fileSize 128MB -resFile /tmp/TestDFSIOwrite.txt
+   kubectl exec -n hadoop -it my-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-2.9.0-tests.jar TestDFSIO -write -nrFiles 5 -fileSize 128MB -resFile /tmp/TestDFSIOwrite.txt
 
 5. You can list the mapreduce jobs like this:
-   kubectl exec -n hadoop -it myhdp-hadoop-yarn-rm-0 -- /usr/local/hadoop/bin/mapred job -list
+   kubectl exec -n hadoop -it my-hadoop-yarn-rm-0 -- /usr/local/hadoop/bin/mapred job -list
 
 6. This chart can also be used with the zeppelin chart
-    helm install --namespace hadoop --set hadoop.useConfigMap=true,hadoop.configMapName=myhdp-hadoop stable/zeppelin
+    helm install --namespace hadoop --set hadoop.useConfigMap=true,hadoop.configMapName=my-hadoop stable/zeppelin
 
 7. You can scale the number of yarn nodes like this:
-   helm upgrade myhdp --set yarn.nodeManager.replicas=4 stable/hadoop
+   helm upgrade my --set yarn.nodeManager.replicas=4 stable/hadoop
 
    Make sure to update the values.yaml if you want to make this permanent.
 EOF
@@ -134,9 +134,9 @@ EOF
 :<<EOF
 
 #2.9.0
-   kubectl exec -n hadoop -it myhdp-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-2.9.0-tests.jar TestDFSIO -write -nrFiles 5 -fileSize 128MB -resFile /tmp/TestDFSIOwrite.txt
+   kubectl exec -n hadoop -it my-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-2.9.0-tests.jar TestDFSIO -write -nrFiles 5 -fileSize 128MB -resFile /tmp/TestDFSIOwrite.txt
 #3.2.1
-   kubectl exec -n hadoop -it myhdp-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-3.2.1-tests.jar TestDFSIO -write -nrFiles 5 -fileSize 128MB -resFile /tmp/TestDFSIOwrite.txt
+   kubectl exec -n hadoop -it my-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-3.2.1-tests.jar TestDFSIO -write -nrFiles 5 -fileSize 128MB -resFile /tmp/TestDFSIOwrite.txt
 2022-11-07 08:33:05,734 INFO sasl.SaslDataTransferClient: SASL encryption trust check: localHostTrusted = false, remoteHostTrusted = false
 2022-11-07 08:33:05,742 INFO fs.TestDFSIO: ----- TestDFSIO ----- : write
 2022-11-07 08:33:05,742 INFO fs.TestDFSIO:             Date & time: Mon Nov 07 08:33:05 UTC 2022
@@ -148,7 +148,7 @@ EOF
 2022-11-07 08:33:05,742 INFO fs.TestDFSIO:      Test exec time sec: 81.65
 2022-11-07 08:33:05,742 INFO fs.TestDFSIO:
 #3.1.1
-   kubectl exec -n hadoop -it myhdp-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-3.1.1-tests.jar TestDFSIO -write -nrFiles 5 -fileSize 128MB -resFile /tmp/TestDFSIOwrite.txt
+   kubectl exec -n hadoop -it my-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-3.1.1-tests.jar TestDFSIO -write -nrFiles 5 -fileSize 128MB -resFile /tmp/TestDFSIOwrite.txt
 EOF
 
 :<<EOF
@@ -163,8 +163,8 @@ Average IO rate mb/sec: 126.87004089355469
     Test exec time sec: 61.293
 EOF
 
-kubectl exec -n hadoop -it myhdp-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.1.jar teragen -Dmapred.map.tasks=20 10000000 /teragen/out
-kubectl exec -n hadoop -it myhdp-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.1.jar terasort -Dmapred.map.tasks=20 /teragen/out /terasort/out
+kubectl exec -n hadoop -it my-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.1.jar teragen -Dmapred.map.tasks=20 10000000 /teragen/out
+kubectl exec -n hadoop -it my-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.1.jar terasort -Dmapred.map.tasks=20 /teragen/out /terasort/out
 :<<EOF
 2022-11-07 08:47:09,757 INFO mapreduce.Job: Counters: 34
 	File System Counters
@@ -210,7 +210,7 @@ kubectl exec -n hadoop -it myhdp-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoo
 EOF
 
 
-helm install myhdp -n hadoop -f values.yaml \
+helm install my -n hadoop -f values.yaml \
   --set hdfs.dataNode.replicas=2 \
   --set yarn.nodeManager.replicas=2 \
   --set persistence.nameNode.enabled=true \
@@ -230,7 +230,7 @@ helm install myhdp -n hadoop -f values.yaml \
   ./
 :<<EOF
 EOF
-kubectl exec -n hadoop -it myhdp-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-3.2.1-tests.jar TestDFSIO -write -nrFiles 5 -fileSize 128MB -resFile /tmp/TestDFSIOwrite.txt
+kubectl exec -n hadoop -it my-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-3.2.1-tests.jar TestDFSIO -write -nrFiles 5 -fileSize 128MB -resFile /tmp/TestDFSIOwrite.txt
 :<<EOF
 2022-11-08 02:40:11,586 INFO sasl.SaslDataTransferClient: SASL encryption trust check: localHostTrusted = false, remoteHostTrusted = false
 2022-11-08 02:40:11,595 INFO fs.TestDFSIO: ----- TestDFSIO ----- : write
@@ -243,12 +243,12 @@ kubectl exec -n hadoop -it myhdp-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoo
 2022-11-08 02:40:11,602 INFO fs.TestDFSIO:      Test exec time sec: 25.45
 2022-11-08 02:40:11,602 INFO fs.TestDFSIO:
 EOF
-kubectl exec -n hadoop -it myhdp-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.1.jar teragen -Dmapred.map.tasks=20 10000000 /teragen/out
-kubectl exec -n hadoop -it myhdp-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.1.jar terasort -Dmapred.map.tasks=20 /teragen/out /terasort/out
+kubectl exec -n hadoop -it my-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.1.jar teragen -Dmapred.map.tasks=20 10000000 /teragen/out
+kubectl exec -n hadoop -it my-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.1.jar terasort -Dmapred.map.tasks=20 /teragen/out /terasort/out
 :<<EOF
 EOF
 
-helm install myhdp -n hadoop -f values.yaml \
+helm install my -n hadoop -f values.yaml \
   --set hdfs.dataNode.replicas=2 \
   --set yarn.nodeManager.replicas=2 \
   --set persistence.nameNode.enabled=true \
@@ -268,7 +268,7 @@ helm install myhdp -n hadoop -f values.yaml \
   ./
 :<<EOF
 EOF
-kubectl exec -n hadoop -it myhdp-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-3.2.1-tests.jar TestDFSIO -write -nrFiles 5 -fileSize 128MB -resFile /tmp/TestDFSIOwrite.txt
+kubectl exec -n hadoop -it my-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-3.2.1-tests.jar TestDFSIO -write -nrFiles 5 -fileSize 128MB -resFile /tmp/TestDFSIOwrite.txt
 :<<EOF
 2022-11-08 03:06:12,962 INFO sasl.SaslDataTransferClient: SASL encryption trust check: localHostTrusted = false, remoteHostTrusted = false
 2022-11-08 03:06:12,975 INFO fs.TestDFSIO: ----- TestDFSIO ----- : write
@@ -281,7 +281,7 @@ kubectl exec -n hadoop -it myhdp-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoo
 2022-11-08 03:06:12,975 INFO fs.TestDFSIO:      Test exec time sec: 22.61
 2022-11-08 03:06:12,975 INFO fs.TestDFSIO:
 EOF
-kubectl exec -n hadoop -it myhdp-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-3.2.1-tests.jar TestDFSIO -write -nrFiles 6 -fileSize 1024MB -resFile /tmp/TestDFSIOwrite.txt
+kubectl exec -n hadoop -it my-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-3.2.1-tests.jar TestDFSIO -write -nrFiles 6 -fileSize 1024MB -resFile /tmp/TestDFSIOwrite.txt
 :<<EOF
 2022-11-08 03:15:28,984 INFO sasl.SaslDataTransferClient: SASL encryption trust check: localHostTrusted = false, remoteHostTrusted = false
 2022-11-08 03:15:28,997 INFO fs.TestDFSIO: ----- TestDFSIO ----- : write
@@ -294,7 +294,7 @@ kubectl exec -n hadoop -it myhdp-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoo
 2022-11-08 03:15:29,008 INFO fs.TestDFSIO:      Test exec time sec: 152.76
 2022-11-08 03:15:29,009 INFO fs.TestDFSIO:
 EOF
-kubectl exec -n hadoop -it myhdp-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.1.jar teragen -Dmapred.map.tasks=20 10000000 /teragen/out
-kubectl exec -n hadoop -it myhdp-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.1.jar terasort -Dmapred.map.tasks=20 /teragen/out /terasort/out
+kubectl exec -n hadoop -it my-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.1.jar teragen -Dmapred.map.tasks=20 10000000 /teragen/out
+kubectl exec -n hadoop -it my-hadoop-yarn-nm-0 -- /usr/local/hadoop/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.1.jar terasort -Dmapred.map.tasks=20 /teragen/out /terasort/out
 :<<EOF
 EOF

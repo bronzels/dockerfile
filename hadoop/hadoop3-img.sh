@@ -1,11 +1,4 @@
 HADOOPREV=3.2.1
-wget -c http://archive.apache.org/dist/hadoop/common/hadoop-${HADOOPREV}/hadoop-${HADOOPREV}-src.tar.gz
-wget -c http://archive.apache.org/dist/hadoop/common/hadoop-${HADOOPREV}/hadoop-${HADOOPREV}.tar.gz
-
-rm -rf helm-hadoop-3
-git clone https://github.com/chenseanxy/helm-hadoop-3.git
-rm -rf helm-hadoop-3.bk
-cp -r helm-hadoop-3 helm-hadoop-3.bk
 if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "Mac detected."
     #mac
@@ -19,6 +12,14 @@ else
 fi
 
 HDPHOME=${MYHOME}/workspace/dockerfile/hadoop/helm-hadoop-3
+
+wget -c http://archive.apache.org/dist/hadoop/common/hadoop-${HADOOPREV}/hadoop-${HADOOPREV}-src.tar.gz
+wget -c http://archive.apache.org/dist/hadoop/common/hadoop-${HADOOPREV}/hadoop-${HADOOPREV}.tar.gz
+
+rm -rf helm-hadoop-3
+git clone https://github.com/chenseanxy/helm-hadoop-3.git
+rm -rf helm-hadoop-3.bk
+cp -r helm-hadoop-3 helm-hadoop-3.bk
 
 cd $HDPHOME
 

@@ -88,7 +88,7 @@ spec:
       volumes:
         - name: hadoop-config-volume
           configMap:
-            name: myhdp-hadoop
+            name: my-hadoop
         - name: hive-custom-config-volume
           configMap:
             name: hive-custom-config-cm

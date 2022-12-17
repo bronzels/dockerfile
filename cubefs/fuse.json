@@ -1,11 +1,11 @@
 {
   "mountPoint": "/cfs/mnt",
-  "volName": "test",
-  "owner": "chubaofs",
+  "volName": "hdfs",
+  "owner": "hdfs",
   "masterAddr": "master-0.master-service:17010.cubefs,master-1.master-service.cubefs:17010,master-2.master-service.cubefs:17010",
   "logDir": "/cfs/logs",
   "logLevel": "debug",
-  "consulAddr": "http://consul-service:8500",
+  "consulAddr": "http://consul-service.cubefs:8500",
   "exporterPort": "9530",
   "profPort": "17410"
 }
