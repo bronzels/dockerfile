@@ -26,7 +26,6 @@ nohup docker build ./ --progress=plain --build-arg rev="${rev}" -t harbor.my.org
 tail -f build-Dockerfile-hadoop-ubussh-cubefs.log
 #docker build ./ --progress=plain --build-arg rev="${rev}" -t harbor.my.org:1080/chenseanxy/hadoop-ubussh-cubefs:3.2.1-nolib
 docker push harbor.my.org:1080/chenseanxy/hadoop-ubussh-cubefs:3.2.1-nolib
-
 ansible all -m shell -a"crictl images|grep hadoop-ubussh-cubefs"
 ansible all -m shell -a"crictl images|grep hadoop-ubussh-cubefs|awk '{print \$3}'|xargs crictl rmi"
 

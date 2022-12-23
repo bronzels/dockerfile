@@ -1,4 +1,3 @@
-HADOOPREV=3.2.1
 if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "Mac detected."
     #mac
@@ -11,6 +10,7 @@ else
     SED=sed
 fi
 
+HADOOPREV=3.2.1
 HDPHOME=${MYHOME}/workspace/dockerfile/hadoop/helm-hadoop-3
 
 wget -c http://archive.apache.org/dist/hadoop/common/hadoop-${HADOOPREV}/hadoop-${HADOOPREV}-src.tar.gz
@@ -60,11 +60,12 @@ make
 docker tag hadoop:${HADOOPREV}-nolib harbor.my.org:1080/chenseanxy/hadoop:${HADOOPREV}-nolib
 docker push harbor.my.org:1080/chenseanxy/hadoop:${HADOOPREV}-nolib
 
+file=Dockerfile
 #其他分布式文件系统
-cp ../../../helm-hadoop-3-templates-distfs/${file}.template ${file}.template
+cp ../../../helm-hadoop-3-templates-distfs/${file} ${file}.template
 
 mkdir files
-cp -r ../../../image/iotest ./files/
+#cp -r ../../../image/iotest ./files/
 cp -r ../../../image/fuse-2.9.2.tar.gz ./files/
 cp -r ../../../image/go1.19.2.linux-amd64.tar.gz ./files/
 cp -r ../../../image/openssl-1.1.1s.tar.gz ./files/
@@ -73,7 +74,6 @@ cp -r ../../../image/settings.xml ./files/
 cp ../../sources-16.04.list sources.list
 
 #cp ../../../../dockerfile/image/sources-16.04.list sources.list
-file=Dockerfile
 #$SED -i '/FROM java:8-jre/a\USER root' ${file}
 $SED -i 's@FROM java:8-jre@FROM paulosalgado\/oracle-java8-ubuntu-16@g' ${file}
 #$SED -i 's@FROM java:8-jre@FROM harbor.my.org:1080\/base\/ubuntu22-openjdk8@g' ${file}
@@ -90,6 +90,9 @@ docker push harbor.my.org:1080/chenseanxy/hadoop-ubussh:${HADOOPREV}-nolib
 
 rm -f hadoop-${HADOOPREV}*
 rm -rf files
+
+#worker
+mkdir -p /app/hdfs/hadoop/mapred/local/
 
 cd $HDPHOME
 file=values.yaml

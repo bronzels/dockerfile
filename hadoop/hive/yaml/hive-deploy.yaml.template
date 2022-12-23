@@ -62,8 +62,8 @@ spec:
               mountPath: /root/db_tools/script
       containers:
         - name: hive
-          image: harbor.my.org:1080/bronzels/hive-ubu16ssh:0.1
-          command: ["bash", "-c", "cp /root/bootstrap/bootstrap.sh /tmp/ && chmod +x /tmp/bootstrap.sh && /tmp/bootstrap.sh"]
+          image: harbor.my.org:1080/bronzels/hive-ubussh:0.1
+          command: ["bash", "-c", "cp /app/hdfs/bootstrap/bootstrap.sh /tmp/ && chmod +x /tmp/bootstrap.sh && /tmp/bootstrap.sh"]
           ports:
             - containerPort: 10000
             - containerPort: 10002
@@ -76,9 +76,9 @@ spec:
                   key: database-user-password
           volumeMounts:
             - name: hadoop-config-volume
-              mountPath: /usr/local/hadoop/etc/hadoop
+              mountPath: /tmp/hadoop-config
             - name: hive-custom-config-volume
-              mountPath: /root/bootstrap
+              mountPath: /app/hdfs/bootstrap
           readinessProbe:
             initialDelaySeconds: 20
             periodSeconds: 5

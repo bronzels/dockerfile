@@ -22,7 +22,7 @@ data:
     #for f in slaves core-site.xml hdfs-site.xml mapred-site.xml yarn-site.xml; do
     for f in slaves mapred-site.xml yarn-site.xml; do
       if [[ -e ${CONFIG_DIR}/$f ]]; then
-        cp ${CONFIG_DIR}/$f $HADOOP_PREFIX/etc/hadoop/$f
+        cp ${CONFIG_DIR}/$f $HADOOP_HOME/etc/hadoop/$f
       else
         echo "ERROR: Could not find $f in $CONFIG_DIR"
         exit 1
@@ -105,6 +105,10 @@ data:
       <property>
         <name>mapreduce.jobhistory.webapp.address</name>
         <value>{{ include "hadoop.fullname" . }}-yarn-rm-0.{{ include "hadoop.fullname" . }}-yarn-rm.{{ .Release.Namespace }}.svc.cluster.local:19888</value>
+      </property>
+      <property>
+        <name>mapred.local.dir</name>
+        <value>/app/hdfs/hadoop/mapred/local/</value>
       </property>
     </configuration>
 
@@ -268,3 +272,4 @@ data:
         <name>yarn.log-aggregation.retain-seconds</name>
         <value>2592000</value>
       </property>
+

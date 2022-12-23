@@ -45,27 +45,6 @@ ls /dev/fuse
 
 #kubectl run juicefs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubu-juicefs:3.2.1-nolib --image-pull-policy="Always" --restart=Never --rm -- /bin/bash
 
-
-cat > juicefs-test.yaml << EOF
-apiVersion: v1
-kind: Pod
-metadata:
-  name: juicefs-test
-  labels:
-    app: nginx
-spec:
-  containers:
-    - name: juicefs-test
-      image: harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib
-      command: ["tail"]
-      args: ["-f", "/dev/null"]
-      securityContext:
-        privileged: true
-        capabilities:
-          add: ["SYS_ADMIN"]
-EOF
-kubectl apply -f juicefs-test.yaml
-kubectl delete -f juicefs-test.yaml
 kubectl exec -it juicefs-test -- /bin/bash
 #kubectl run juicefs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib --restart=Never --rm -- /bin/bash
   mc config host add minio https://minio.minio-tenant-1.svc.cluster.local EUQPL08FI26I3SC1QHB3 FrQ17BqUELW7kWhzVk9udlM278U9sWv98CRJlcm5

@@ -1,20 +1,21 @@
-
 if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "Mac detected."
     #mac
-    HIVEHOME=/Volumes/data/workspace/cluster-sh-k8s/hadoop/hive
+    MYHOME=/Volumes/data
     SED=gsed
 else
     echo "Assuming linux by default."
     #linux
-    HIVEHOME=~/hive
+    MYHOME=~
     SED=sed
 fi
 
+HIVEHOME=${MYHOME}/workspace/dockerfile/hadoop/hive
+
+HIVEREV=3.1.2
 cd $HIVEHOME
 cd image
 
-hiverev=3.1.2
 wget -c https://archive.apache.org/dist/hive/hive-${hiverev}/apache-hive-${hiverev}-bin.tar.gz
 
 wget -c https://cdn.mysql.com//archives/mysql-connector-java-5.1/mysql-connector-java-5.1.47.tar.gz
@@ -33,8 +34,35 @@ ansible all -m shell -a"docker images|grep hive|awk '{print \$3}'|xargs docker r
 ansible all -m shell -a"crictl images|grep hive"
 ansible all -m shell -a"crictl images|grep hive|awk '{print \$3}'|xargs crictl rmi"
 
-docker build --build-arg HIVEREV=3.1.2 -t harbor.my.org:1080/bronzels/hive-ubu16ssh:0.1 ./
-docker push harbor.my.org:1080/bronzels/hive-ubu16ssh:0.1
+file=Dockerfile
+cp -f ${file}.template ${file}
+
+#juicefs
+distfs=juicefs
+$SED -i 's@harbor.my.org:1080/chenseanxy/hadoop-ubussh@harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs@g' ${file}
+#cubefs
+distfs=cubefs
+$SED -i 's@harbor.my.org:1080/chenseanxy/hadoop-ubussh@harbor.my.org:1080/chenseanxy/hadoop-ubussh-cubefs@g' ${file}
+
+git clone https://github.com/hortonworks/hive-testbench.git -b hdp3
+cd hive-testbench
+#for f in tpcds-setup.sh tpch-setup.sh; do
+  f=tpcds-setup.sh
+  file=hive-testbench/$f
+  cp ${file} ${file}.bk
+  #cp ${file}.bk ${file}
+  $SED -i 's@HIVE="beeline -n hive -u@#HIVE="beeline -n hive -u@g' ${file}
+  $SED -i '/#HIVE="beeline -n hive -u/a\HIVE="hive "\' ${file}
+#done
+cp -r settings settings.bk
+#cp -r settings.bk settings
+for file in settings/*.sql
+do
+  $SED -i 's@set hive.optimize.sort.dynamic.partition.threshold=0;@set hive.optimize.sort.dynamic.partition=true;@g' ${file}
+done
+
+docker build ./ --progress=plain --build-arg HIVEREV="${HIVEREV}" -t harbor.my.org:1080/bronzels/hive-ubussh-${distfs}:0.1
+docker push harbor.my.org:1080/bronzels/hive-ubussh-${distfs}:0.1
 
 git clone git@github.com:chenlein/database-tools.git
 cd database-tools
@@ -69,7 +97,59 @@ docker build -f Dockerfile.dbtool -t harbor.my.org:1080/bronzels/database-tools:
 docker push harbor.my.org:1080/bronzels/database-tools:1.0-SNAPSHOT
 
 cd $HIVEHOME
+file=yaml/hive-deploy.yaml
+cp -f ${file}.template ${file}
+
+#juicefs
+distfs=juicefs
+#cubefs
+distfs=cubefs
+
+$SED -i "s@harbor.my.org:1080/bronzels/hive-ubussh:0.1@harbor.my.org:1080/bronzels/hive-ubussh-${distfs}:0.1@g" ${file}
+
+:<<EOF
+beeline -n hive -u "jdbc:hive2://hive-service:9083/;auth=noSasl"
+core-site.xml
+      <property>
+        <name>hadoop.proxyuser.hive.hosts</name>
+        <value>*</value>
+      </property>
+      <property>
+        <name>hadoop.proxyuser.hive.groups</name>
+        <value>*</value>
+      </property>
+
+    <property>
+        <name>hadoop.proxyuser.hdfs.hosts</name>
+        <value>*</value>
+    </property>
+    <property>
+        <name>hadoop.proxyuser.root.groups</name>
+        <value>*</value>
+    </property>
+hive-site.xml
+      <property>
+        <name>hive.server2.enable.doAs</name>
+        <value>false</value>
+      </property>
+
+      <property>
+        <name>hive.optimize.sort.dynamic.partition</name>
+        <value>true</value>
+        <description>When enabled dynamic partitioning column will be globally sorted.
+        This way we can keep only one record writer open for each partition value
+        in the reducer thereby reducing the memory pressure on reducers.</description>
+      </property>
+      <property>
+        <name>hive.exec.dynamic.partition.mode</name>
+        <value>nostrict</value>
+        <description>In strict mode, the user must specify at least one static partition in case the user accidentally overwrites all partitions.</description>
+      </property>
+
+EOF
+
 kubectl apply -n hadoop -f yaml/
+kubectl delete -n hadoop -f yaml/
 
 cat << students.txt > EOF
 EOF
@@ -79,9 +159,9 @@ kubectl delete -n hadoop -f yaml/
 
 kubectl describe pod -n hadoop `kubectl get pod -n hadoop | grep hive-serv | awk '{print $1}'`
 kubectl logs -n hadoop `kubectl get pod -n hadoop | grep hive-serv | awk '{print $1}'`
-kubectl cp employee.txt -n hadoop `kubectl get pod -n hadoop | grep hive-serv | awk '{print $1}'` /usr/local/hadoop/
-kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep hive-serv | awk '{print $1}'` -- bash
-  hadoop fs -put ./employee.txt /tmp/
+kubectl cp employee.txt -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-serv | awk '{print $1}'`:/app/hdfs/hive/
+kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-serv | awk '{print $1}'` -- bash
+  hadoop fs -put employee.txt /tmp/
   hadoop fs -ls /tmp/
   hive
     create database test1;

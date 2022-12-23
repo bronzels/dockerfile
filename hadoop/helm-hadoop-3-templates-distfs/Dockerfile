@@ -19,44 +19,9 @@ RUN apt install -y automake autoconf libtool
 RUN gcc --version
 RUN make --version
 
-WORKDIR /
-ADD files/fuse-2.9.2.tar.gz /
-WORKDIR /fuse-2.9.2
-RUN ./configure --prefix=/usr
-RUN make
-RUN make install
 
 RUN apt install -y tar zip unzip
 RUN apt install -y git
-
-WORKDIR /
-COPY files/iotest/mpich-3.2.tar.gz /mpich-3.2.tar.gz
-RUN tar -xzvf mpich-3.2.tar.gz
-WORKDIR /mpich-3.2
-RUN ./configure --disable-fortran
-RUN make
-RUN make install
-RUN mpicc || :
-ENV MPI_CC=mpicc
-
-WORKDIR /
-COPY files/iotest/mdtest-master.zip /mdtest-master.zip
-RUN unzip mdtest-master.zip
-WORKDIR /mdtest-master
-RUN make
-RUN mv mdtest /usr/local/bin
-RUN mdtest || :
-
-RUN apt-get install -y libaio-dev
-
-WORKDIR /
-COPY files/iotest/fio-fio-3.32.zip /fio-fio-3.32.zip
-RUN unzip fio-fio-3.32.zip
-WORKDIR fio-fio-3.32
-RUN ./configure
-RUN make
-RUN make install
-RUN fio || :
 
 ADD files/go1.19.2.linux-amd64.tar.gz /usr/local/
 ENV PATH /usr/local/go/bin:$PATH
@@ -128,8 +93,9 @@ EXPOSE 8030 8031 8032 8033 8040 8042 8088
 #Other ports
 EXPOSE 49707 2122
 
-#USER hdfs
-#RUN mkdir /app/hdfs/.m2
-#COPY files/settings.xml /app/hdfs/.m2/
-RUN mkdir /root/.m2
-COPY files/settings.xml /root/.m2/
+RUN mkdir /app/hdfs/.m2
+COPY files/settings.xml /app/hdfs/.m2/
+ENV REPOHOME=/app/hdfs/.m2/repository
+
+RUN mkdir -p /app/hdfs/hadoop/mapred/local/
+RUN mkdir /app/hdfs/hadoop/tmpdir/

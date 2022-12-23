@@ -7,8 +7,24 @@ metadata:
 data:
   bootstrap.sh: |-
     #!/bin/bash
+    # from hadoop boot strap
+    # Directory to find config artifacts
+    CONFIG_DIR="/tmp/hadoop-config"
+
+    # Copy config files from volume mount
+
+    #for f in slaves core-site.xml hdfs-site.xml mapred-site.xml yarn-site.xml; do
+    for f in slaves mapred-site.xml yarn-site.xml; do
+      if [[ -e ${CONFIG_DIR}/$f ]]; then
+        cp ${CONFIG_DIR}/$f $HADOOP_HOME/etc/hadoop/$f
+      else
+        echo "ERROR: Could not find $f in $CONFIG_DIR"
+        exit 1
+      fi
+    done
+    
     set -x
-    cd /root/bootstrap
+    cd /app/hdfs/bootstrap
     # Apply custom config file context
     for cfg in ./*; do
       if [[ ! "$cfg" =~ bootstrap.sh ]]; then
@@ -95,4 +111,18 @@ data:
         <value>true</value>
         <description>creates necessary schema on a startup if one doesn't exist. set this to false, after creating it once</description>
       </property>
+    
+      <property>
+        <name>hive.optimize.sort.dynamic.partition</name>
+        <value>true</value>
+        <description>When enabled dynamic partitioning column will be globally sorted.
+        This way we can keep only one record writer open for each partition value
+        in the reducer thereby reducing the memory pressure on reducers.</description>
+      </property>
+      <property>
+        <name>hive.exec.dynamic.partition.mode</name>
+        <value>nostrict</value>
+        <description>In strict mode, the user must specify at least one static partition in case the user accidentally overwrites all partitions.</description>
+      </property>
+    
     </configuration>

@@ -53,7 +53,6 @@
 
     <property>
         <name>hadoop.tmp.dir</name>
-        <value>/usr/local/hadoop/tmpdir</value>
+        <value>/app/hdfs/hadoop/tmpdir</value>
     </property>
-
 </configuration>

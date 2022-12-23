@@ -1,0 +1,43 @@
+FROM harbor.my.org:1080/chenseanxy/hadoop-ubussh:3.2.1-nolib
+
+USER root
+
+WORKDIR /
+ADD files/fuse-2.9.2.tar.gz /
+WORKDIR /fuse-2.9.2
+RUN ./configure --prefix=/usr
+RUN make
+RUN make install
+RUN apt install -y kmod
+
+WORKDIR /
+COPY files/iotest/mpich-3.2.tar.gz /mpich-3.2.tar.gz
+RUN tar -xzvf mpich-3.2.tar.gz
+WORKDIR /mpich-3.2
+RUN ./configure --disable-fortran
+RUN make
+RUN make install
+RUN mpicc || :
+ENV MPI_CC=mpicc
+
+WORKDIR /
+COPY files/iotest/mdtest-master.zip /mdtest-master.zip
+RUN unzip mdtest-master.zip
+WORKDIR /mdtest-master
+RUN make
+RUN mv mdtest /usr/local/bin
+RUN mdtest || :
+
+RUN apt-get install -y libaio-dev
+
+WORKDIR /
+COPY files/iotest/fio-fio-3.32.zip /fio-fio-3.32.zip
+RUN unzip fio-fio-3.32.zip
+WORKDIR fio-fio-3.32
+RUN ./configure
+RUN make
+RUN make install
+RUN fio || :
+
+USER hdfs
+WORKDIR ${HADOOP_HOME}
