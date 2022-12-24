@@ -50,7 +50,8 @@ spec:
                   key: mysql-root-password
       volumes:
         - name: data
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: meta-mysql-claim
 ---
 kind: Service
 apiVersion: v1

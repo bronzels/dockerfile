@@ -147,9 +147,10 @@ hive-site.xml
       </property>
 
 EOF
-
+#kubectl apply -f meta-pvc.yaml -n hadoop
 kubectl apply -n hadoop -f yaml/
 kubectl delete -n hadoop -f yaml/
+#kubectl delete -f meta-pvc.yaml -n hadoop
 
 cat << students.txt > EOF
 EOF

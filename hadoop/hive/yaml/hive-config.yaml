@@ -113,16 +113,8 @@ data:
       </property>
     
       <property>
-        <name>hive.optimize.sort.dynamic.partition</name>
-        <value>true</value>
-        <description>When enabled dynamic partitioning column will be globally sorted.
-        This way we can keep only one record writer open for each partition value
-        in the reducer thereby reducing the memory pressure on reducers.</description>
+        <name>hive.metastore.uris</name>
+        <value>thrift://hive-service:9083</value>
+        <description>Thrift URI for the remote metastore. Used by metastore client to connect to remote metastore.</description>
       </property>
-      <property>
-        <name>hive.exec.dynamic.partition.mode</name>
-        <value>nostrict</value>
-        <description>In strict mode, the user must specify at least one static partition in case the user accidentally overwrites all partitions.</description>
-      </property>
-    
     </configuration>
