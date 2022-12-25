@@ -28,6 +28,13 @@ helm install my -n hadoop -f values.yaml \
   --set yarn.nodeManager.resources.limits.memory="16384Mi" \
   --set yarn.nodeManager.resources.limits.cpu="4000m" \
   ./
+helm install my -n hadoop -f values.yaml \
+  --set yarn.nodeManager.replicas=3 \
+  --set yarn.nodeManager.resources.requests.memory="16384Mi" \
+  --set yarn.nodeManager.resources.requests.cpu="3000m" \
+  --set yarn.nodeManager.resources.limits.memory="16384Mi" \
+  --set yarn.nodeManager.resources.limits.cpu="3000m" \
+  ./
 kubectl exec -it -n hadoop my-hadoop-yarn-rm-0 -- /bin/bash
   hadoop jar /app/hdfs/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-3.2.1-tests.jar TestDFSIO -write -nrFiles 5 -fileSize 128MB -resFile /tmp/TestDFSIOwrite.txt
   hdfs dfs -rm -r -f /teragen

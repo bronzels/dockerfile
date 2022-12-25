@@ -28,33 +28,67 @@ data:
     # Apply custom config file context
     for cfg in ./*; do
       if [[ ! "$cfg" =~ bootstrap.sh ]]; then
-        echo $cfg
-        cat $cfg
-        cat $cfg > $HIVE_HOME/conf/${cfg##*/}
+        if [[ "$cfg" =~ hive-site.xml.internal ]];
+        then
+          if [[ "${HOSTNAME}" =~ hive-serv ]]; then
+            echo "hive-site.xml is setup in server"
+            cat $cfg > $HIVE_HOME/conf/hive-site.xml
+          fi
+        elif [[ "$cfg" =~ hive-site.xml.external ]];
+        then
+          if [[ "${HOSTNAME}" =~ hive-client ]]; then
+            echo "hive-site.xml is setup in client"
+            cat $cfg > $HIVE_HOME/conf/hive-site.xml
+          fi
+        elif [[ "$cfg" =~ hive-env.sh ]];
+        then
+          if [[ "${HOSTNAME}" =~ hive-client ]]; then
+            echo "hive-env.sh is setup in client"
+            cat $cfg > $HIVE_HOME/conf/hive-env.sh
+          fi
+        elif [[ "$cfg" =~ metastore.sh ]];
+        then
+          if [[ "${HOSTNAME}" =~ hive-serv ]]; then
+            echo "metastore.sh is setup in server"
+            cat $cfg > $HIVE_HOME/bin/ext/metastore.sh
+          fi
+        else
+          echo "other common non bootstrap.sh config files are setup"
+          echo $cfg
+          cat $cfg
+          cat $cfg > $HIVE_HOME/conf/${cfg##*/}
+        fi
       fi
     done
     # Replace hive metadata password
-    sed -i 's/${HIVE_METADATA_PASSWORD}/'$HIVE_METADATA_PASSWORD'/g' `grep '${HIVE_METADATA_PASSWORD}' -rl $HIVE_HOME/conf`
+    if [[ "${HOSTNAME}" =~ hive-serv ]]; then
+      sed -i 's/${HIVE_METADATA_PASSWORD}/'$HIVE_METADATA_PASSWORD'/g' `grep '${HIVE_METADATA_PASSWORD}' -rl $HIVE_HOME/conf`
+    fi
     # initSchema
     echo "step 1"
     if [[ ! -d $HIVE_HOME/log ]]; then
       mkdir $HIVE_HOME/log
     fi
     if [[ ! -e $HADOOP_CONF_DIR/hive-metastore-initialization.out ]]; then
-      echo "step 2"
-      $HADOOP_HOME/bin/hadoop fs -mkdir -p /tmp
-      $HADOOP_HOME/bin/hadoop fs -mkdir -p /user/hive/warehouse
-      $HADOOP_HOME/bin/hadoop fs -chmod g+w /tmp
-      $HADOOP_HOME/bin/hadoop fs -chmod g+w /user/hive/warehouse
-      $HIVE_HOME/bin/schematool -dbType mysql -initSchema --verbose &> $HIVE_HOME/log/hive-metastore-initialization.out
+        if [[ "${HOSTNAME}" =~ hive-serv ]]; then
+        echo "step 2 specific to server, setup hdfs dirs"
+        $HADOOP_HOME/bin/hadoop fs -mkdir -p /tmp
+        $HADOOP_HOME/bin/hadoop fs -mkdir -p /user/hive/warehouse
+        $HADOOP_HOME/bin/hadoop fs -chmod g+w /tmp
+        $HADOOP_HOME/bin/hadoop fs -chmod g+w /user/hive/warehouse
+        echo "step 2 specific to server, init db"
+        $HIVE_HOME/bin/schematool -dbType mysql -initSchema --verbose &> $HIVE_HOME/log/hive-metastore-initialization.out
+      fi
     fi
-    echo "step 3"
-    #$HIVE_HOME/bin/hiveserver2 2> $HIVE_HOME/log/hive-server2_stderr.log > $HIVE_HOME/log/hive-server2_stdout.log &
-    $HIVE_HOME/bin/hive --service metastore 2> $HIVE_HOME/log/hive-metastore_stderr.log > $HIVE_HOME/log/hive-metastore_stdout.log &
-    cp $HIVE_HOME/conf/hive-env.sh.template $HIVE_HOME/conf/hive-env.sh && echo "export HADOOP_CLIENT_OPTS=\"-Xmx512m -XX:MaxPermSize=1024m \$HADOOP_CLIENT_OPTS\"" >> $HIVE_HOME/conf/hive-env.sh
+    if [[ "${HOSTNAME}" =~ "hive-serv" ]]; then
+      echo "step 3 specific to server, start servers"
+      #$HIVE_HOME/bin/hiveserver2 2> $HIVE_HOME/log/hive-server2_stderr.log > $HIVE_HOME/log/hive-server2_stdout.log &
+      $HIVE_HOME/bin/hive --service metastore 2> $HIVE_HOME/log/hive-metastore_stderr.log > $HIVE_HOME/log/hive-metastore_stdout.log &
+      #cp $HIVE_HOME/conf/hive-env.sh.template $HIVE_HOME/conf/hive-env.sh && echo "export HADOOP_CLIENT_OPTS=\"-Xmx512m -XX:MaxPermSize=1024m \$HADOOP_CLIENT_OPTS\"" >> $HIVE_HOME/conf/hive-env.sh
+    fi
     # keep running
     sleep infinity
-  hive-site.xml: |-
+  hive-site.xml.internal: |-
     <?xml version="1.0" encoding="UTF-8" standalone="no"?>
     <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
     <configuration>
@@ -112,9 +146,39 @@ data:
         <description>creates necessary schema on a startup if one doesn't exist. set this to false, after creating it once</description>
       </property>
     
+    </configuration>
+  hive-site.xml.external: |-
+    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+    <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+    <configuration>
       <property>
         <name>hive.metastore.uris</name>
         <value>thrift://hive-service:9083</value>
         <description>Thrift URI for the remote metastore. Used by metastore client to connect to remote metastore.</description>
       </property>
     </configuration>
+  hive-env.sh: |-
+    export HADOOP_CLIENT_OPTS="-Xmx6144m $HADOOP_CLIENT_OPTS"
+  metastore.sh: |-
+    THISSERVICE=metastore
+    export SERVICE_LIST="${SERVICE_LIST}${THISSERVICE} "
+    metastore() {
+      echo "$(timestamp): Starting Hive Metastore Server"
+      CLASS=org.apache.hadoop.hive.metastore.HiveMetaStore
+      if $cygwin; then
+      HIVE_LIB=`cygpath -w "$HIVE_LIB"`
+      fi
+      JAR=${HIVE_LIB}/hive-metastore-*.jar
+      # hadoop 20 or newer - skip the aux_jars option and hiveconf
+      export HADOOP_CLIENT_OPTS=" -Dproc_metastore $HADOOP_CLIENT_OPTS "
+      export HIVE_METASTORE_HADOOP_OPTS="-Xms2048m -Xmx4096m"
+      export HADOOP_OPTS="$HIVE_METASTORE_HADOOP_OPTS $HADOOP_OPTS"
+      exec $HADOOP jar $JAR $CLASS "$@"
+    }
+    metastore_help() {
+      metastore -h
+    }
+    timestamp()
+    {
+      date +"%Y-%m-%d %T"
+    }

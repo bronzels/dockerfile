@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hive-client
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: hive-cli
+  template:
+    metadata:
+      labels:
+        app: hive-cli
+    spec:
+      containers:
+        - name: hive
+          image: harbor.my.org:1080/bronzels/hive-ubussh-cubefs:0.1
+          command: ["bash", "-c", "cp /app/hdfs/bootstrap/bootstrap.sh /tmp/ && chmod +x /tmp/bootstrap.sh && /tmp/bootstrap.sh"]
+          resources:
+            requests:
+              memory: "4Gi"
+              cpu: "1000m"
+            limits:
+              memory: "6Gi"
+              cpu: "1000m"
+          ports:
+            - containerPort: 10000
+            - containerPort: 10002
+            - containerPort: 9083
+          env:
+            - name: HIVE_METADATA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: hive-metastore-secret
+                  key: database-user-password
+          volumeMounts:
+            - name: hadoop-config-volume
+              mountPath: /tmp/hadoop-config
+            - name: hive-custom-config-volume
+              mountPath: /app/hdfs/bootstrap
+      volumes:
+        - name: hadoop-config-volume
+          configMap:
+            name: my-hadoop
+        - name: hive-custom-config-volume
+          configMap:
+            name: hive-custom-config-cm

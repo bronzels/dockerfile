@@ -7,7 +7,7 @@ metadata:
 spec:
   containers:
     - name: distfs-test
-      image: harbor.my.org:1080/chenseanxy/hadoop-ubussh:3.2.1-nolib
+      image: harbor.my.org:1080/chenseanxy/hadoop-ubussh-distfs-test:3.2.1-nolib
       imagePullPolicy: Always
       command: ["tail"]
       args: ["-f", "/dev/null"]

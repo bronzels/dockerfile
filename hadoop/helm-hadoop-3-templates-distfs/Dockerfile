@@ -49,7 +49,7 @@ RUN cmake --version
 
 RUN apt install -y zlib1g-dev libbz2-dev
 RUN apt install -y maven
-RUN apt install -y jq
+RUN apt install -y jq bc netcat-traditional
 
 
 RUN useradd -d /app/hdfs hdfs

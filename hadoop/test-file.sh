@@ -12,12 +12,19 @@ fi
 
 HDPHOME=${MYHOME}/workspace/dockerfile/hadoop/helm-hadoop-3
 
+nohup docker build ./ --add-host pypi.my.org:192.168.0.62 -f Dockerfile-usertestsys --progress=plain --build-arg rev="${rev}" -t harbor.my.org:1080/chenseanxy/hadoop-ubussh-cubefs:3.2.1-nolib > build-Dockerfile-hadoop-ubussh-cubefs.log 2>&1 &
+tail -f build-Dockerfile-hadoop-ubussh-cubefs.log
+#docker build ./ --progress=plain --build-arg rev="${rev}" -t harbor.my.org:1080/chenseanxy/hadoop-ubussh-cubefs:3.2.1-nolib
+docker push harbor.my.org:1080/chenseanxy/hadoop-ubussh-cubefs:3.2.1-nolib
+
 file=helm-hadoop-3-templates-distfs/distfs-test.yaml
 cp ${file}.template ${file}
 #juicefs
-$SED -i 's@harbor.my.org:1080/chenseanxy/hadoop-ubussh@harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs@g' ${file}
+distfs=
 #cubefs
-$SED -i 's@harbor.my.org:1080/chenseanxy/hadoop-ubussh@harbor.my.org:1080/chenseanxy/hadoop-ubussh-cubefs@g' ${file}
+distfs=cubefs
+$SED -i "s@harbor.my.org:1080/chenseanxy/hadoop-ubussh-distfs-test@harbor.my.org:1080/chenseanxy/hadoop-ubussh-${distfs}-distfs-test@g" ${file}
+
 kubectl apply -f $file
 kubectl delete -f $file
 kubectl exec -it distfs-test -- /bin/bash

@@ -107,7 +107,7 @@ NOTES:
    kubectl exec -n hadoop -it my-hadoop-hdfs-nn-0 -- /usr/local/hadoop/bin/hdfs dfsadmin -report
 
 2. You can list the yarn nodes by running this command:
-   kubectl exec -n hadoop -it my-hadoop-yarn-rm-0 -- /usr/local/hadoop/bin/yarn node -list
+   kubectl exec -n hadoop -it my-hadoop-yarn-rm-0 -- yarn node -list
 
 3. Create a port-forward to the yarn resource manager UI:
    kubectl port-forward -n hadoop my-hadoop-yarn-rm-0 8088:8088

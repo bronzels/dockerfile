@@ -146,7 +146,16 @@ hive-site.xml
         <description>In strict mode, the user must specify at least one static partition in case the user accidentally overwrites all partitions.</description>
       </property>
 
+set mapred.map.child.java.opts=-server -Xmx3072m -Djava.net.preferIPv4Stack=true;
+set mapred.reduce.child.java.opts=-server -Xms2048m -Xmx4096m -Djava.net.preferIPv4Stack=true;
+set mapreduce.map.memory.mb=2048;
+set mapreduce.reduce.memory.mb=3072;
+set io.sort.mb=800;
+
+set mapreduce.job.reduces=8
 EOF
+
+#需要先安装好nfs client sc
 #kubectl apply -f meta-pvc.yaml -n hadoop
 kubectl apply -n hadoop -f yaml/
 kubectl delete -n hadoop -f yaml/
@@ -162,14 +171,17 @@ kubectl describe pod -n hadoop `kubectl get pod -n hadoop | grep hive-serv | awk
 kubectl logs -n hadoop `kubectl get pod -n hadoop | grep hive-serv | awk '{print $1}'`
 kubectl cp employee.txt -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-serv | awk '{print $1}'`:/app/hdfs/hive/
 kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-serv | awk '{print $1}'` -- bash
-  hadoop fs -put employee.txt /tmp/
-  hadoop fs -ls /tmp/
+  #hadoop fs -put employee.txt /tmp/
+  #hadoop fs -ls /tmp/
   hive
-    create database test1;
-    use test1;
-    create table employee (eud int,name String,salary String,destination String) COMMENT 'Employee table' ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' STORED AS TEXTFILE;
-    load data local inpath 'employee.txt' overwrite into table test1.employee;
-    select * from employee;
+    DROP DATABASE IF EXISTS test1 CASCADE;
+    CREATE DATABASE test1;
+    USE test1;
+    CREATE TABLE employee (eud INT,name STRING,salary STRING,destination STRING) COMMENT 'Employee table' ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' STORED AS TEXTFILE;
+    LOAD DATA LOCAL INPATH 'employee.txt' OVERWRITE INTO TABLE test1.employee;
+    USE test1;
+    SELECT * FROM employee;
+    DROP DATABASE test1 CASCADE;
 
 kubectl get configmap hive-custom-config-cm-ext -n hadoop -o yaml
 

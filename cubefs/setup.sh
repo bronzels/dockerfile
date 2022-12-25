@@ -89,12 +89,13 @@ kubectl exec -it client-78b5b5c497-zbdf4 /bin/bash -n cubefs
 kubectl exec -it -n hadoop my-hadoop-yarn-rm-0 -- /bin/bash
   /cfs/bin/cfs-cli config set --addr master-service.cubefs:17010
   /cfs/bin/cfs-cli user create hdfs -y
+  /cfs/bin/cfs-cli user create hdfs -y --access-key=u2WGjkhUtI15EXYm --secret-key=A5hi5bugDdYZnlJr6wjy8pw5CeDAySO2
 :<<EOF
-    Access Key : 7QvXDdpBczgTwZt3
-    Secret Key : SFXxvPnmO5eDfsHNirtdJ6bvwBwwwrxT
+  Access Key : u2WGjkhUtI15EXYm
+  Secret Key : A5hi5bugDdYZnlJr6wjy8pw5CeDAySO2
 EOF
-  #curl -v "http://master-0.master-service.cubefs:17010/admin/createVol?name=hdfs&capacity=100&owner=hdfs&mpCount=3"
-  cfs-cli volume create hdfs
+  #curl -v "http://master-0.master-service.cubefs:17010/admin/createVol?name=hdfs&capacity=200&owner=hdfs&mpCount=3"
+  /cfs/bin/cfs-cli volume create hdfs hdfs --capacity 200 -y
 
 /cfs/bin/start.sh
 /cfs/bin/cfs-client -f -c /cfs/conf/fuse.json
