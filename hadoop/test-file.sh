@@ -10,19 +10,23 @@ else
     SED=sed
 fi
 
-HDPHOME=${MYHOME}/workspace/dockerfile/hadoop/helm-hadoop-3
+cd ${MYHOME}/workspace/dockerfile/hadoop
 
-nohup docker build ./ --add-host pypi.my.org:192.168.0.62 -f Dockerfile-usertestsys --progress=plain --build-arg rev="${rev}" -t harbor.my.org:1080/chenseanxy/hadoop-ubussh-cubefs:3.2.1-nolib > build-Dockerfile-hadoop-ubussh-cubefs.log 2>&1 &
-tail -f build-Dockerfile-hadoop-ubussh-cubefs.log
-#docker build ./ --progress=plain --build-arg rev="${rev}" -t harbor.my.org:1080/chenseanxy/hadoop-ubussh-cubefs:3.2.1-nolib
-docker push harbor.my.org:1080/chenseanxy/hadoop-ubussh-cubefs:3.2.1-nolib
-
-file=helm-hadoop-3-templates-distfs/distfs-test.yaml
-cp ${file}.template ${file}
 #juicefs
-distfs=
+distfs=juicefs
 #cubefs
 distfs=cubefs
+
+cd helm-hadoop-3-templates-distfs/
+
+cp -r ../../image/iotest ./files/
+cp -r ../../image/fuse-2.9.2.tar.gz ./files/
+
+docker build ./ --progress=plain --build-arg distfs="${distfs}" -f Dockerfile-distfs-test -t harbor.my.org:1080/chenseanxy/hadoop-ubussh-${distfs}-distfs-test:3.2.1-nolib
+docker push harbor.my.org:1080/chenseanxy/hadoop-ubussh-${distfs}-distfs-test:3.2.1-nolib
+
+file=distfs-test.yaml
+cp ${file}.template ${file}
 $SED -i "s@harbor.my.org:1080/chenseanxy/hadoop-ubussh-distfs-test@harbor.my.org:1080/chenseanxy/hadoop-ubussh-${distfs}-distfs-test@g" ${file}
 
 kubectl apply -f $file

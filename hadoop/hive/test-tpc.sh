@@ -10,15 +10,19 @@ else
     SED=sed
 fi
 
+kubectl cp employee.txt -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'`:/app/hdfs/hive/hive-testbench/employee.txt
+kubectl cp -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'`:/app/hdfs/hive/hive-testbench/tpcds-setup.sh ./tpcds-setup.sh
+kubectl cp ./tpcds-setup.sh -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'`:/app/hdfs/hive/hive-testbench/tpcds-setup.sh
 #kubectl cp hive-testbench -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-serv | awk '{print $1}'`:/app/hdfs/hive/hive-testbench
 kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- bash
   cd hive-testbench
-  #for SCALE in 10 50 100; do
   for ts in ds h; do
-    for SCALE in 5 10 20; do
+    for SCALE in 10 50 100; do
+    #for SCALE in 2 5; do
       echo "ts:${ts}"
       echo "SCALE:${SCALE}"
-      #SCALE=20
+      #ts=ds
+      #SCALE=10
       start=$(date +"%s.%9N")
       ./tpc${ts}-setup.sh ${SCALE} /tmp/tpc${ts}-gen
       end=$(date +"%s.%9N")
@@ -29,14 +33,16 @@ kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive
       echo "use tpc${ts}_bin_partitioned_orc_${SCALE};" > dbuse.sql
       MAX_REDUCERS=2500 # maximum number of useful reducers for any scale
       REDUCERS=$((test ${SCALE} -gt ${MAX_REDUCERS} && echo ${MAX_REDUCERS}) || echo ${SCALE})
-      echo "REDUCERS:${REDUCERS}"queries
+      echo "REDUCERS:${REDUCERS}"
       if [[ "${ts}" =~ "ds" ]]; then
-        nummax=99
+        nummax=100
       else
-        nummax=22
+        nummax=23
       fi
       echo "nummax:${nummax}"
-      for num in {1..${nummax}}
+      num=1
+      #for num in {1..${nummax}}
+      while [ $num -lt $nummax ]
       do
         if [[ "${ts}" =~ "ds" ]]; then
           queryfile="sample-queries-tpc${ts}/query${num}.sql"
@@ -45,11 +51,12 @@ kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive
         fi
         echo "queryfile:${queryfile}"
         start=$(date +"%s.%9N")
-        #hive --hivevar REDUCERS=${REDUCERS} -i dbuse.sql -i settings/load-partitioned.sql -f ${queryfile}
-        hive --hivevar REDUCERS=${REDUCERS} -i dbuse.sql -f ${queryfile}
+        hive --hivevar REDUCERS=${REDUCERS} -i dbuse.sql -i settings/load-partitioned.sql -f ${queryfile}
+        #hive --hivevar REDUCERS=${REDUCERS} -i dbuse.sql -f ${queryfile}
         end=$(date +"%s.%9N")
         echo timediff:`echo "scale=9;$end - $start" | bc`
         echo "----------------------------------------------------------------------------------------------------------------------------------------"
+        num=$[$num+1]
       done
 
       hive -e "DROP DATABASE IF EXISTS tpc${ts}_bin_partitioned_orc_${SCALE} CASCADE"

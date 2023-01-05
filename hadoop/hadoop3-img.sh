@@ -65,8 +65,6 @@ file=Dockerfile
 cp ../../../helm-hadoop-3-templates-distfs/${file} ${file}.template
 
 mkdir files
-#cp -r ../../../image/iotest ./files/
-cp -r ../../../image/fuse-2.9.2.tar.gz ./files/
 cp -r ../../../image/go1.19.2.linux-amd64.tar.gz ./files/
 cp -r ../../../image/openssl-1.1.1s.tar.gz ./files/
 cp -r ../../../image/settings.xml ./files/

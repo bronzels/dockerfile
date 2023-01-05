@@ -19,6 +19,7 @@ COPY --chown=hdfs:root hive-testbench $HIVE_HOME/hive-testbench
 WORKDIR $HIVE_HOME/hive-testbench
 COPY --chown=hdfs:root load-partitioned.sql settings/load-partitioned.sql
 #COPY --chown=hdfs:root load-flat.sql settings/load-flat.sql
+COPY --chown=hdfs:root ddl-tpcds-bin_partitioned ddl-tpcds/bin_partitioned
 RUN ./tpcds-build.sh
 RUN ./tpch-build.sh
 WORKDIR $HIVE_HOME

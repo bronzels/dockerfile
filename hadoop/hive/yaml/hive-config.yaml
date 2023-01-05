@@ -146,6 +146,11 @@ data:
         <description>creates necessary schema on a startup if one doesn't exist. set this to false, after creating it once</description>
       </property>
     
+      <property>
+        <name>hive.metastore.uris</name>
+        <value>thrift://hive-service:9083</value>
+        <description>Thrift URI for the remote metastore. Used by metastore client to connect to remote metastore.</description>
+      </property>
     </configuration>
   hive-site.xml.external: |-
     <?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -157,28 +162,3 @@ data:
         <description>Thrift URI for the remote metastore. Used by metastore client to connect to remote metastore.</description>
       </property>
     </configuration>
-  hive-env.sh: |-
-    export HADOOP_CLIENT_OPTS="-Xmx6144m $HADOOP_CLIENT_OPTS"
-  metastore.sh: |-
-    THISSERVICE=metastore
-    export SERVICE_LIST="${SERVICE_LIST}${THISSERVICE} "
-    metastore() {
-      echo "$(timestamp): Starting Hive Metastore Server"
-      CLASS=org.apache.hadoop.hive.metastore.HiveMetaStore
-      if $cygwin; then
-      HIVE_LIB=`cygpath -w "$HIVE_LIB"`
-      fi
-      JAR=${HIVE_LIB}/hive-metastore-*.jar
-      # hadoop 20 or newer - skip the aux_jars option and hiveconf
-      export HADOOP_CLIENT_OPTS=" -Dproc_metastore $HADOOP_CLIENT_OPTS "
-      export HIVE_METASTORE_HADOOP_OPTS="-Xms2048m -Xmx4096m"
-      export HADOOP_OPTS="$HIVE_METASTORE_HADOOP_OPTS $HADOOP_OPTS"
-      exec $HADOOP jar $JAR $CLASS "$@"
-    }
-    metastore_help() {
-      metastore -h
-    }
-    timestamp()
-    {
-      date +"%Y-%m-%d %T"
-    }

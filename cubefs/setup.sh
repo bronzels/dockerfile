@@ -70,12 +70,11 @@ mount|grep data0
 
 kubectl create ns cubefs
 cp ../../values.yaml ./
-ansible all -m shell -a"mkdir /data0/cubefs"
+ansible all -m shell -a"mkdir -p /data0/cubefs/path"
+ansible all -m shell -a"mkdir -p /data0/cubefs/data"
 helm install my ./ -n cubefs
 helm uninstall my -n cubefs
 ansible all -m shell -a"rm -rf /data0/cubefs"
-ansible all -m shell -a"mkdir -p /data0/cubefs/path"
-ansible all -m shell -a"mkdir -p /data0/cubefs/data"
 
 watch kubectl get all -n cubefs
 
@@ -84,7 +83,7 @@ docker load -i quay.io_k8scsi_csi-node-driver-registrar_v1.3.0.tar.gz
 
 #command: ["/bin/bash", "-ce", "tail -f /dev/null"]
 kubectl edit deployment client -n cubefs
-kubectl exec -it client-78b5b5c497-zbdf4 /bin/bash -n cubefs
+#kubectl exec -it client-78b5b5c497-zbdf4 /bin/bash -n cubefs
 #--password hdfs --access-key=hdfs --secret-key=12345678
 kubectl exec -it -n hadoop my-hadoop-yarn-rm-0 -- /bin/bash
   /cfs/bin/cfs-cli config set --addr master-service.cubefs:17010

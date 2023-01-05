@@ -14,8 +14,8 @@ brew install juicefs
 juicefs format \
     --storage minio \
     --bucket https://localhost:1443/rtc \
-    --access-key QR9RXSLIPZCLQCHB240V \
-    --secret-key ThPMZakACdQ42AU4a8A3HgGJAotvm148hW4jpv4m \
+    --access-key BCRG2IUBDWMKLQD76NWZ \
+    --secret-key KRKbToTPOaZtBEceFicW1Iako5YXpZaquVqzKdBC \
     "redis://localhost:6379/1" \
     miniofs
 EOF
@@ -44,30 +44,31 @@ modprobe fuse
 ls /dev/fuse
 
 #kubectl run juicefs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubu-juicefs:3.2.1-nolib --image-pull-policy="Always" --restart=Never --rm -- /bin/bash
-
-kubectl exec -it juicefs-test -- /bin/bash
 #kubectl run juicefs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib --restart=Never --rm -- /bin/bash
-  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local EUQPL08FI26I3SC1QHB3 FrQ17BqUELW7kWhzVk9udlM278U9sWv98CRJlcm5
+
+kubectl exec -it distfs-test -- /bin/bash
+  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local BCRG2IUBDWMKLQD76NWZ KRKbToTPOaZtBEceFicW1Iako5YXpZaquVqzKdBC
   mc mb minio/jfs
   mc ls minio/jfs
   juicefs format \
       --storage minio \
       --bucket https://minio.minio-tenant-1.svc.cluster.local/jfs?tls-insecure-skip-verify=true \
-      --access-key EUQPL08FI26I3SC1QHB3 \
-      --secret-key FrQ17BqUELW7kWhzVk9udlM278U9sWv98CRJlcm5 \
+      --access-key BCRG2IUBDWMKLQD76NWZ \
+      --secret-key KRKbToTPOaZtBEceFicW1Iako5YXpZaquVqzKdBC \
       "redis://:redis@my-redis-master.redis.svc.cluster.local:6379/1" \
       miniofs
+  #mount test use distfs-test image and modprob 1stly
+  #unnecessary if only for hdfs
   mkdir jfsmnt
-  juicefs mount "redis://my-redis-ha.redis.svc.cluster.local:6379/1" jfsmnt
+  juicefs mount "redis://:redis@my-redis-master.redis.svc.cluster.local:6379/1" jfsmnt
   export MINIO_ROOT_USER=admin
   export MINIO_ROOT_PASSWORD=12345678
-  miniogw gateway juicefs --console-address ':42311' redis://my-redis-ha.redis.svc.cluster.local:6379/1 &
-kubectl port-forward juicefs-test 42311:42311 &
+  miniogw gateway juicefs --console-address ':42311' redis://:redis@my-redis-master.redis.svc.cluster.local:6379/1 &
+kubectl port-forward distfs-test 42311:42311 &
 
 kubectl exec -it -n hadoop my-hadoop-yarn-rm-0 -- /bin/bash
-  su hdfs
-    hdfs dfs -mkdir -p /jobhistory/logs
-    hdfs dfs -mkdir -p /user/hdfs/yarn-logs
+  hdfs dfs -mkdir -p /jobhistory/logs
+  hdfs dfs -mkdir -p /user/hdfs/yarn-logs
 kubectl port-forward -n hadoop my-hadoop-yarn-rm-0 42311:42311 &
 
 

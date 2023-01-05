@@ -56,5 +56,6 @@ To connect to your database from outside the cluster execute the following comma
 EOF
 watch kubectl get all -n redis
 
-kubectl port-forward -n redis svc/my-redis-ha 6379:6379 &
+#kubectl port-forward -n redis svc/my-redis-ha 6379:6379 &
+kubectl port-forward -n redis svc/my-redis-master 6379:6379 &
 

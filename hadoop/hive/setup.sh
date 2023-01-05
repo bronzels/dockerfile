@@ -97,14 +97,17 @@ docker build -f Dockerfile.dbtool -t harbor.my.org:1080/bronzels/database-tools:
 docker push harbor.my.org:1080/bronzels/database-tools:1.0-SNAPSHOT
 
 cd $HIVEHOME
-file=yaml/hive-deploy.yaml
-cp -f ${file}.template ${file}
-
 #juicefs
 distfs=juicefs
 #cubefs
 distfs=cubefs
 
+
+file=yaml/hive-deploy.yaml
+cp -f ${file}.template ${file}
+$SED -i "s@harbor.my.org:1080/bronzels/hive-ubussh:0.1@harbor.my.org:1080/bronzels/hive-ubussh-${distfs}:0.1@g" ${file}
+file=yaml/hive-client.yaml
+cp -f ${file}.template ${file}
 $SED -i "s@harbor.my.org:1080/bronzels/hive-ubussh:0.1@harbor.my.org:1080/bronzels/hive-ubussh-${distfs}:0.1@g" ${file}
 
 :<<EOF
@@ -153,6 +156,50 @@ set mapreduce.reduce.memory.mb=3072;
 set io.sort.mb=800;
 
 set mapreduce.job.reduces=8
+
+  hive-env.sh: |-
+    export HADOOP_CLIENT_OPTS="-Xms4096m  -Xmx4096m $HADOOP_CLIENT_OPTS"
+  metastore.sh: |-
+    THISSERVICE=metastore
+    export SERVICE_LIST="${SERVICE_LIST}${THISSERVICE} "
+    metastore() {
+      echo "$(timestamp): Starting Hive Metastore Server"
+      CLASS=org.apache.hadoop.hive.metastore.HiveMetaStore
+      if $cygwin; then
+      HIVE_LIB=`cygpath -w "$HIVE_LIB"`
+      fi
+      JAR=${HIVE_LIB}/hive-metastore-*.jar
+      # hadoop 20 or newer - skip the aux_jars option and hiveconf
+      export HADOOP_CLIENT_OPTS=" -Dproc_metastore $HADOOP_CLIENT_OPTS "
+      export HIVE_METASTORE_HADOOP_OPTS="-Xmx14336m"
+      export HADOOP_OPTS="$HIVE_METASTORE_HADOOP_OPTS $HADOOP_OPTS"
+      exec $HADOOP jar $JAR $CLASS "$@"
+    }
+    metastore_help() {
+      metastore -h
+    }
+    timestamp()
+    {
+      date +"%Y-%m-%d %T"
+      date +"%Y-%m-%d %T"
+    }
+
+          resources:
+            requests:
+              memory: "6Gi"
+              cpu: "2000m"
+            limits:
+              memory: "6Gi"
+              cpu: "2000m"
+
+          resources:
+            requests:
+              memory: "8Gi"
+              cpu: "2000m"
+            limits:
+              memory: "16Gi"
+              cpu: "2000m"
+
 EOF
 
 #需要先安装好nfs client sc
@@ -169,8 +216,8 @@ kubectl delete -n hadoop -f yaml/
 
 kubectl describe pod -n hadoop `kubectl get pod -n hadoop | grep hive-serv | awk '{print $1}'`
 kubectl logs -n hadoop `kubectl get pod -n hadoop | grep hive-serv | awk '{print $1}'`
-kubectl cp employee.txt -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-serv | awk '{print $1}'`:/app/hdfs/hive/
-kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-serv | awk '{print $1}'` -- bash
+kubectl cp employee.txt -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'`:/app/hdfs/hive/
+kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- bash
   #hadoop fs -put employee.txt /tmp/
   #hadoop fs -ls /tmp/
   hive

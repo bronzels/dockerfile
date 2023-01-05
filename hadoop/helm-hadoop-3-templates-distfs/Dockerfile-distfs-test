@@ -1,3 +1,4 @@
+ARG distfs
 FROM harbor.my.org:1080/chenseanxy/hadoop-ubussh-${distfs}:3.2.1-nolib
 
 USER root
