@@ -19,10 +19,12 @@ kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive
   for ts in ds h; do
     for SCALE in 10 50 100; do
     #for SCALE in 2 5; do
-      echo "ts:${ts}"
-      echo "SCALE:${SCALE}"
       #ts=ds
       #SCALE=10
+      echo "ts:${ts}"
+      echo "SCALE:${SCALE}"
+      csvfile=test-tpc${ts}-result-cluster-3c16g-3-data-${SCALE}g.csv
+      echo "csvfile:${csvfile}"
       start=$(date +"%s.%9N")
       ./tpc${ts}-setup.sh ${SCALE} /tmp/tpc${ts}-gen
       end=$(date +"%s.%9N")
@@ -42,6 +44,8 @@ kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive
       echo "nummax:${nummax}"
       num=1
       #for num in {1..${nummax}}
+      #echo -e "query\ttime" > $csvfile
+      echo -e "query,time" > $csvfile
       while [ $num -lt $nummax ]
       do
         if [[ "${ts}" =~ "ds" ]]; then
@@ -51,14 +55,17 @@ kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive
         fi
         echo "queryfile:${queryfile}"
         start=$(date +"%s.%9N")
-        hive --hivevar REDUCERS=${REDUCERS} -i dbuse.sql -i settings/load-partitioned.sql -f ${queryfile}
-        #hive --hivevar REDUCERS=${REDUCERS} -i dbuse.sql -f ${queryfile}
+        #hive --hivevar REDUCERS=${REDUCERS} -i dbuse.sql -i settings/load-partitioned.sql -f ${queryfile}
+        date
         end=$(date +"%s.%9N")
-        echo timediff:`echo "scale=9;$end - $start" | bc`
+        delta=`echo "scale=9;$end - $start" | bc`
+        echo timediff:${delta}
         echo "----------------------------------------------------------------------------------------------------------------------------------------"
+        #echo -e "$num\t${delta}" >> $csvfile
+        echo -e "$num,${delta}" >> $csvfile
         num=$[$num+1]
       done
-
+      #cat test-tpcds-result-cluster-3c16g-3-data-10g.txt | grep timediff: | sed 's/timediff://g'
       hive -e "DROP DATABASE IF EXISTS tpc${ts}_bin_partitioned_orc_${SCALE} CASCADE"
       hive -e "DROP DATABASE IF EXISTS tpc${ts}_text_${SCALE} CASCADE"
       #hive -e "use tpcds_bin_partitioned_orc_10;show tables" | xargs -I '{}' hive -e 'drop table {}'

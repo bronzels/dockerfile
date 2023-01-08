@@ -1,0 +1,7 @@
+FROM harbor.my.org:1080/bronzels/hive-ubussh-juicefs:0.1 as hadoop
+
+FROM harbor.my.org:1080/bronzels/spark-juicefs:3.3.1 as final
+
+COPY --from=hadoop /app/hdfs/hive/hive-testbench/spark-queries-tpcds /app/hdfs/spark/work-dir/spark-queries-tpcds
+
+
