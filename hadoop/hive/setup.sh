@@ -202,6 +202,10 @@ set mapreduce.job.reduces=8
 
 EOF
 
+#如果没有安装hdfs/yarn单独安装hive
+kubectl apply -n hadoop -f hadoop-configmap.yaml
+kubectl delete -n hadoop -f hadoop-configmap.yaml
+
 #需要先安装好nfs client sc
 #kubectl apply -f meta-pvc.yaml -n hadoop
 kubectl apply -n hadoop -f yaml/

@@ -73,3 +73,25 @@ kubectl port-forward -n hadoop my-hadoop-yarn-rm-0 42311:42311 &
 
 
 redis-cli -n 1 flushdb
+
+:<<EOF
+kubectl -n kube-system create secret generic juicefs-sc-secret \
+  --from-literal=name=miniofs \
+  --from-literal=metaurl=redis://:redis@my-redis-master.redis.svc.cluster.local:6379/1 \
+  --from-literal=storage=minio \
+  --from-literal=bucket=https://minio.minio-tenant-1.svc.cluster.local/jfs?tls-insecure-skip-verify=true \
+  --from-literal=access-key BCRG2IUBDWMKLQD76NWZ \
+  --from-literal=secret-key KRKbToTPOaZtBEceFicW1Iako5YXpZaquVqzKdBC \
+EOF
+#all k8s node
+ctr -n k8s.io image import juicedata-juicefs-csi-driver-v0.17.4.tar
+csirev=0.17.4
+wget -c https://github.com/juicedata/juicefs-csi-driver/archive/refs/tags/v${csirev}.tar.gz
+tar xzvf juicefs-csi-driver-${csirev}.tar.gz
+ln -s juicefs-csi-driver-${csirev} juicefs-csi-driver
+cd juicefs-csi-driver/deploy
+kubectl apply -f k8s.yaml
+kubectl -n kube-system get pods -l app.kubernetes.io/name=juicefs-csi-driver
+
+kubectl apply -f juicefs-sc-secret.yaml -n kube-system
+kubectl apply -f juicefs-sc.yaml -n kube-system

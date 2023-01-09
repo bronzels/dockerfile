@@ -105,7 +105,7 @@ RUN juicefs
 COPY hive-site.xml /app/hdfs/spark/conf/
 #RUN ln -s  /app/hdfs/hive/lib/mysql-connector-java.jar  /app/hdfs/spark/jars/mysql-connector-java.jar
 
-ENV PATH=${PATH}:${SPARK_HOME}/bin
+ENV PATH=.:${PATH}:${SPARK_HOME}/bin
 
 WORKDIR /app/hdfs/spark/work-dir
 
