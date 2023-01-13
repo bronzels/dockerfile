@@ -16,3 +16,6 @@ rules:
   - apiGroups: [""]
     resources: ["services"]
     verbs: ["get", "watch", "list"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["create", "delete", "get", "watch", "list"]

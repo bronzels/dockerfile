@@ -2,13 +2,13 @@ helm repo add bitnami https://charts.bitnami.com/bitnami
 helm repo update
 kubectl create ns redis
 helm install my bitnami/redis \
---set global.storageClass=nfs-client \
---set global.redis.password=redis \
---set image.registry=registry.cn-shanghai.aliyuncs.com \
---set image.repository=wanfei/redis \
---set architecture=standalone \
---version 16.5.5 \
- -n redis
+  --set global.storageClass=nfs-client \
+  --set global.redis.password=redis \
+  --set image.registry=registry.cn-shanghai.aliyuncs.com \
+  --set image.repository=wanfei/redis \
+  --set architecture=standalone \
+  --version 16.5.5 \
+  -n redis
 helm uninstall my -n redis
 kubectl get pvc -n redis | grep redis | awk '{print $1}' | xargs kubectl delete pvc -n redis
 :<<EOF

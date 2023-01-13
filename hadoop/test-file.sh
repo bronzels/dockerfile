@@ -40,7 +40,7 @@ kubectl exec -it distfs-test -- /bin/bash
   #juicefs
   mntpath=/app/hdfs/hadoop/distfsmnt
   mkdir $mntpath
-  juicefs mount "redis://:redis@my-redis-master.redis.svc.cluster.local:6379/1" distfsmnt > distfsmnt.log 2>&1 &
+  juicefs mount "redis://:redis@my-redis-master.redis.svc.cluster.local:6379/2" distfsmnt > distfsmnt.log 2>&1 &
   #cubefs
   mntpath=/cfs/mnt
   mkdir $mntpath

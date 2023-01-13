@@ -1,0 +1,21 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: rss-juicefs-pvc-test-pod
+spec:
+  containers:
+  - name: test-pod
+    image: busybox:1.29.2
+    command:
+      - "/bin/sh"
+    args:
+      - "-c"
+      - "echo 'success' > /mnt/SUCCESS && exit 0 || exit 1"
+    volumeMounts:
+      - name: juicefs-pvc
+        mountPath: "/mnt"
+  restartPolicy: "Never"
+  volumes:
+    - name: juicefs-pvc
+      persistentVolumeClaim:
+        claimName: rss-juicefs-pvc

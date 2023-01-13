@@ -50,13 +50,14 @@ kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive
       do
         if [[ "${ts}" =~ "ds" ]]; then
           queryfile="sample-queries-tpc${ts}/query${num}.sql"
+          #queryfile="spark-queries-tpc${ts}/q${num}.sql"
         else
           queryfile="sample-queries-tpc${ts}/tpch_query${num}.sql"
         fi
         echo "queryfile:${queryfile}"
         start=$(date +"%s.%9N")
-        #hive --hivevar REDUCERS=${REDUCERS} -i dbuse.sql -i settings/load-partitioned.sql -f ${queryfile}
-        date
+        hive --hivevar REDUCERS=${REDUCERS} -i dbuse.sql -i settings/load-partitioned.sql -f ${queryfile}
+        #date
         end=$(date +"%s.%9N")
         delta=`echo "scale=9;$end - $start" | bc`
         echo timediff:${delta}

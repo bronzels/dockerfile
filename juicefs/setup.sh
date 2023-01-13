@@ -47,14 +47,14 @@ ls /dev/fuse
 #kubectl run juicefs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib --restart=Never --rm -- /bin/bash
 
 kubectl exec -it distfs-test -- /bin/bash
-  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local BCRG2IUBDWMKLQD76NWZ KRKbToTPOaZtBEceFicW1Iako5YXpZaquVqzKdBC
+  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local 4UFXGHAUY3W02Z2OM247 MCzN5DsK1o8TF5tzQ2TkjQRv39IoLiqc8FaKFEWP
   mc mb minio/jfs
   mc ls minio/jfs
   juicefs format \
       --storage minio \
       --bucket https://minio.minio-tenant-1.svc.cluster.local/jfs?tls-insecure-skip-verify=true \
-      --access-key BCRG2IUBDWMKLQD76NWZ \
-      --secret-key KRKbToTPOaZtBEceFicW1Iako5YXpZaquVqzKdBC \
+      --access-key 4UFXGHAUY3W02Z2OM247 \
+      --secret-key MCzN5DsK1o8TF5tzQ2TkjQRv39IoLiqc8FaKFEWP \
       "redis://:redis@my-redis-master.redis.svc.cluster.local:6379/1" \
       miniofs
   #mount test use distfs-test image and modprob 1stly
@@ -85,6 +85,7 @@ kubectl -n kube-system create secret generic juicefs-sc-secret \
 EOF
 #all k8s node
 ctr -n k8s.io image import juicedata-juicefs-csi-driver-v0.17.4.tar
+ctr -n k8s.io image import juicedata-mount-v1.0.2-4.8.3.tar
 csirev=0.17.4
 wget -c https://github.com/juicedata/juicefs-csi-driver/archive/refs/tags/v${csirev}.tar.gz
 tar xzvf juicefs-csi-driver-${csirev}.tar.gz
@@ -93,5 +94,24 @@ cd juicefs-csi-driver/deploy
 kubectl apply -f k8s.yaml
 kubectl -n kube-system get pods -l app.kubernetes.io/name=juicefs-csi-driver
 
+kubectl exec -it distfs-test -- /bin/bash
+  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local 4UFXGHAUY3W02Z2OM247 MCzN5DsK1o8TF5tzQ2TkjQRv39IoLiqc8FaKFEWP
+  mc mb minio/jfspvc
+  mc ls minio/jfspvc
+  juicefs format \
+      --storage minio \
+      --bucket https://minio.minio-tenant-1.svc.cluster.local/jfspvc?tls-insecure-skip-verify=true \
+      --access-key 4UFXGHAUY3W02Z2OM247 \
+      --secret-key MCzN5DsK1o8TF5tzQ2TkjQRv39IoLiqc8FaKFEWP \
+      "redis://:redis@my-redis-master.redis.svc.cluster.local:6379/2" \
+      miniofspvc
+  export MINIO_ROOT_USER=admin
+  export MINIO_ROOT_PASSWORD=12345678
+  miniogw gateway juicefs --console-address ':42312' redis://:redis@my-redis-master.redis.svc.cluster.local:6379/2 &
+kubectl port-forward distfs-test 42312:42312 &
 kubectl apply -f juicefs-sc-secret.yaml -n kube-system
 kubectl apply -f juicefs-sc.yaml -n kube-system
+:<<EOF
+kubectl delete -f juicefs-sc.yaml -n kube-system
+kubectl delete -f juicefs-sc-secret.yaml -n kube-system
+EOF
