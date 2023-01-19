@@ -48,8 +48,11 @@ FROM base as spark
 ARG SPARK_VERSION
 ### Download Spark Distribution ###
 WORKDIR /app/hdfs
-COPY spark-${SPARK_VERSION}-bin-hadoop3.tgz /app/hdfs/
-RUN tar xzvf spark-${SPARK_VERSION}-bin-hadoop3.tgz
+
+#COPY spark-${SPARK_VERSION}-bin-hadoop3.tgz /app/hdfs/
+#RUN tar xzvf spark-${SPARK_VERSION}-bin-hadoop3.tgz
+COPY --chown=hdfs:root spark-${SPARK_VERSION}-bin-volcano.tgz /app/hdfs/
+RUN tar xzvf spark-${SPARK_VERSION}-bin-volcano.tgz
 
 FROM spark as build
 ### Create target directories ###
@@ -65,17 +68,18 @@ ARG HIVEREV
 
 RUN mkdir /app/hdfs/spark
 
-ENV _spark_dir=/app/hdfs/spark-${SPARK_VERSION}-bin-hadoop3
+#ENV _spark_dir=/app/hdfs/spark-${SPARK_VERSION}-bin-hadoop3
+ENV _spark_dir=/app/hdfs/spark-${SPARK_VERSION}-bin-volcano
 ### Copy files from the build image ###
-COPY --from=build ${_spark_dir}/jars /app/hdfs/spark/jars
-COPY --from=build /app/hdfs/spark/jars /app/hdfs/spark/jars
-COPY --from=build ${_spark_dir}/bin /app/hdfs/spark/bin
-COPY --from=build ${_spark_dir}/sbin /app/hdfs/spark/sbin
-COPY --from=build ${_spark_dir}/kubernetes/dockerfiles/spark/entrypoint.sh /app/hdfs/
-COPY --from=build ${_spark_dir}/kubernetes/dockerfiles/spark/decom.sh /app/hdfs/
-COPY --from=build ${_spark_dir}/examples /app/hdfs/spark/examples
-COPY --from=build ${_spark_dir}/kubernetes/tests /app/hdfs/spark/tests
-COPY --from=build ${_spark_dir}/data /app/hdfs/spark/data
+COPY --from=build --chown=hdfs:root ${_spark_dir}/jars /app/hdfs/spark/jars
+COPY --from=build --chown=hdfs:root /app/hdfs/spark/jars /app/hdfs/spark/jars
+COPY --from=build --chown=hdfs:root ${_spark_dir}/bin /app/hdfs/spark/bin
+COPY --from=build --chown=hdfs:root ${_spark_dir}/sbin /app/hdfs/spark/sbin
+COPY --from=build --chown=hdfs:root ${_spark_dir}/kubernetes/dockerfiles/spark/entrypoint.sh /app/hdfs/
+COPY --from=build --chown=hdfs:root ${_spark_dir}/kubernetes/dockerfiles/spark/decom.sh /app/hdfs/
+COPY --from=build --chown=hdfs:root ${_spark_dir}/examples /app/hdfs/spark/examples
+COPY --from=build --chown=hdfs:root ${_spark_dir}/kubernetes/tests /app/hdfs/spark/tests
+COPY --from=build --chown=hdfs:root ${_spark_dir}/data /app/hdfs/spark/data
 
 ENV SPARK_HOME /app/hdfs/spark
 
@@ -93,8 +97,8 @@ ENTRYPOINT [ "/app/hdfs/entrypoint.sh" ]
 
 RUN mkdir /app/hdfs/spark/conf
 
-COPY --from=hadoop /app/hdfs/hadoop/share/hadoop/common/lib/juicefs-hadoop-1.0.2.jar /app/hdfs/spark/jars
-COPY --from=hadoop /app/hdfs/hadoop/etc/hadoop/core-site.xml /app/hdfs/spark/conf
+COPY --from=hadoop --chown=hdfs:root /app/hdfs/hadoop/share/hadoop/common/lib/juicefs-hadoop-1.0.2.jar /app/hdfs/spark/jars
+COPY --from=hadoop --chown=hdfs:root /app/hdfs/hadoop/etc/hadoop/core-site.xml /app/hdfs/spark/conf
 
 COPY --from=hadoop /usr/local/bin/mc /usr/local/bin/mc
 COPY --from=hadoop /usr/local/bin/miniogw /usr/local/bin/miniogw
@@ -102,8 +106,11 @@ COPY --from=hadoop /usr/local/bin/juicefs /usr/local/bin/juicefs
 
 RUN juicefs
 
-COPY hive-site.xml /app/hdfs/spark/conf/
+COPY --chown=hdfs:root hive-site.xml /app/hdfs/spark/conf/
 #RUN ln -s  /app/hdfs/hive/lib/mysql-connector-java.jar  /app/hdfs/spark/jars/mysql-connector-java.jar
+
+COPY --chown=hdfs:root volcano-default-podgroup.yaml /app/hdfs/spark/work-dir/
+COPY --chown=hdfs:root spark-sql-cluster-mode-3/target/my-spark-sql-cluster-3.jar /app/hdfs/spark/jars/
 
 ENV PATH=.:${PATH}:${SPARK_HOME}/bin
 

@@ -1,14 +1,29 @@
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "Mac detected."
+    #mac
+    MYHOME=/Volumes/data
+    SED=gsed
+else
+    echo "Assuming linux by default."
+    #linux
+    MYHOME=~
+    SED=sed
+fi
+
+MYSPARK_HOME=/Volumes/data/workspace/dockerfile/spark
+
 #spark query on yarn
 #q1, timediff:346.991397060
 #q2, timediff:743.642260938
 
-kubectl port-forward spark-sql-job-test-qhgk9 4040:4040 &
+kubectl port-forward spark-test -n spark-operator 4040:4040 &
 
 kubectl apply -f spark-test.yaml -n spark-operator
 kubectl delete -f spark-test.yaml -n spark-operator
 kubectl exec -it spark-test -n spark-operator -- /bin/bash
   echo "use tpcds_bin_partitioned_orc_10" > dbuse.sql
 
+#test case: fixed resource
   echo -e "query,time" > spark-query.csv
   for num in {1..2}
   do
@@ -41,6 +56,8 @@ q1,24.706304598
 q2,141.147401197
 EOF
 
+
+#test case: dynamic allocation with shuffletracking, executor.memory fixed 4G
   echo -e "query,time" > spark-query.csv
   for num in {1..2}
   do
@@ -76,6 +93,8 @@ q2,106.537121287
 q2,108.007699354
 EOF
 
+
+#test case: dynamic allocation with shuffletracking, executor.memory not fixed 4G
   echo -e "query,time" > spark-query.csv
   for num in {1..2}
   do
@@ -111,6 +130,8 @@ q1,43.660220807
 q2,108.960869015
 EOF
 
+
+#test case: dynamic allocation with shuffletracking, executor.memory fixed 4G, request/limit cores 500m/1000m
   echo -e "query,time" > spark-query.csv
   for num in {1..2}
   do
@@ -148,6 +169,8 @@ q1,46.420251943
 q2,117.879876710
 EOF
 
+
+#test case: dynamic allocation with shuffletracking, executor.memory fixed 4G, request/limit cores 250m/500m
   echo -e "query,time" > spark-query.csv
   for num in {1..2}
   do
@@ -183,8 +206,9 @@ q1,104.648819718
 q2,158.504421685
 EOF
 
-ansible all -m shell -a"rm -rf /sparklocal;mkdir /sparklocal"
 
+#test case: dynamic allocation with shuffletracking, executor.memory fixed 4G, localdir set to ssd faster than default emptydir
+ansible all -m shell -a"rm -rf /sparklocal;mkdir /sparklocal"
   echo -e "query,time" > spark-query.csv
   for num in {1..2}
   do
@@ -223,9 +247,9 @@ kubectl get pod -n spark-operator |grep spark-sql-job-test-manual|awk '{print $1
 EOF
 
 
+#test case: dynamic allocation with shuffletracking, executor.memory fixed 4G, localdir set to OnDemand nfs PVC
 kubectl apply -f rss-nfs-pvc.yaml -n spark-operator
 #kubectl delete -f rss-nfs-pvc.yaml -n spark-operator
-
   echo -e "query,time" > spark-query.csv
   for num in {1..2}
   do
@@ -269,13 +293,14 @@ q1,40.443544108
 q2,114.907334498
 EOF
 
+
+#test case: dynamic allocation with shuffletracking, executor.memory fixed 4G, localdir set to OnDemand juicefs PVC
 kubectl apply -f rss-juicefs-pvc.yaml -n spark-operator
 kubectl apply -f rss-juicefs-pvc-test-pod.yaml -n spark-operator
 :<<EOF
 kubectl delete -f rss-juicefs-pvc-test-pod.yaml -n spark-operator
 kubectl delete -f rss-juicefs-pvc.yaml -n spark-operator
 EOF
-
   echo -e "query,time" > spark-query.csv
   for num in {1..2}
   do
@@ -410,6 +435,7 @@ org.apache.spark.shuffle.MetadataFetchFailedException: Missing an output locatio
 EOF
 
 
+#test case: dynamic allocation with shuffletracking, executor.memory fixed 4G, localdir set to tmps
   echo -e "query,time" > spark-query.csv
   for num in {1..2}
   do
@@ -471,6 +497,7 @@ org.apache.spark.SparkException: Could not find CoarseGrainedScheduler.
 EOF
 
 
+#test case: dynamic allocation with shuffletracking, executor.memory fixed lower to 2G, localdir set to tmps
   echo -e "query,time" > spark-query.csv
   for num in {1..2}
   do
@@ -506,6 +533,111 @@ EOF
 q1,41.975624268
 q2,108.801407158
 EOF
+
+
+#test case: dynamic allocation with shuffletracking, executor.memory fixed lower to 2G
+  echo -e "query,time" > spark-query.csv
+  for num in {1..2}
+  do
+    start=$(date +"%s.%9N")
+    spark-sql \
+      --master \
+      k8s://https://kubernetes.default.svc.cluster.local:443 \
+      --deploy-mode client \
+      --name spark-sql-job-test-manual \
+      --conf spark.kubernetes.namespace=spark-operator \
+      --conf spark.kubernetes.authenticate.driver.serviceAccountName=default \
+      --conf spark.kubernetes.driver.pod.name=`hostname` \
+      --conf spark.driver.host=`hostname -i` \
+      --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs:3.3.1 \
+      --conf spark.executor.memory=2g \
+      --conf spark.dynamicAllocation.enabled=true \
+      --conf spark.dynamicAllocation.shuffleTracking.enabled=true \
+      --conf spark.dynamicAllocation.executorIdleTimeout=60s \
+      --conf spark.dynamicAllocation.initialExecutors=3 \
+      --conf spark.dynamicAllocation.minExecutors=1 \
+      -i dbuse.sql \
+      -f spark-queries-tpcds/q${num}.sql
+  #   -f /app/hdfs/spark/work-dir/test.sql
+    end=$(date +"%s.%9N")
+    delta=`echo "scale=9;$end - $start" | bc`
+    echo q${num},${delta}
+    echo -e "q$num,${delta}" >> spark-query.csv
+  done
+  cat spark-query.csv
+:<<EOF
+q1,46.444110381
+q2,111.827838235
+EOF
+
+
+#test case: dynamic allocation with shuffletracking, executor.memory fixed 4G, scheduler set to volcano
+kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- bash
+  echo "use tpcds_bin_partitioned_orc_10" > dbuse.sql
+  rm -rf /tmp/spark-tpcds-10
+  hadoop fs -rm -r -f /tmp/spark-tpcds-10
+  mkdir /tmp/spark-tpcds-10
+  hadoop fs -mkdir /tmp/spark-tpcds-10
+  for num in {1..99}
+  do
+    file=/tmp/spark-tpcds-10/q${num}.sql
+    cat dbuse.sql > ${file}
+    echo -e ";" >> ${file}
+    cat hive-testbench/spark-queries-tpcds/q${num}.sql >> ${file}
+    echo -e ";" >> ${file}
+    #cat ${file}
+    hadoop fs -put ${file} ${file}
+    #hadoop fs -cat /tmp/spark-tpcds-10/q${num}.sql
+    echo "q${num} done"
+  done
+
+  hadoop fs -mkdir /tmp/k8sup
+
+  echo -e "query,time" > spark-query.csv
+  for num in {1..2}
+  do
+    start=$(date +"%s.%9N")
+    spark-submit \
+      --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
+      --master \
+      k8s://https://kubernetes.default.svc.cluster.local:443 \
+      --deploy-mode cluster \
+      --conf spark.submit.deployMode=cluster \
+      --name spark-sql-job-test-manual \
+      --conf spark.kubernetes.namespace=spark-operator \
+      --conf spark.kubernetes.authenticate.driver.serviceAccountName=default \
+      --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs:3.3.1 \
+      --conf spark.executor.memory=4g \
+      --conf spark.dynamicAllocation.enabled=true \
+      --conf spark.dynamicAllocation.shuffleTracking.enabled=true \
+      --conf spark.dynamicAllocation.executorIdleTimeout=60s \
+      --conf spark.dynamicAllocation.initialExecutors=3 \
+      --conf spark.dynamicAllocation.minExecutors=1 \
+      --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
+      --conf spark.kubernetes.scheduler.name=volcano \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/volcano-default-podgroup.yaml \
+      --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+      --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
+    end=$(date +"%s.%9N")
+    delta=`echo "scale=9;$end - $start" | bc`
+    echo q${num},${delta}
+    echo -e "q$num,${delta}" >> spark-query.csv
+  done
+  cat spark-query.csv
+:<<EOF
+1, spark需要重新编译支持-Dvolcano，不然报错：
+java.lang.ClassNotFoundException: org.apache.spark.deploy.k8s.features.VolcanoFeatureStep
+
+2，还不支持client模式，有个ticket在解决：https://github.com/volcano-sh/volcano/pull/2358
+23/01/19 07:17:21 WARN ExecutorPodsSnapshotsStoreImpl: Exception when notifying snapshot subscriber.
+io.fabric8.kubernetes.client.KubernetesClientException: Failure executing: POST at: https://kubernetes.default.svc.cluster.local/api/v1/namespaces/spark-operator/pods. Message: admission webhook "validatepod.volcano.sh" denied the request: failed to get PodGroup for pod <spark-operator/spark-sql-job-test-manual-4f878885c8e3a550-exec-1>: podgroups.scheduling.volcano.sh "spark-c4e1f89a7cf8451da3013d464e56258b-podgroup" not found. Received status: Status(apiVersion=v1, code=400, details=null, kind=Status, message=admission webhook "validatepod.volcano.sh" denied the request: failed to get PodGroup for pod <spark-operator/spark-sql-job-test-manual-4f878885c8e3a550-exec-1>: podgroups.scheduling.volcano.sh "spark-c4e1f89a7cf8451da3013d464e56258b-podgroup" not found, metadata=ListMeta(_continue=null, remainingItemCount=null, resourceVersion=null, selfLink=null, additionalProperties={}), reason=null, status=Failure, additionalProperties={}).
+
+q1,56.218652501
+q2,120.528430892
+EOF
+
 
 :<<EOF
 AAAAAAAAAAAAFAAA

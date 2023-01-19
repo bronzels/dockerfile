@@ -1,12 +1,12 @@
 if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "Mac detected."
     #mac
-    MVNREPOHOME=/Volumes/data/m2/repository
+    MYHOME=/Volumes/data
     SED=gsed
 else
     echo "Assuming linux by default."
     #linux
-    MVNREPOHOME=~/m2repository
+    MYHOME=~
     SED=sed
 fi
 
@@ -14,6 +14,7 @@ fi
 SPARK_VERSION=3.3.1
 HADOOP_VERSION=3.2.1
 HIVEREV=3.1.2
+
 wget -c https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop3.tgz
 docker build ./ --progress=plain --build-arg SPARK_VERSION="${SPARK_VERSION}" --build-arg HADOOP_VERSION="${HADOOP_VERSION}" --build-arg HIVEREV="${HIVEREV}" -t harbor.my.org:1080/bronzels/spark-hadoop-${HADOOP_VERSION}-juicefs:${SPARK_VERSION}
 docker push harbor.my.org:1080/bronzels/spark-hadoop-${HADOOP_VERSION}-juicefs:${SPARK_VERSION}
@@ -54,9 +55,16 @@ ansible all -m shell -a"crictl images|grep spark-juicefs|awk '{print \$3}'|xargs
 
 kubectl apply -f app-pi-nfs-pvc.yaml -n spark-operator
 kubectl apply -f app-pi.yaml -n spark-operator
+:<<EOF
 kubectl delete -f app-pi.yaml -n spark-operator
+kubectl delete -f app-pi-nfs-pvc.yaml -n spark-operator
+EOF
 
 kubectl apply -f clusterrole-endpoints-reader.yaml
 kubectl create clusterrolebinding endpoints-reader-default \
   --clusterrole=endpoints-reader  \
   --serviceaccount=spark-operator:default
+:<<EOF
+kubectl delete clusterrolebinding endpoints-reader-default
+kubectl delete -f clusterrole-endpoints-reader.yaml
+EOF
