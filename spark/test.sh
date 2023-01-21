@@ -12,11 +12,22 @@ fi
 
 MYSPARK_HOME=/Volumes/data/workspace/dockerfile/spark
 
-#spark query on yarn
-#q1, timediff:346.991397060
-#q2, timediff:743.642260938
+:<<EOF
+spark query on yarn
+q1, timediff:346.991397060
+q2, timediff:743.642260938
+EOF
+
+watch kube-capacity -u
+:<<EOF
+NODE       CPU REQUESTS   CPU LIMITS     CPU UTIL      MEMORY REQUESTS   MEMORY LIMITS   MEMORY UTIL
+*          6750m (24%)    10000m (35%)   575m (2%)   20408Mi (15%)     50516Mi (39%)   9726Mi (7%)
+EOF
 
 kubectl port-forward spark-test -n spark-operator 4040:4040 &
+
+#删除已完成的driver pod
+kubectl get pod -n spark-operator |grep spark-sql-job-test-manual |grep driver |grep Completed |awk '{print $1}'| xargs kubectl delete pod "$1" -n spark-operator
 
 kubectl apply -f spark-test.yaml -n spark-operator
 kubectl delete -f spark-test.yaml -n spark-operator
@@ -243,7 +254,6 @@ ansible all -m shell -a"rm -rf /sparklocal;mkdir /sparklocal"
   cat spark-query.csv
 :<<EOF
 创建上千个container，只有1个在运行，手工停止
-kubectl get pod -n spark-operator |grep spark-sql-job-test-manual|awk '{print $1}'| xargs kubectl delete pod "$1" -n spark-operator
 EOF
 
 
@@ -590,8 +600,8 @@ kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive
     #hadoop fs -cat /tmp/spark-tpcds-10/q${num}.sql
     echo "q${num} done"
   done
-
   hadoop fs -mkdir /tmp/k8sup
+
 
   echo -e "query,time" > spark-query.csv
   for num in {1..2}
@@ -636,6 +646,399 @@ io.fabric8.kubernetes.client.KubernetesClientException: Failure executing: POST 
 
 q1,56.218652501
 q2,120.528430892
+EOF
+
+
+#test case: dynamic allocation with shuffletracking, scheduler set to volcano, remove resource conf redudant to volcano podgroup
+  echo -e "query,time" > spark-query.csv
+  for num in {1..2}
+  do
+    start=$(date +"%s.%9N")
+    spark-submit \
+      --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
+      --master \
+      k8s://https://kubernetes.default.svc.cluster.local:443 \
+      --deploy-mode cluster \
+      --conf spark.submit.deployMode=cluster \
+      --name spark-sql-job-test-manual \
+      --conf spark.kubernetes.namespace=spark-operator \
+      --conf spark.kubernetes.authenticate.driver.serviceAccountName=default \
+      --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs:3.3.1 \
+      --conf spark.dynamicAllocation.enabled=true \
+      --conf spark.dynamicAllocation.shuffleTracking.enabled=true \
+      --conf spark.dynamicAllocation.executorIdleTimeout=60s \
+      --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
+      --conf spark.kubernetes.scheduler.name=volcano \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/volcano-default-podgroup.yaml \
+      --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+      --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
+    end=$(date +"%s.%9N")
+    delta=`echo "scale=9;$end - $start" | bc`
+    echo q${num},${delta}
+    echo -e "q$num,${delta}" >> spark-query.csv
+  done
+  cat spark-query.csv
+:<<EOF
+q1,56.218652501
+q2,120.528430892
+EOF
+
+
+#test case: dynamic allocation with shuffletracking, scheduler set to volcano, remove resource conf redudant to volcano podgroup
+  echo -e "query,time" > spark-query.csv
+  for num in {1..2}
+  do
+    start=$(date +"%s.%9N")
+    spark-submit \
+      --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
+      --master \
+      k8s://https://kubernetes.default.svc.cluster.local:443 \
+      --deploy-mode cluster \
+      --conf spark.submit.deployMode=cluster \
+      --name spark-sql-job-test-manual \
+      --conf spark.kubernetes.namespace=spark-operator \
+      --conf spark.kubernetes.authenticate.driver.serviceAccountName=default \
+      --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs:3.3.1 \
+      --conf spark.dynamicAllocation.enabled=true \
+      --conf spark.dynamicAllocation.shuffleTracking.enabled=true \
+      --conf spark.dynamicAllocation.executorIdleTimeout=60s \
+      --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
+      --conf spark.kubernetes.scheduler.name=volcano \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/volcano-default-podgroup.yaml \
+      --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+      --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
+    end=$(date +"%s.%9N")
+    delta=`echo "scale=9;$end - $start" | bc`
+    echo q${num},${delta}
+    echo -e "q$num,${delta}" >> spark-query.csv
+  done
+  cat spark-query.csv
+:<<EOF
+q1,52.492568714
+q2,120.837940928
+EOF
+
+
+#test case: dynamic allocation with shuffletracking, scheduler set to volcano, assigned to a queue with min resource by spark conf
+  echo -e "query,time" > spark-query.csv
+  for num in {1..2}
+  do
+    start=$(date +"%s.%9N")
+    spark-submit \
+      --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
+      --master \
+      k8s://https://kubernetes.default.svc.cluster.local:443 \
+      --deploy-mode cluster \
+      --conf spark.submit.deployMode=cluster \
+      --name spark-sql-job-test-manual \
+      --conf spark.kubernetes.namespace=spark-operator \
+      --conf spark.kubernetes.authenticate.driver.serviceAccountName=default \
+      --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs:3.3.1 \
+      --conf spark.dynamicAllocation.enabled=true \
+      --conf spark.dynamicAllocation.shuffleTracking.enabled=true \
+      --conf spark.dynamicAllocation.executorIdleTimeout=60s \
+      --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
+      --conf spark.kubernetes.scheduler.name=volcano \
+      --conf spark.kubernetes.scheduler.volcano.podgroup.queue=min \
+      --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+      --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
+    end=$(date +"%s.%9N")
+    delta=`echo "scale=9;$end - $start" | bc`
+    echo q${num},${delta}
+    echo -e "q$num,${delta}" >> spark-query.csv
+  done
+  cat spark-query.csv
+:<<EOF
+还是有很多pending的任务，总任务数有到50（1）/100（2）
+watch kube-capacity -u观察，CPU UTIL接近60%，MEMORY UTIL接近20%
+不支持conf方式使用：https://github.com/apache/spark/pull/37802
+q1,50.725082567
+q2,116.245581167
+EOF
+
+
+#test case: dynamic allocation with shuffletracking, scheduler set to volcano, assigned to a queue with all available resource by podgroup file
+  echo -e "query,time" > spark-query.csv
+  for num in {1..2}
+  do
+    start=$(date +"%s.%9N")
+    spark-submit \
+      --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
+      --master \
+      k8s://https://kubernetes.default.svc.cluster.local:443 \
+      --deploy-mode cluster \
+      --conf spark.submit.deployMode=cluster \
+      --name spark-sql-job-test-manual \
+      --conf spark.kubernetes.namespace=spark-operator \
+      --conf spark.kubernetes.authenticate.driver.serviceAccountName=default \
+      --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs:3.3.1 \
+      --conf spark.dynamicAllocation.enabled=true \
+      --conf spark.dynamicAllocation.shuffleTracking.enabled=true \
+      --conf spark.dynamicAllocation.executorIdleTimeout=60s \
+      --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
+      --conf spark.kubernetes.scheduler.name=volcano \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-allavailable-podgroup.yaml \
+      --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+      --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
+    end=$(date +"%s.%9N")
+    delta=`echo "scale=9;$end - $start" | bc`
+    echo q${num},${delta}
+    echo -e "q$num,${delta}" >> spark-query.csv
+  done
+  cat spark-query.csv
+:<<EOF
+还是有很多pending的任务，总任务数有到50（1）/100（2）
+watch kube-capacity -u观察，CPU UTIL接近60%，MEMORY UTIL接近30%
+watch kubectl get queue all-available -o yaml观察，峰值
+   cpu: "19"
+   memory: 26752Mi
+q1,49.395365928
+q2,117.591562565
+EOF
+
+
+#test case: dynamic allocation with shuffletracking, scheduler set to volcano, assigned to a queue with all available resource by podgroup file, fixed executor resource
+  echo -e "query,time" > spark-query.csv
+  for num in {1..2}
+  do
+    start=$(date +"%s.%9N")
+    spark-submit \
+      --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
+      --master \
+      k8s://https://kubernetes.default.svc.cluster.local:443 \
+      --deploy-mode cluster \
+      --conf spark.submit.deployMode=cluster \
+      --name spark-sql-job-test-manual \
+      --conf spark.kubernetes.namespace=spark-operator \
+      --conf spark.kubernetes.authenticate.driver.serviceAccountName=default \
+      --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs:3.3.1 \
+      --conf spark.executor.memory=4g \
+      --conf spark.kubernetes.executor.request.cores=500m \
+      --conf spark.kubernetes.executor.limit.cores=1000m \
+      --conf spark.dynamicAllocation.enabled=true \
+      --conf spark.dynamicAllocation.shuffleTracking.enabled=true \
+      --conf spark.dynamicAllocation.executorIdleTimeout=60s \
+      --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
+      --conf spark.kubernetes.scheduler.name=volcano \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-allavailable-podgroup.yaml \
+      --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+      --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
+    end=$(date +"%s.%9N")
+    delta=`echo "scale=9;$end - $start" | bc`
+    echo q${num},${delta}
+    echo -e "q$num,${delta}" >> spark-query.csv
+  done
+  cat spark-query.csv
+:<<EOF
+还是有很多pending的任务，总任务数有到50（1）/100（2）
+watch kube-capacity -u观察，CPU UTIL接近60%，MEMORY UTIL接近20%
+watch kubectl get queue all-available -o yaml观察，峰值
+    cpu: "12"
+    memory: 100518Mi
+q1,54.504497260
+q2,116.204576737
+EOF
+
+
+#test case: dynamic allocation with shuffletracking, scheduler set to volcano, assigned to a queue with half available resource by podgroup file
+  echo -e "query,time" > spark-query.csv
+  for num in {1..2}
+  do
+    start=$(date +"%s.%9N")
+    spark-submit \
+      --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
+      --master \
+      k8s://https://kubernetes.default.svc.cluster.local:443 \
+      --deploy-mode cluster \
+      --conf spark.submit.deployMode=cluster \
+      --name spark-sql-job-test-manual \
+      --conf spark.kubernetes.namespace=spark-operator \
+      --conf spark.kubernetes.authenticate.driver.serviceAccountName=default \
+      --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs:3.3.1 \
+      --conf spark.dynamicAllocation.enabled=true \
+      --conf spark.dynamicAllocation.shuffleTracking.enabled=true \
+      --conf spark.dynamicAllocation.executorIdleTimeout=60s \
+      --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
+      --conf spark.kubernetes.scheduler.name=volcano \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+      --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+      --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
+    end=$(date +"%s.%9N")
+    delta=`echo "scale=9;$end - $start" | bc`
+    echo q${num},${delta}
+    echo -e "q$num,${delta}" >> spark-query.csv
+  done
+  cat spark-query.csv
+:<<EOF
+还是有很多pending的任务，总任务数有到50（1）/100（2）
+watch kube-capacity -u观察，CPU UTIL接近60%，MEMORY UTIL接近30%
+watch kubectl get queue all-available -o yaml观察，峰值
+    cpu: "14"
+    memory: 19712Mi
+q1,42.146292450
+q2,108.161868076
+EOF
+
+
+#test case: dynamic allocation with shuffletracking, scheduler set to volcano, assigned to a queue with few resource by podgroup file
+  echo -e "query,time" > spark-query.csv
+  for num in {1..2}
+  do
+    start=$(date +"%s.%9N")
+    spark-submit \
+      --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
+      --master \
+      k8s://https://kubernetes.default.svc.cluster.local:443 \
+      --deploy-mode cluster \
+      --conf spark.submit.deployMode=cluster \
+      --name spark-sql-job-test-manual \
+      --conf spark.kubernetes.namespace=spark-operator \
+      --conf spark.kubernetes.authenticate.driver.serviceAccountName=default \
+      --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs:3.3.1 \
+      --conf spark.dynamicAllocation.enabled=true \
+      --conf spark.dynamicAllocation.shuffleTracking.enabled=true \
+      --conf spark.dynamicAllocation.executorIdleTimeout=60s \
+      --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
+      --conf spark.kubernetes.scheduler.name=volcano \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-few-podgroup.yaml \
+      --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+      --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
+    end=$(date +"%s.%9N")
+    delta=`echo "scale=9;$end - $start" | bc`
+    echo q${num},${delta}
+    echo -e "q$num,${delta}" >> spark-query.csv
+  done
+  cat spark-query.csv
+:<<EOF
+还是有很多pending的任务，总任务数有到50（1）/100（2）
+watch kube-capacity -u观察，CPU UTIL接近24%，MEMORY UTIL接近12%
+watch kubectl get queue all-available -o yaml观察，峰值
+    cpu: "4"
+    memory: 5632Mi
+q1,31.356548507
+q2,143.300491476
+EOF
+
+
+#test case: dynamic allocation with shuffletracking, scheduler set to volcano, assigned to a queue with half available resource by podgroup file
+  echo -e "query,time" > spark-query.csv
+  for num in {1..2}
+  :<<EOF
+  num=1
+  num=2
+  EOF
+  #分别exec在2个term进入同一个测试pod，执行同一段代码
+  #开始
+  start=$(date +"%s.%9N")
+  spark-submit \
+    --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
+    --master \
+    k8s://https://kubernetes.default.svc.cluster.local:443 \
+    --deploy-mode cluster \
+    --conf spark.submit.deployMode=cluster \
+    --name spark-sql-job-test-manual \
+    --conf spark.kubernetes.namespace=spark-operator \
+    --conf spark.kubernetes.authenticate.driver.serviceAccountName=default \
+    --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs:3.3.1 \
+    --conf spark.dynamicAllocation.enabled=true \
+    --conf spark.dynamicAllocation.shuffleTracking.enabled=true \
+    --conf spark.dynamicAllocation.executorIdleTimeout=60s \
+    --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
+    --conf spark.kubernetes.scheduler.name=volcano \
+    --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+    --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+    --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+    $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+    -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
+  end=$(date +"%s.%9N")
+  delta=`echo "scale=9;$end - $start" | bc`
+  echo q${num},${delta}
+  echo -e "q$num,${delta}" >> spark-query.csv
+  #结束
+  cat spark-query.csv
+:<<EOF
+q1,38.398455371
+q2,135.992466594
+EOF
+
+
+#test case: dynamic allocation with shuffletracking, scheduler set to volcano, assigned to a queue with resource by podgroup file，1 has lower priority than 2
+  echo -e "query,time" > spark-query.csv
+  for num in {1..2}
+  :<<EOF
+  num=1
+  num=2
+  queue=halfavailable
+  queue=few
+  queue=fewer
+  EOF
+  echo "num:${num}"
+  echo "queue:${queue}"
+  #分别exec在2个term进入同一个测试pod，执行同一段代码
+  #开始
+  if [[ "${num}" =~ "1" ]]; then
+    priority=low
+  else
+    priority=high
+  fi
+  echo "priority:${priority}"
+  start=$(date +"%s.%9N")
+  spark-submit \
+    --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
+    --master \
+    k8s://https://kubernetes.default.svc.cluster.local:443 \
+    --deploy-mode cluster \
+    --conf spark.submit.deployMode=cluster \
+    --name spark-sql-job-test-manual-10-q${num} \
+    --conf spark.kubernetes.namespace=spark-operator \
+    --conf spark.kubernetes.authenticate.driver.serviceAccountName=default \
+    --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs:3.3.1 \
+    --conf spark.dynamicAllocation.enabled=true \
+    --conf spark.dynamicAllocation.shuffleTracking.enabled=true \
+    --conf spark.dynamicAllocation.executorIdleTimeout=60s \
+    --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
+    --conf spark.kubernetes.scheduler.name=volcano \
+    --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-${queue}-podgroup-${priority}.yaml \
+    --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+    --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+    $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+    -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
+  end=$(date +"%s.%9N")
+  delta=`echo "scale=9;$end - $start" | bc`
+  echo q${num},${delta}
+  echo -e "q$num,${delta}" >> spark-query.csv
+  #结束
+  cat spark-query.csv
+:<<EOF
+high 1000000000，low 0，先执行q2，有running的driver/executor以后，再执行q1，q1 pending无法执行
+halfavailable，high 1000000000，low 0，q1/q2同时开始执行，q2先paste
+q2,107.479897960
+q1,145.464241198
+few，high 1000000000，low 0，q1/q2同时开始执行，q1先paste
+q1,33.752888970
+q2,156.579792613
+halfavailable，high 1000000000，low 0，q1/q2同时开始执行
+q1,46.193245619
+q2,141.829041291
+few，high 1000000000，low -1000000000，q1/q2同时开始执行
+q1,34.767383415
+q2,154.887262673
+fewer，high 1000000000，low -1000000000
+q2完成以前，q1的driver pending无法创建，q2执行时间太长，delete q2的driver pod以后，q1开始执行
 EOF
 
 

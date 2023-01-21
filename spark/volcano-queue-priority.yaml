@@ -1,0 +1,70 @@
+apiVersion: scheduling.volcano.sh/v1beta1
+kind: Queue
+metadata:
+  name: all-available
+spec:
+  weight: 1
+  reclaimable: false
+  capability:
+    cpu: 28000m
+    memory: 127655Mi
+---
+apiVersion: scheduling.volcano.sh/v1beta1
+kind: Queue
+metadata:
+  name: half-available
+spec:
+  weight: 1
+  reclaimable: false
+  capability:
+    cpu: 14000m
+    memory: 63287Mi
+---
+apiVersion: scheduling.volcano.sh/v1beta1
+kind: Queue
+metadata:
+  name: few
+spec:
+  weight: 1
+  reclaimable: false
+  capability:
+    cpu: 4000m
+    memory: 16384Mi
+---
+apiVersion: scheduling.volcano.sh/v1beta1
+kind: Queue
+metadata:
+  name: fewer
+spec:
+  weight: 1
+  reclaimable: false
+  capability:
+    cpu: 2000m
+    memory: 8192Mi
+---
+apiVersion: scheduling.volcano.sh/v1beta1
+kind: Queue
+metadata:
+  name: min
+spec:
+  weight: 1
+  reclaimable: false
+  capability:
+    cpu: 1000m
+    memory: 4096Mi
+---
+apiVersion: scheduling.k8s.io/v1
+description: Used for volcano jobs
+kind: PriorityClass
+metadata:
+  name: high-task
+preemptionPolicy: PreemptLowerPriority
+value: 1000000000
+---
+apiVersion: scheduling.k8s.io/v1
+description: Used for workloads
+kind: PriorityClass
+metadata:
+  name: low-task
+preemptionPolicy: PreemptLowerPriority
+value: 0

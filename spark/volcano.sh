@@ -38,3 +38,34 @@ kubectl delete -f app-pi-nfs-pvc.yaml -n spark-operator
 EOF
 kubectl logs spark-pi-driver -n spark-operator
 
+kubectl get node --no-headers | while read node status; do echo '>>>>  ['$node']'; kubectl describe node $node | grep Resource -A 3 ;done
+:<<EOF
+>>>>  [dtpct]
+  Resource           Requests       Limits
+  --------           --------       ------
+  cpu                5150m (42%)    5 (41%)
+  memory             17392Mi (27%)  42324Mi (66%)
+>>>>  [mdlapubu]
+  Resource           Requests     Limits
+  --------           --------     ------
+  cpu                1200m (15%)  4 (50%)
+  memory             2Gi (6%)     7Gi (22%)
+>>>>  [mdubu]
+  Resource           Requests    Limits
+  --------           --------    ------
+  cpu                400m (5%)   1 (12%)
+  memory             968Mi (3%)  1Gi (3%)
+EOF
+
+kube-capacity -u -a
+:<<EOF
+NODE       CPU REQUESTS    CPU LIMITS      CPU UTIL        MEMORY REQUESTS     MEMORY LIMITS      MEMORY UTIL
+*          21250m/28000m   18000m/28000m   27454m/28000m   107247Mi/127655Mi   77139Mi/127655Mi   120469Mi/127655Mi
+dtpct      6850m/12000m    7000m/12000m    11642m/12000m   46611Mi/64003Mi     21679Mi/64003Mi    60794Mi/64003Mi
+mdlapubu   6800m/8000m     4000m/8000m     7925m/8000m     29741Mi/31789Mi     24621Mi/31789Mi    30023Mi/31789Mi
+mdubu      7600m/8000m     7000m/8000m     7885m/8000m     30896Mi/31864Mi     30840Mi/31864Mi    29653Mi/31864Mi
+EOF
+
+kubectl apply -f volcano-queue-priority.yaml -n spark-operator
+kubectl delete -f volcano-queue-priority.yaml -n spark-operator
+

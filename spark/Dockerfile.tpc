@@ -14,3 +14,6 @@ COPY --chown=hdfs:root spark-sql-job.sh /app/hdfs/spark/work-dir/
 COPY --chown=hdfs:root dbuse.sql /app/hdfs/spark/work-dir/
 
 COPY --from=hadoop --chown=hdfs:root /app/hdfs/hive/hive-testbench/spark-queries-tpcds /app/hdfs/spark/work-dir/spark-queries-tpcds
+
+COPY --chown=hdfs:root podgroups /app/hdfs/spark/work-dir/podgroups
+
