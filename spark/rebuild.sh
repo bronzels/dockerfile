@@ -22,16 +22,12 @@ wget -c https://github.com/apache/spark/archive/refs/tags/v${SPARK_VERSION}.zip 
 unzip -q spark-${SPARK_VERSION}.zip
 cd spark-${SPARK_VERSION}
 #安装scala2.12
-file=./dev/make-distribution.sh
-cp ${file} ${file}.bk
-cp ${file}.bk ${file}
-$SED -i 's/clean package/package/g' ${file}
 cp ./dev/make-distribution.sh ./dev/make-distribution.sh.bk
 cp ../make-distribution-${SPARK_VERSION}.sh ./dev/make-distribution.sh
 wget -c https://downloads.lightbend.com/scala/2.12.15/scala-2.12.15.tgz
 ./dev/change-scala-version.sh 2.12
 export MAVEN_OPTS=-Xss4096k
-./dev/make-distribution.sh --name volcano --pip --tgz -Pyarn -Phadoop-3.2 -Dhadoop.version=${HADOOP_VERSION} -Psparkr -Phive -Phive-thriftserver -Pkubernetes -Pvolcano  -DskipTests package
+./dev/make-distribution.sh --name volcano --pip --tgz -Pyarn -Phadoop-3.2 -Dhadoop.version=${HADOOP_VERSION} -Psparkr -Phive -Phive-thriftserver -Pkubernetes -Pvolcano  -DskipTests clean package
 # mvn -Pyarn -Phadoop-3.2 -Dhadoop.version=${HADOOP_VERSION} -Phive -Phive-thriftserver -Pkubernetes -Pvolcano  -DskipTests package
 :<<EOF
 1，-DskipTests跳过test case执行，-Dmaven.test.skip=true不编译tests代码

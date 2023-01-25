@@ -731,7 +731,7 @@ EOF
       --conf spark.dynamicAllocation.executorIdleTimeout=60s \
       --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
       --conf spark.kubernetes.scheduler.name=volcano \
-      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/volcano-default-podgroup.yaml \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-default-podgroup.yaml \
       --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
       --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
       $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
@@ -1040,6 +1040,53 @@ q9,638.805645036
 3，q9, spark.dynamicAllocation.executorAllocationRatio，峰值大概40以上，70s以后会逐渐减少pending executor数量到全部都是running
       --conf spark.dynamicAllocation.executorAllocationRatio=0.01 \
 q9,680.760188459
+EOF
+
+
+:<<EOF
+test case
+  dynamic allocation with shuffletracking
+  scheduler set to volcano
+  assigned to a queue with half available resource by podgroup file
+  use maxpending to reduce pending executors
+EOF
+  echo -e "query,time" > spark-query.csv
+  arr=(2 9)
+  #for num in {1..2}
+  for num in ${arr[*]}
+  do
+    start=$(date +"%s.%9N")
+    spark-submit \
+      --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
+      --master \
+      k8s://https://kubernetes.default.svc.cluster.local:443 \
+      --deploy-mode cluster \
+      --conf spark.submit.deployMode=cluster \
+      --name spark-sql-job-test-manual-10-q${num} \
+      --conf spark.kubernetes.namespace=spark-operator \
+      --conf spark.kubernetes.authenticate.driver.serviceAccountName=default \
+      --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs:3.3.1 \
+      --conf spark.kubernetes.allocation.maxPendingPods=10 \
+      --conf spark.dynamicAllocation.enabled=true \
+      --conf spark.dynamicAllocation.shuffleTracking.enabled=true \
+      --conf spark.dynamicAllocation.executorIdleTimeout=60s \
+      --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
+      --conf spark.kubernetes.scheduler.name=volcano \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+      --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+      --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
+      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
+    end=$(date +"%s.%9N")
+    delta=`echo "scale=9;$end - $start" | bc`
+    echo q${num},${delta}
+    echo -e "q$num,${delta}" >> spark-query.csv
+  done
+  cat spark-query.csv
+:<<EOF
+pending数目一直控制在10个，q9性能有明显下降
+q2,107.749156279
+q9,725.406285522
 EOF
 
 

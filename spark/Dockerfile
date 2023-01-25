@@ -48,8 +48,11 @@ FROM base as spark
 ARG SPARK_VERSION
 ### Download Spark Distribution ###
 WORKDIR /app/hdfs
-COPY spark-${SPARK_VERSION}-bin-hadoop3.tgz /app/hdfs/
-RUN tar xzvf spark-${SPARK_VERSION}-bin-hadoop3.tgz
+
+#COPY spark-${SPARK_VERSION}-bin-hadoop3.tgz /app/hdfs/
+#RUN tar xzvf spark-${SPARK_VERSION}-bin-hadoop3.tgz
+COPY --chown=hdfs:root spark-${SPARK_VERSION}-bin-volcano-rss.tgz /app/hdfs/
+RUN tar xzvf spark-${SPARK_VERSION}-bin-volcano-rss.tgz
 
 FROM spark as build
 ### Create target directories ###
@@ -62,20 +65,22 @@ FROM base as final
 ARG SPARK_VERSION
 ARG HADOOP_VERSION
 ARG HIVEREV
+ARG RSS_VERSION
 
 RUN mkdir /app/hdfs/spark
 
-ENV _spark_dir=/app/hdfs/spark-${SPARK_VERSION}-bin-hadoop3
+#ENV _spark_dir=/app/hdfs/spark-${SPARK_VERSION}-bin-hadoop3
+ENV _spark_dir=/app/hdfs/spark-${SPARK_VERSION}-bin-volcano-rss
 ### Copy files from the build image ###
-COPY --from=build ${_spark_dir}/jars /app/hdfs/spark/jars
-COPY --from=build /app/hdfs/spark/jars /app/hdfs/spark/jars
-COPY --from=build ${_spark_dir}/bin /app/hdfs/spark/bin
-COPY --from=build ${_spark_dir}/sbin /app/hdfs/spark/sbin
-COPY --from=build ${_spark_dir}/kubernetes/dockerfiles/spark/entrypoint.sh /app/hdfs/
-COPY --from=build ${_spark_dir}/kubernetes/dockerfiles/spark/decom.sh /app/hdfs/
-COPY --from=build ${_spark_dir}/examples /app/hdfs/spark/examples
-COPY --from=build ${_spark_dir}/kubernetes/tests /app/hdfs/spark/tests
-COPY --from=build ${_spark_dir}/data /app/hdfs/spark/data
+COPY --from=build --chown=hdfs:root ${_spark_dir}/jars /app/hdfs/spark/jars
+COPY --from=build --chown=hdfs:root /app/hdfs/spark/jars /app/hdfs/spark/jars
+COPY --from=build --chown=hdfs:root ${_spark_dir}/bin /app/hdfs/spark/bin
+COPY --from=build --chown=hdfs:root ${_spark_dir}/sbin /app/hdfs/spark/sbin
+COPY --from=build --chown=hdfs:root ${_spark_dir}/kubernetes/dockerfiles/spark/entrypoint.sh /app/hdfs/
+COPY --from=build --chown=hdfs:root ${_spark_dir}/kubernetes/dockerfiles/spark/decom.sh /app/hdfs/
+COPY --from=build --chown=hdfs:root ${_spark_dir}/examples /app/hdfs/spark/examples
+COPY --from=build --chown=hdfs:root ${_spark_dir}/kubernetes/tests /app/hdfs/spark/tests
+COPY --from=build --chown=hdfs:root ${_spark_dir}/data /app/hdfs/spark/data
 
 ENV SPARK_HOME /app/hdfs/spark
 
@@ -91,18 +96,10 @@ ENTRYPOINT [ "/app/hdfs/entrypoint.sh" ]
 
 # Add native libs
 
-ENV HADOOP_HOME=/app/hdfs/hadoop \
-    HADOOP_COMMON_HOME=/app/hdfs/hadoop \
-    HADOOP_HDFS_HOME=/app/hdfs/hadoop \
-    HADOOP_MAPRED_HOME=/app/hdfs/hadoop \
-    HADOOP_YARN_HOME=/app/hdfs/hadoop \
-    HADOOP_CONF_DIR=/app/hdfs/hadoop/etc/hadoop \
-    YARN_CONF_DIR=/app/hdfs/hadoop/etc/hadoop \
-    YARN_HOME=/app/hdfs/hadoop \
-    PATH=${PATH}:/app/hdfs/hadoop/bin
+RUN mkdir /app/hdfs/spark/conf
 
-COPY --from=hadoop /app/hdfs/hadoop-${HADOOP_VERSION} /app/hdfs/hadoop-${HADOOP_VERSION}
-COPY --from=hadoop /app/hdfs/hadoop /app/hdfs/hadoop
+COPY --from=hadoop --chown=hdfs:root /app/hdfs/hadoop/share/hadoop/common/lib/juicefs-hadoop-1.0.2.jar /app/hdfs/spark/jars
+COPY --from=hadoop --chown=hdfs:root /app/hdfs/hadoop/etc/hadoop/core-site.xml /app/hdfs/spark/conf
 
 COPY --from=hadoop /usr/local/bin/mc /usr/local/bin/mc
 COPY --from=hadoop /usr/local/bin/miniogw /usr/local/bin/miniogw
@@ -110,15 +107,20 @@ COPY --from=hadoop /usr/local/bin/juicefs /usr/local/bin/juicefs
 
 RUN juicefs
 
-COPY --from=hadoop /app/hdfs/apache-hive-${HIVEREV}-bin /app/hdfs/apache-hive-${HIVEREV}-bin
-COPY --from=hadoop /app/hdfs/hive /app/hdfs/hive
-COPY hive-site.xml /app/hdfs/hive/conf/
-RUN mkdir /app/hdfs/spark/conf;ln -s /app/hdfs/hive/conf/hive-site.xml /app/hdfs/spark/conf/hive-site.xml
+COPY --chown=hdfs:root hive-site.xml /app/hdfs/spark/conf/
 #RUN ln -s  /app/hdfs/hive/lib/mysql-connector-java.jar  /app/hdfs/spark/jars/mysql-connector-java.jar
 
-ENV HIVE_HOME /app/hdfs/hive
-ENV PATH $HIVE_HOME/bin:$PATH
+COPY --chown=hdfs:root spark-sql-cluster-mode-3/target/my-spark-sql-cluster-3.jar /app/hdfs/spark/jars/
 
-ENV PATH $SPARK_HOME/bin:$PATH
+COPY --chown=hdfs:root rss-shuffle-manager-${RSS_VERSION}-shaded.jar /app/hdfs/spark/jars/
+COPY --chown=hdfs:root spark-defaults.conf /app/hdfs/spark/conf/
 
-WORKDIR /app/hdfs
+#history server
+COPY envsubst /usr/local/bin/
+RUN mkdir ${SPARK_HOME}/logs
+COPY --chown=hdfs:root hdfs-site.xml /app/hdfs/spark/conf/
+
+ENV PATH=.:${PATH}:${SPARK_HOME}/bin
+
+WORKDIR /app/hdfs/spark/work-dir
+

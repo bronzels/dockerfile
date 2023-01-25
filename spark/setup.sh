@@ -14,20 +14,33 @@ fi
 SPARK_VERSION=3.3.1
 HADOOP_VERSION=3.2.1
 HIVEREV=3.1.2
+RSS_VERSION=0.1.4
 
+:<<EOF
 wget -c https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop3.tgz
-docker build ./ --progress=plain --build-arg SPARK_VERSION="${SPARK_VERSION}" --build-arg HADOOP_VERSION="${HADOOP_VERSION}" --build-arg HIVEREV="${HIVEREV}" -t harbor.my.org:1080/bronzels/spark-hadoop-${HADOOP_VERSION}-juicefs:${SPARK_VERSION}
+docker build ./ -f Dockerfile.all --progress=plain --build-arg SPARK_VERSION="${SPARK_VERSION}" --build-arg HADOOP_VERSION="${HADOOP_VERSION}" --build-arg HIVEREV="${HIVEREV}" -t harbor.my.org:1080/bronzels/spark-hadoop-${HADOOP_VERSION}-juicefs:${SPARK_VERSION}
 docker push harbor.my.org:1080/bronzels/spark-hadoop-${HADOOP_VERSION}-juicefs:${SPARK_VERSION}
+EOF
 
-mv ../spark-${SPARK_VERSION}-bin-hadoop3.tgz ./
-docker build ./ -f Dockerfile.min --progress=plain --build-arg SPARK_VERSION="${SPARK_VERSION}" --build-arg HADOOP_VERSION="${HADOOP_VERSION}" --build-arg HIVEREV="${HIVEREV}" -t harbor.my.org:1080/bronzels/spark-juicefs:${SPARK_VERSION}
+#mv ../spark-${SPARK_VERSION}-bin-hadoop3.tgz ./
+mv ../spark-${SPARK_VERSION}-bin-volcano-rss.tgz ./
+:<<EOF
+docker build ./ --progress=plain --build-arg SPARK_VERSION="${SPARK_VERSION}" --build-arg HADOOP_VERSION="${HADOOP_VERSION}" --build-arg HIVEREV="${HIVEREV}" --build-arg RSS_VERSION="${RSS_VERSION}" -t harbor.my.org:1080/bronzels/spark-juicefs:${SPARK_VERSION}
 docker push harbor.my.org:1080/bronzels/spark-juicefs:${SPARK_VERSION}
+EOF
+docker build ./ --progress=plain --build-arg SPARK_VERSION="${SPARK_VERSION}" --build-arg HADOOP_VERSION="${HADOOP_VERSION}" --build-arg HIVEREV="${HIVEREV}" --build-arg RSS_VERSION="${RSS_VERSION}" -t harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:${SPARK_VERSION}
+docker push harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:${SPARK_VERSION}
 
-mv ./spark-${SPARK_VERSION}-bin-hadoop3.tgz ../
+#mv ./spark-${SPARK_VERSION}-bin-hadoop3.tgz ../
+mv ./spark-${SPARK_VERSION}-bin-volcano-rss.tgz ../
 cp ../image/sources-22.04.list sources.list
 #docker build ./ -f Dockerfile.tpc --progress=plain --build-arg SPARK_VERSION="${SPARK_VERSION}" -t harbor.my.org:1080/bronzels/spark-juicefs-tpc:${SPARK_VERSION}
+:<<EOF
 docker build ./ -f Dockerfile.tpc --progress=plain -t harbor.my.org:1080/bronzels/spark-juicefs-tpc:${SPARK_VERSION}
 docker push harbor.my.org:1080/bronzels/spark-juicefs-tpc:${SPARK_VERSION}
+EOF
+docker build ./ -f Dockerfile.tpc --progress=plain -t harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:${SPARK_VERSION}
+docker push harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:${SPARK_VERSION}
 
 helm repo add spark-operator https://googlecloudplatform.github.io/spark-on-k8s-operator
 
