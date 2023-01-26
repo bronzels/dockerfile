@@ -112,8 +112,10 @@ COPY --chown=hdfs:root hive-site.xml /app/hdfs/spark/conf/
 
 COPY --chown=hdfs:root spark-sql-cluster-mode-3/target/my-spark-sql-cluster-3.jar /app/hdfs/spark/jars/
 
-COPY --chown=hdfs:root rss-shuffle-manager-${RSS_VERSION}-shaded.jar /app/hdfs/spark/jars/
-COPY --chown=hdfs:root spark-defaults.conf /app/hdfs/spark/conf/
+COPY --chown=hdfs:root celeborn-client-spark-3-shaded_2.12-${RSS_VERSION}.jar /app/hdfs/spark/jars/
+
+COPY --chown=hdfs:root spark-defaults.conf /app/hdfs/spark/conf/spark-defaults.conf
+#COPY --chown=hdfs:root spark-defaults-rss.conf /app/hdfs/spark/conf/spark-defaults.conf
 
 #history server
 COPY envsubst /usr/local/bin/

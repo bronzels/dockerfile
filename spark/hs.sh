@@ -85,28 +85,6 @@ helm install myhs -n spark-operator -f values.yaml \
   --set sparkEventLogStorage.logDirectory=file:///tmp/sparklogs \
   ./
   spark-submit \
-    --master \
-    k8s://https://kubernetes.default.svc.cluster.local:443 \
-    --deploy-mode cluster \
-    --name spark-pi \
-    --class org.apache.spark.examples.SparkPi \
-    --conf spark.executor.instances=5 \
-    --conf spark.kubernetes.namespace=spark-operator \
-    --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
-    --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:3.3.1 \
-    --conf spark.kubernetes.authenticate.driver.serviceAccountName=default \
-    --conf spark.eventLog.enabled=true \
-    --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.juicefsvol.mount.path=/tmp/sparklogs \
-    --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.juicefsvol.readOnly=false \
-    --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.juicefsvol.options.claimName=rss-juicefs-pvc \
-    --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.juicefsvol.mount.path=/tmp/sparklogs \
-    --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.juicefsvol.readOnly=false \
-    --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.juicefsvol.options.claimName=rss-juicefs-pvc \
-    --conf spark.eventLog.dir=file:///tmp/sparklogs \
-    /app/hdfs/spark/examples/jars/spark-examples_2.12-3.3.1.jar
-
-
-  spark-submit \
     --name spark-pi \
     --class org.apache.spark.examples.SparkPi \
     --conf spark.executor.instances=5 \

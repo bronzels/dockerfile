@@ -20,20 +20,29 @@ EOF
 
 watch kube-capacity -u
 :<<EOF
+#before RSS cluster installed
 NODE       CPU REQUESTS   CPU LIMITS     CPU UTIL      MEMORY REQUESTS   MEMORY LIMITS   MEMORY UTIL
 *          6750m (24%)    10000m (35%)   575m (2%)   20408Mi (15%)     50516Mi (39%)   9726Mi (7%)
+NODE       CPU REQUESTS   CPU LIMITS     CPU UTIL    MEMORY REQUESTS   MEMORY LIMITS   MEMORY UTIL
+*          6750m (24%)    10000m (35%)   638m (2%)   20408Mi (15%)     50516Mi (39%)   7179Mi (5%)
+#after RSS cluster installed
+NODE       CPU REQUESTS   CPU LIMITS     CPU UTIL    MEMORY REQUESTS   MEMORY LIMITS   MEMORY UTIL
+*          8250m (29%)    12500m (44%)   557m (1%)   21944Mi (17%)     56660Mi (44%)   12793Mi (10%)
 EOF
 
 kubectl port-forward spark-test -n spark-operator 4040:4040 &
+
+kubectl port-forward svc/`kubectl get svc -n spark-operator |grep spark-sql-job-test-manual |awk '{print $1}'` -n spark-operator 4040:4040 &
 
 #删除已完成的driver pod
 kubectl get pod -n spark-operator |grep spark-sql-job-test-manual |grep driver |grep Completed |awk '{print $1}'| xargs kubectl delete pod "$1" -n spark-operator
 
 kubectl apply -f spark-test.yaml -n spark-operator
 kubectl delete -f spark-test.yaml -n spark-operator
+kubectl delete pod spark-test -n spark-operator --force --grace-period=0
 kubectl exec -it spark-test -n spark-operator -- /bin/bash
-  echo "use tpcds_bin_partitioned_orc_10" > dbuse.sql
 
+ansible all -m shell -a"crictl images|grep spark-juicefs|awk '{print \$3}'|xargs crictl rmi"
 
 :<<EOF
 test case
@@ -1091,6 +1100,620 @@ EOF
 
 
 :<<EOF
+test case
+  dynamic allocation with shuffletracking
+  scheduler set to volcano
+  assigned to a queue with half available resource by podgroup file
+  use maxpending to reduce pending executors
+  move common --conf from CLI to spark-defaults.conf
+  RSS cluster installed but disabled as base line
+EOF
+  echo -e "query,time" > spark-query.csv
+  arr=(2 9)
+  #for num in {1..2}
+  for num in ${arr[*]}
+  do
+    start=$(date +"%s.%9N")
+    spark-submit \
+      --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
+      --name spark-sql-job-test-manual-10-q${num} \
+      --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1 \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
+    end=$(date +"%s.%9N")
+    delta=`echo "scale=9;$end - $start" | bc`
+    echo q${num},${delta}
+    echo -e "q$num,${delta}" >> spark-query.csv
+  done
+  cat spark-query.csv
+:<<EOF
+q2,147.285537566
+q9,778.070888849
+EOF
+
+
+:<<EOF
+test case
+  dynamic allocation with shuffletracking
+  scheduler set to volcano
+  assigned to a queue with half available resource by podgroup file
+  use maxpending to reduce pending executors
+  move common --conf from CLI to spark-defaults.conf
+  RSS cluster enabled
+EOF
+  echo -e "query,time" > spark-query.csv
+  arr=(2 9)
+  #for num in {1..2}
+  for num in ${arr[*]}
+  do
+    start=$(date +"%s.%9N")
+    spark-submit \
+      --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
+      --name spark-sql-job-test-manual-10-q${num} \
+      --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1 \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
+    end=$(date +"%s.%9N")
+    delta=`echo "scale=9;$end - $start" | bc`
+    echo q${num},${delta}
+    echo -e "q$num,${delta}" >> spark-query.csv
+  done
+  cat spark-query.csv
+:<<EOF
+1，RSS的2个master提示没有leader，剩余的1个master和2个worker没有明显错误提示
+2，出现很多OOM executor，最后driver失败
+localhost:harbor apple$ kubectl logs spark-sql-job-test-manual-10-q9-6603be85ec8b484f-driver -n spark-operator
+++ id -u
++ myuid=1000
+++ id -g
++ mygid=0
++ set +e
+++ getent passwd 1000
++ uidentry=hdfs:x:1000:0::/app/hdfs:/bin/sh
++ set -e
++ '[' -z hdfs:x:1000:0::/app/hdfs:/bin/sh ']'
++ '[' -z /opt/java/openjdk ']'
++ SPARK_CLASSPATH=':/app/hdfs/spark/jars/*'
++ env
++ grep SPARK_JAVA_OPT_
++ sort -t_ -k4 -n
++ sed 's/[^=]*=\(.*\)/\1/g'
++ readarray -t SPARK_EXECUTOR_JAVA_OPTS
++ '[' -n '' ']'
++ '[' -z ']'
++ '[' -z ']'
++ '[' -n '' ']'
++ '[' -z ']'
++ '[' -z x ']'
++ SPARK_CLASSPATH='/opt/spark/conf::/app/hdfs/spark/jars/*'
++ case "$1" in
++ shift 1
++ CMD=("$SPARK_HOME/bin/spark-submit" --conf "spark.driver.bindAddress=$SPARK_DRIVER_BIND_ADDRESS" --deploy-mode client "$@")
++ exec /usr/bin/tini -s -- /app/hdfs/spark/bin/spark-submit --conf spark.driver.bindAddress=100.110.242.107 --deploy-mode client --properties-file /opt/spark/conf/spark.properties --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver spark-internal -f jfs://miniofs/tmp/spark-tpcds-10/q9.sql
+23/01/26 05:28:15 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+Spark master: k8s://https://kubernetes.default.svc.cluster.local:443, Application Id: spark-c68a2df6a52e450588d61ab5154b1c38
+Time taken: 0.873 seconds
+23/01/26 05:37:07 ERROR TaskSchedulerImpl: Lost executor 13 on 100.86.155.194:
+The executor with id 13 exited with exit code 137(SIGKILL, possible container OOM).
+
+
+
+The API gave the following container statuses:
+
+
+	 container name: spark-kubernetes-executor
+	 container image: harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1
+	 container state: terminated
+	 container started at: 2023-01-26T05:28:32Z
+	 container finished at: 2023-01-26T05:37:06Z
+	 exit code: 137
+	 termination reason: OOMKilled
+
+23/01/26 05:37:07 WARN TaskSetManager: Lost task 25.0 in stage 8.0 (TID 9337) (100.86.155.194 executor 13): ExecutorLostFailure (executor 13 exited caused by one of the running tasks) Reason:
+The executor with id 13 exited with exit code 137(SIGKILL, possible container OOM).
+
+
+
+The API gave the following container statuses:
+
+
+	 container name: spark-kubernetes-executor
+	 container image: harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1
+	 container state: terminated
+	 container started at: 2023-01-26T05:28:32Z
+	 container finished at: 2023-01-26T05:37:06Z
+	 exit code: 137
+	 termination reason: OOMKilled
+
+23/01/26 05:37:32 ERROR TaskSchedulerImpl: Lost executor 12 on 100.86.155.219:
+The executor with id 12 exited with exit code 137(SIGKILL, possible container OOM).
+
+
+
+The API gave the following container statuses:
+
+
+	 container name: spark-kubernetes-executor
+	 container image: harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1
+	 container state: terminated
+	 container started at: 2023-01-26T05:28:31Z
+	 container finished at: 2023-01-26T05:37:32Z
+	 exit code: 137
+	 termination reason: OOMKilled
+
+23/01/26 05:37:32 WARN TaskSetManager: Lost task 0.0 in stage 9.0 (TID 9376) (100.86.155.219 executor 12): ExecutorLostFailure (executor 12 exited caused by one of the running tasks) Reason:
+The executor with id 12 exited with exit code 137(SIGKILL, possible container OOM).
+
+
+
+The API gave the following container statuses:
+
+
+	 container name: spark-kubernetes-executor
+	 container image: harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1
+	 container state: terminated
+	 container started at: 2023-01-26T05:28:31Z
+	 container finished at: 2023-01-26T05:37:32Z
+	 exit code: 137
+	 termination reason: OOMKilled
+
+23/01/26 05:37:36 ERROR TaskSchedulerImpl: Lost executor 9 on 100.95.202.155:
+The executor with id 9 exited with exit code 137(SIGKILL, possible container OOM).
+
+
+
+The API gave the following container statuses:
+
+
+	 container name: spark-kubernetes-executor
+	 container image: harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1
+	 container state: terminated
+	 container started at: 2023-01-26T05:28:32Z
+	 container finished at: 2023-01-26T05:37:35Z
+	 exit code: 137
+	 termination reason: OOMKilled
+
+23/01/26 05:37:36 WARN TaskSetManager: Lost task 0.1 in stage 9.0 (TID 9393) (100.95.202.155 executor 9): ExecutorLostFailure (executor 9 exited caused by one of the running tasks) Reason:
+The executor with id 9 exited with exit code 137(SIGKILL, possible container OOM).
+
+
+
+The API gave the following container statuses:
+
+
+	 container name: spark-kubernetes-executor
+	 container image: harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1
+	 container state: terminated
+	 container started at: 2023-01-26T05:28:32Z
+	 container finished at: 2023-01-26T05:37:35Z
+	 exit code: 137
+	 termination reason: OOMKilled
+
+23/01/26 05:38:12 ERROR TaskSchedulerImpl: Lost executor 5 on 100.110.242.97:
+The executor with id 5 exited with exit code 137(SIGKILL, possible container OOM).
+
+
+
+The API gave the following container statuses:
+
+
+	 container name: spark-kubernetes-executor
+	 container image: harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1
+	 container state: terminated
+	 container started at: 2023-01-26T05:28:26Z
+	 container finished at: 2023-01-26T05:38:12Z
+	 exit code: 137
+	 termination reason: OOMKilled
+
+23/01/26 05:38:12 WARN TaskSetManager: Lost task 20.0 in stage 9.0 (TID 9399) (100.110.242.97 executor 5): ExecutorLostFailure (executor 5 exited caused by one of the running tasks) Reason:
+The executor with id 5 exited with exit code 137(SIGKILL, possible container OOM).
+
+
+
+The API gave the following container statuses:
+
+
+	 container name: spark-kubernetes-executor
+	 container image: harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1
+	 container state: terminated
+	 container started at: 2023-01-26T05:28:26Z
+	 container finished at: 2023-01-26T05:38:12Z
+	 exit code: 137
+	 termination reason: OOMKilled
+
+23/01/26 05:38:19 ERROR TaskSchedulerImpl: Lost executor 4 on 100.86.155.243:
+The executor with id 4 exited with exit code 137(SIGKILL, possible container OOM).
+
+
+
+The API gave the following container statuses:
+
+
+	 container name: spark-kubernetes-executor
+	 container image: harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1
+	 container state: terminated
+	 container started at: 2023-01-26T05:28:30Z
+	 container finished at: 2023-01-26T05:38:19Z
+	 exit code: 137
+	 termination reason: OOMKilled
+
+23/01/26 05:38:19 WARN TaskSetManager: Lost task 0.2 in stage 9.0 (TID 9395) (100.86.155.243 executor 4): ExecutorLostFailure (executor 4 exited caused by one of the running tasks) Reason:
+The executor with id 4 exited with exit code 137(SIGKILL, possible container OOM).
+
+
+
+The API gave the following container statuses:
+
+
+	 container name: spark-kubernetes-executor
+	 container image: harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1
+	 container state: terminated
+	 container started at: 2023-01-26T05:28:30Z
+	 container finished at: 2023-01-26T05:38:19Z
+	 exit code: 137
+	 termination reason: OOMKilled
+
+23/01/26 05:38:23 ERROR TaskSchedulerImpl: Lost executor 1 on 100.110.242.65:
+The executor with id 1 exited with exit code 137(SIGKILL, possible container OOM).
+
+
+
+The API gave the following container statuses:
+
+
+	 container name: spark-kubernetes-executor
+	 container image: harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1
+	 container state: terminated
+	 container started at: 2023-01-26T05:28:22Z
+	 container finished at: 2023-01-26T05:38:22Z
+	 exit code: 137
+	 termination reason: OOMKilled
+
+23/01/26 05:38:23 WARN TaskSetManager: Lost task 0.3 in stage 9.0 (TID 9411) (100.110.242.65 executor 1): ExecutorLostFailure (executor 1 exited caused by one of the running tasks) Reason:
+The executor with id 1 exited with exit code 137(SIGKILL, possible container OOM).
+
+
+
+The API gave the following container statuses:
+
+
+	 container name: spark-kubernetes-executor
+	 container image: harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1
+	 container state: terminated
+	 container started at: 2023-01-26T05:28:22Z
+	 container finished at: 2023-01-26T05:38:22Z
+	 exit code: 137
+	 termination reason: OOMKilled
+
+23/01/26 05:38:23 ERROR TaskSetManager: Task 0 in stage 9.0 failed 4 times; aborting job
+org.apache.spark.SparkException: Exception thrown in awaitResult:
+	at org.apache.spark.util.ThreadUtils$.awaitResult(ThreadUtils.scala:318)
+	at org.apache.spark.sql.execution.SubqueryExec.executeCollect(basicPhysicalOperators.scala:861)
+	at org.apache.spark.sql.execution.ScalarSubquery.updateResult(subquery.scala:80)
+	at org.apache.spark.sql.execution.SparkPlan.$anonfun$waitForSubqueries$1(SparkPlan.scala:262)
+	at org.apache.spark.sql.execution.SparkPlan.$anonfun$waitForSubqueries$1$adapted(SparkPlan.scala:261)
+	at scala.collection.mutable.ResizableArray.foreach(ResizableArray.scala:62)
+	at scala.collection.mutable.ResizableArray.foreach$(ResizableArray.scala:55)
+	at scala.collection.mutable.ArrayBuffer.foreach(ArrayBuffer.scala:49)
+	at org.apache.spark.sql.execution.SparkPlan.waitForSubqueries(SparkPlan.scala:261)
+	at org.apache.spark.sql.execution.SparkPlan.$anonfun$executeQuery$1(SparkPlan.scala:231)
+	at org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:151)
+	at org.apache.spark.sql.execution.SparkPlan.executeQuery(SparkPlan.scala:229)
+	at org.apache.spark.sql.execution.CodegenSupport.produce(WholeStageCodegenExec.scala:92)
+	at org.apache.spark.sql.execution.CodegenSupport.produce$(WholeStageCodegenExec.scala:92)
+	at org.apache.spark.sql.execution.ProjectExec.produce(basicPhysicalOperators.scala:42)
+	at org.apache.spark.sql.execution.WholeStageCodegenExec.doCodeGen(WholeStageCodegenExec.scala:660)
+	at org.apache.spark.sql.execution.WholeStageCodegenExec.doExecute(WholeStageCodegenExec.scala:723)
+	at org.apache.spark.sql.execution.SparkPlan.$anonfun$execute$1(SparkPlan.scala:194)
+	at org.apache.spark.sql.execution.SparkPlan.$anonfun$executeQuery$1(SparkPlan.scala:232)
+	at org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:151)
+	at org.apache.spark.sql.execution.SparkPlan.executeQuery(SparkPlan.scala:229)
+	at org.apache.spark.sql.execution.SparkPlan.execute(SparkPlan.scala:190)
+	at org.apache.spark.sql.execution.SparkPlan.getByteArrayRdd(SparkPlan.scala:340)
+	at org.apache.spark.sql.execution.SparkPlan.executeCollect(SparkPlan.scala:421)
+	at org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec.$anonfun$executeCollect$1(AdaptiveSparkPlanExec.scala:345)
+	at org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec.withFinalPlanUpdate(AdaptiveSparkPlanExec.scala:373)
+	at org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec.executeCollect(AdaptiveSparkPlanExec.scala:345)
+	at org.apache.spark.sql.execution.SparkPlan.executeCollectPublic(SparkPlan.scala:451)
+	at org.apache.spark.sql.execution.HiveResult$.hiveResultString(HiveResult.scala:76)
+	at org.apache.spark.sql.hive.thriftserver.SparkSQLDriver.$anonfun$run$2(SparkSQLDriver.scala:69)
+	at org.apache.spark.sql.execution.SQLExecution$.$anonfun$withNewExecutionId$6(SQLExecution.scala:109)
+	at org.apache.spark.sql.execution.SQLExecution$.withSQLConfPropagated(SQLExecution.scala:169)
+	at org.apache.spark.sql.execution.SQLExecution$.$anonfun$withNewExecutionId$1(SQLExecution.scala:95)
+	at org.apache.spark.sql.SparkSession.withActive(SparkSession.scala:779)
+	at org.apache.spark.sql.execution.SQLExecution$.withNewExecutionId(SQLExecution.scala:64)
+	at org.apache.spark.sql.hive.thriftserver.SparkSQLDriver.run(SparkSQLDriver.scala:69)
+	at org.apache.spark.sql.hive.thriftserver.SparkSQLCLIDriver.processCmd(SparkSQLCLIDriver.scala:384)
+	at org.apache.spark.sql.hive.thriftserver.SparkSQLCLIDriver.$anonfun$processLine$1(SparkSQLCLIDriver.scala:504)
+	at org.apache.spark.sql.hive.thriftserver.SparkSQLCLIDriver.$anonfun$processLine$1$adapted(SparkSQLCLIDriver.scala:498)
+	at scala.collection.Iterator.foreach(Iterator.scala:943)
+	at scala.collection.Iterator.foreach$(Iterator.scala:943)
+	at scala.collection.AbstractIterator.foreach(Iterator.scala:1431)
+	at scala.collection.IterableLike.foreach(IterableLike.scala:74)
+	at scala.collection.IterableLike.foreach$(IterableLike.scala:73)
+	at scala.collection.AbstractIterable.foreach(Iterable.scala:56)
+	at org.apache.spark.sql.hive.thriftserver.SparkSQLCLIDriver.processLine(SparkSQLCLIDriver.scala:498)
+	at org.apache.hadoop.hive.cli.CliDriver.processLine(CliDriver.java:336)
+	at org.apache.hadoop.hive.cli.CliDriver.processReader(CliDriver.java:474)
+	at org.apache.hadoop.hive.cli.CliDriver.processFile(CliDriver.java:490)
+	at org.apache.spark.sql.hive.my.MySparkSQLCLIDriver$.main(MySparkSQLCLIDriver.scala:188)
+	at org.apache.spark.sql.hive.my.MySparkSQLCLIDriver.main(MySparkSQLCLIDriver.scala)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+	at java.base/java.lang.reflect.Method.invoke(Unknown Source)
+	at org.apache.spark.deploy.JavaMainApplication.start(SparkApplication.scala:52)
+	at org.apache.spark.deploy.SparkSubmit.org$apache$spark$deploy$SparkSubmit$$runMain(SparkSubmit.scala:958)
+	at org.apache.spark.deploy.SparkSubmit.doRunMain$1(SparkSubmit.scala:180)
+	at org.apache.spark.deploy.SparkSubmit.submit(SparkSubmit.scala:203)
+	at org.apache.spark.deploy.SparkSubmit.doSubmit(SparkSubmit.scala:90)
+	at org.apache.spark.deploy.SparkSubmit$$anon$2.doSubmit(SparkSubmit.scala:1046)
+	at org.apache.spark.deploy.SparkSubmit$.main(SparkSubmit.scala:1055)
+	at org.apache.spark.deploy.SparkSubmit.main(SparkSubmit.scala)
+Caused by: java.util.concurrent.ExecutionException: org.apache.spark.SparkException: Job aborted due to stage failure: Task 0 in stage 9.0 failed 4 times, most recent failure: Lost task 0.3 in stage 9.0 (TID 9411) (100.110.242.65 executor 1): ExecutorLostFailure (executor 1 exited caused by one of the running tasks) Reason:
+The executor with id 1 exited with exit code 137(SIGKILL, possible container OOM).
+
+
+
+The API gave the following container statuses:
+
+
+	 container name: spark-kubernetes-executor
+	 container image: harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1
+	 container state: terminated
+	 container started at: 2023-01-26T05:28:22Z
+	 container finished at: 2023-01-26T05:38:22Z
+	 exit code: 137
+	 termination reason: OOMKilled
+
+Driver stacktrace:
+	at java.base/java.util.concurrent.FutureTask.report(Unknown Source)
+	at java.base/java.util.concurrent.FutureTask.get(Unknown Source)
+	at org.apache.spark.util.ThreadUtils$.awaitResult(ThreadUtils.scala:310)
+	... 62 more
+Caused by: org.apache.spark.SparkException: Job aborted due to stage failure: Task 0 in stage 9.0 failed 4 times, most recent failure: Lost task 0.3 in stage 9.0 (TID 9411) (100.110.242.65 executor 1): ExecutorLostFailure (executor 1 exited caused by one of the running tasks) Reason:
+The executor with id 1 exited with exit code 137(SIGKILL, possible container OOM).
+
+
+
+The API gave the following container statuses:
+
+
+	 container name: spark-kubernetes-executor
+	 container image: harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1
+	 container state: terminated
+	 container started at: 2023-01-26T05:28:22Z
+	 container finished at: 2023-01-26T05:38:22Z
+	 exit code: 137
+	 termination reason: OOMKilled
+
+Driver stacktrace:
+	at org.apache.spark.scheduler.DAGScheduler.failJobAndIndependentStages(DAGScheduler.scala:2674)
+	at org.apache.spark.scheduler.DAGScheduler.$anonfun$abortStage$2(DAGScheduler.scala:2610)
+	at org.apache.spark.scheduler.DAGScheduler.$anonfun$abortStage$2$adapted(DAGScheduler.scala:2609)
+	at scala.collection.mutable.ResizableArray.foreach(ResizableArray.scala:62)
+	at scala.collection.mutable.ResizableArray.foreach$(ResizableArray.scala:55)
+	at scala.collection.mutable.ArrayBuffer.foreach(ArrayBuffer.scala:49)
+	at org.apache.spark.scheduler.DAGScheduler.abortStage(DAGScheduler.scala:2609)
+	at org.apache.spark.scheduler.DAGScheduler.$anonfun$handleTaskSetFailed$1(DAGScheduler.scala:1182)
+	at org.apache.spark.scheduler.DAGScheduler.$anonfun$handleTaskSetFailed$1$adapted(DAGScheduler.scala:1182)
+	at scala.Option.foreach(Option.scala:407)
+	at org.apache.spark.scheduler.DAGScheduler.handleTaskSetFailed(DAGScheduler.scala:1182)
+	at org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.doOnReceive(DAGScheduler.scala:2862)
+	at org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.onReceive(DAGScheduler.scala:2804)
+	at org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.onReceive(DAGScheduler.scala:2793)
+	at org.apache.spark.util.EventLoop$$anon$1.run(EventLoop.scala:49)
+
+23/01/26 05:38:23 WARN ExecutorPodsWatchSnapshotSource: Kubernetes client has been closed.
+23/01/26 05:38:24 WARN ShuffleClientImpl: Shuffle client has been shutdown!
+Exception in thread "main" java.lang.RuntimeException: MySparkSQLCLIDriver exit with code(1)
+	at org.apache.spark.sql.hive.my.MySparkSQLCLIDriver$.main(MySparkSQLCLIDriver.scala:204)
+	at org.apache.spark.sql.hive.my.MySparkSQLCLIDriver.main(MySparkSQLCLIDriver.scala)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+	at java.base/java.lang.reflect.Method.invoke(Unknown Source)
+	at org.apache.spark.deploy.JavaMainApplication.start(SparkApplication.scala:52)
+	at org.apache.spark.deploy.SparkSubmit.org$apache$spark$deploy$SparkSubmit$$runMain(SparkSubmit.scala:958)
+	at org.apache.spark.deploy.SparkSubmit.doRunMain$1(SparkSubmit.scala:180)
+	at org.apache.spark.deploy.SparkSubmit.submit(SparkSubmit.scala:203)
+	at org.apache.spark.deploy.SparkSubmit.doSubmit(SparkSubmit.scala:90)
+	at org.apache.spark.deploy.SparkSubmit$$anon$2.doSubmit(SparkSubmit.scala:1046)
+	at org.apache.spark.deploy.SparkSubmit$.main(SparkSubmit.scala:1055)
+	at org.apache.spark.deploy.SparkSubmit.main(SparkSubmit.scala)
+EOF
+
+
+:<<EOF
+test case
+  dynamic allocation with shuffletracking
+  scheduler set to volcano
+  assigned to a queue with half available resource by podgroup file
+  use maxpending to reduce pending executors
+  move common --conf from CLI to spark-defaults.conf
+  RSS cluster enabled
+  Fix executor memory to 2G to avoid executor OOM
+  #Increase off-heap memory to avoid executor OOM
+EOF
+  echo -e "query,time" > spark-query.csv
+  arr=(2 9)
+  #for num in {1..2}
+  for num in ${arr[*]}
+  do
+    start=$(date +"%s.%9N")
+    spark-submit \
+      --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
+      --name spark-sql-job-test-manual-10-q${num} \
+      --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1 \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+      --conf spark.executor.memory=2g \
+      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
+    end=$(date +"%s.%9N")
+    delta=`echo "scale=9;$end - $start" | bc`
+    echo q${num},${delta}
+    echo -e "q$num,${delta}" >> spark-query.csv
+  done
+  cat spark-query.csv
+:<<EOF
+q9还是有executor OOM，少了一些，driver没有失败
+q2,115.748011617
+q9,775.697776053
+EOF
+
+
+:<<EOF
+test case
+  dynamic allocation with shuffletracking
+  scheduler set to volcano
+  assigned to a queue with half available resource by podgroup file
+  use maxpending to reduce pending executors
+  move common --conf from CLI to spark-defaults.conf
+  RSS cluster enabled
+  Fix executor memory to 4G to avoid executor OOM
+  #Increase off-heap memory to avoid executor OOM
+EOF
+  echo -e "query,time" > spark-query.csv
+  arr=(9)
+  #for num in {1..2}
+  for num in ${arr[*]}
+  do
+    start=$(date +"%s.%9N")
+    spark-submit \
+      --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
+      --name spark-sql-job-test-manual-10-q${num} \
+      --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1 \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+      --conf spark.executor.memory=4g \
+      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
+    end=$(date +"%s.%9N")
+    delta=`echo "scale=9;$end - $start" | bc`
+    echo q${num},${delta}
+    echo -e "q$num,${delta}" >> spark-query.csv
+  done
+  cat spark-query.csv
+:<<EOF
+q9,685.477269435
+
+Time taken: 672.422 seconds, Fetched 1 row(s)
+357.850483	1038.882336	1721.298328	2404.876780	3086.395444
+
+有2个RSS master报错no leader，重启后不报错，但是重启时作业driver报错
+23/01/26 06:27:34 WARN RssHARetryClient: Master leader is not present currently, please check masters' status!
+23/01/26 06:27:34 WARN RssHARetryClient: Master leader is not present currently, please check masters' status!
+23/01/26 06:27:35 WARN RssHARetryClient: Master leader is not present currently, please check masters' status!
+23/01/26 06:27:35 WARN RssHARetryClient: Master leader is not present currently, please check masters' status!
+23/01/26 06:27:37 WARN RssHARetryClient: Master leader is not present currently, please check masters' status!
+23/01/26 06:27:37 WARN RssHARetryClient: Master leader is not present currently, please check masters' status!
+23/01/26 06:27:38 WARN RssHARetryClient: Master leader is not present currently, please check masters' status!
+23/01/26 06:27:38 WARN RssHARetryClient: Master leader is not present currently, please check masters' status!
+23/01/26 06:27:40 ERROR RssHARetryClient: Send rpc with failure, has tried 15, max try 15!
+org.apache.celeborn.common.exception.CelebornException: Exception thrown in awaitResult:
+        at org.apache.celeborn.common.util.ThreadUtils$.awaitResult(ThreadUtils.scala:231)                                                                                                                       Handling at org.apache.celeborn.common.rpc.RpcTimeout.awaitResult(RpcTimeout.scala:74)
+        at org.apache.celeborn.common.haclient.RssHARetryClient.sendMessageInner(RssHARetryClient.java:150)
+        at org.apache.celeborn.common.haclient.RssHARetryClient.lambda$send$0(RssHARetryClient.java:109)                                                                                                         E0126 14:at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)80 -> 18080: Timeout occurred
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source)                                                                                                                                         Handling at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
+        at java.base/java.lang.Thread.run(Unknown Source)ndling connection for 2080
+Caused by: org.apache.celeborn.common.haclient.MasterNotLeaderException: Master:celeborn-master-2.celeborn-master-svc.spark-rss.svc.cluster.local:9097 is not the leader. Suggested leader is Master:leader is not
+ present.                                                                                                      Handling connection for 2080
+        at org.apache.celeborn.service.deploy.master.clustermeta.ha.HAHelper.checkShouldProcess(HAHelper.java:51)                                                                                                E0126 14:at org.apache.celeborn.service.deploy.master.Master.executeWithLeaderChecker(Master.scala:191)imeout occurred
+        at org.apache.celeborn.service.deploy.master.Master$$anonfun$receiveAndReply$1.applyOrElse(Master.scala:216) E0126 14:25:53.078565   27098 portforward.go:368] error creating forwarding stream for port 2080 -> 1at org.apache.celeborn.common.rpc.netty.Inbox.$anonfun$process$1(Inbox.scala:115)
+        at org.apache.celeborn.common.rpc.netty.Inbox.safelyCall(Inbox.scala:222)
+RSS worker也有报错：
+23/01/26 14:31:11,147 WARN [worker-forward-message-scheduler] RssHARetryClient: Connect to celeborn-master-1.celeborn-master-svc.spark-rss.svc.cluster.local:9097 failed.
+org.apache.celeborn.common.rpc.RpcTimeoutException: Futures timed out after [30000 milliseconds]. This timeout is controlled by celeborn.rpc.lookupTimeout
+	at org.apache.celeborn.common.rpc.RpcTimeout.org$apache$celeborn$common$rpc$RpcTimeout$$createRpcTimeoutException(RpcTimeout.scala:46)
+	at org.apache.celeborn.common.rpc.RpcTimeout$$anonfun$addMessageIfTimeout$1.applyOrElse(RpcTimeout.scala:61)
+	at org.apache.celeborn.common.rpc.RpcTimeout$$anonfun$addMessageIfTimeout$1.applyOrElse(RpcTimeout.scala:57)
+	at scala.runtime.AbstractPartialFunction.apply(AbstractPartialFunction.scala:38)
+	at org.apache.celeborn.common.rpc.RpcTimeout.awaitResult(RpcTimeout.scala:75)
+	at org.apache.celeborn.common.rpc.RpcEnv.setupEndpointRefByURI(RpcEnv.scala:96)
+	at org.apache.celeborn.common.rpc.RpcEnv.setupEndpointRef(RpcEnv.scala:104)
+	at org.apache.celeborn.common.haclient.RssHARetryClient.setupEndpointRef(RssHARetryClient.java:251)
+	at org.apache.celeborn.common.haclient.RssHARetryClient.getOrSetupRpcEndpointRef(RssHARetryClient.java:227)
+	at org.apache.celeborn.common.haclient.RssHARetryClient.sendMessageInner(RssHARetryClient.java:148)
+	at org.apache.celeborn.common.haclient.RssHARetryClient.askSync(RssHARetryClient.java:118)
+	at org.apache.celeborn.service.deploy.worker.Worker.org$apache$celeborn$service$deploy$worker$Worker$$heartBeatToMaster(Worker.scala:261)
+	at org.apache.celeborn.service.deploy.worker.Worker$$anon$1.$anonfun$run$1(Worker.scala:290)
+	at org.apache.celeborn.common.util.Utils$.tryLogNonFatalError(Utils.scala:193)
+	at org.apache.celeborn.service.deploy.worker.Worker$$anon$1.run(Worker.scala:290)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)
+	at java.util.concurrent.FutureTask.runAndReset(FutureTask.java:308)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.access$301(ScheduledThreadPoolExecutor.java:180)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:294)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.util.concurrent.TimeoutException: Futures timed out after [30000 milliseconds]
+	at scala.concurrent.impl.Promise$DefaultPromise.ready(Promise.scala:259)
+	at scala.concurrent.impl.Promise$DefaultPromise.result(Promise.scala:263)
+	at org.apache.celeborn.common.util.ThreadUtils$.awaitResult(ThreadUtils.scala:227)
+	at org.apache.celeborn.common.rpc.RpcTimeout.awaitResult(RpcTimeout.scala:74)
+	... 17 more
+23/01/26 14:31:11,150 INFO [worker-forward-message-scheduler] RssHARetryClient: connect to master celeborn-master-2.celeborn-master-svc.spark-rss.svc.cluster.local:9097.
+EOF
+
+
+:<<EOF
+test case
+  dynamic allocation without shuffletracking
+  scheduler set to volcano
+  assigned to a queue with half available resource by podgroup file
+  use maxpending to reduce pending executors
+  move common --conf from CLI to spark-defaults.conf
+  RSS cluster enabled
+  Fix executor memory to 4G to avoid executor OOM
+  #Increase off-heap memory to avoid executor OOM
+  Reboot RSS cluster to make sure no impact to job
+EOF
+  echo -e "query,time" > spark-query.csv
+  arr=(9)
+  #for num in {1..2}
+  for num in ${arr[*]}
+  do
+    start=$(date +"%s.%9N")
+    spark-submit \
+      --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
+      --name spark-sql-job-test-manual-10-q${num} \
+      --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1 \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+      --conf spark.executor.memory=4g \
+      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
+    end=$(date +"%s.%9N")
+    delta=`echo "scale=9;$end - $start" | bc`
+    echo q${num},${delta}
+    echo -e "q$num,${delta}" >> spark-query.csv
+  done
+  cat spark-query.csv
+:<<EOF
+1，with shuffletracking by mistake
+作业driver没有报错，rss集群还有1个master报错not leader，其他正常
+q9,683.564783875
+357.850483	1038.882336	1721.298328	2404.876780	3086.395444
+Time taken: 671.606 seconds, Fetched 1 row(s)
+
+2，without shuffletracking
+357.850483	1038.882336	1721.298328	2404.876780	3086.395444
+Time taken: 738.08 seconds, Fetched 1 row(s)
+q9,752.514148249
+EOF
+
+
+#9
+:<<EOF
+357.850483	1038.882336	1721.298328	2404.876780	3086.395444
+Time taken: 700.797 seconds, Fetched 1 row(s)
+EOF
+
+#1
+:<<EOF
 AAAAAAAAAAAAFAAA
 AAAAAAAAAAAAHAAA
 AAAAAAAAAAAAHAAA
@@ -1193,6 +1816,7 @@ AAAAAAAAAAIDBAAA
 AAAAAAAAAAIDFAAA
 Time taken: 166.423 seconds, Fetched 100 row(s)
 
+#2
 5270	NULL	NULL	NULL	1.64	NULL	NULL	NULL
 5270	NULL	NULL	NULL	1.64	NULL	NULL	NULL
 5270	NULL	NULL	NULL	1.64	NULL	NULL	NULL

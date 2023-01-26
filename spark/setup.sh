@@ -14,7 +14,7 @@ fi
 SPARK_VERSION=3.3.1
 HADOOP_VERSION=3.2.1
 HIVEREV=3.1.2
-RSS_VERSION=0.1.4
+RSS_VERSION=0.2.0-incubating
 
 :<<EOF
 wget -c https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop3.tgz
@@ -30,6 +30,9 @@ docker push harbor.my.org:1080/bronzels/spark-juicefs:${SPARK_VERSION}
 EOF
 docker build ./ --progress=plain --build-arg SPARK_VERSION="${SPARK_VERSION}" --build-arg HADOOP_VERSION="${HADOOP_VERSION}" --build-arg HIVEREV="${HIVEREV}" --build-arg RSS_VERSION="${RSS_VERSION}" -t harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:${SPARK_VERSION}
 docker push harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:${SPARK_VERSION}
+
+docker build ./ -f Dockerfile.tpc --progress=plain -t harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:${SPARK_VERSION}
+docker push harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:${SPARK_VERSION}
 
 #mv ./spark-${SPARK_VERSION}-bin-hadoop3.tgz ../
 mv ./spark-${SPARK_VERSION}-bin-volcano-rss.tgz ../

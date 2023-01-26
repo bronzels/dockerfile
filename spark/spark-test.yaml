@@ -8,6 +8,7 @@ spec:
   containers:
     - name: spark-test
       #image: harbor.my.org:1080/bronzels/spark-juicefs-tpc:3.3.1
-      image: "harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:3.3.1"
+      #image: "harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:3.3.1"
+      image: "harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1"
       command: ["tail"]
       args: ["-f", "/dev/null"]

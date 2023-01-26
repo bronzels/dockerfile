@@ -1,35 +1,25 @@
 #!/bin/bash
-container_image=$1
-echo "container_image:${container_image}"
-setting_sql_file=$2
-echo "setting_sql_file:${setting_sql_file}"
-execute_sql_file=$3
-echo "execute_sql_file:${execute_sql_file}"
-start=$(date +"%s.%9N")
-spark-sql \
-  --master \
-  k8s://https://${K8S_APISERVER} \
-  --deploy-mode client \
-  --name ${MY_POD_NAME} \
-  --conf spark.kubernetes.namespace=spark-operator \
-  --conf spark.kubernetes.authenticate.driver.serviceAccountName=default \
-  --conf spark.kubernetes.driver.pod.name=${MY_POD_NAME} \
-  --conf spark.driver.host=${MY_POD_IP} \
-  --conf spark.kubernetes.container.image=${container_image} \
-  --conf spark.executor.memory=${SPARK_EXECUTOR_MEMORY} \
-  --conf spark_kubernetes_executor_request_cores=${SPARK_KUBERNETES_EXECUTOR_REQUEST_CORES} \
-  --conf spark_kubernetes_executor_limit_cores=${SPARK_KUBERNETES_EXECUTOR_LIMIT_CORES} \
-  --conf spark.dynamicAllocation.enabled=true \
-  --conf spark.dynamicAllocation.initialExecutors=3 \
-  --conf spark.dynamicAllocation.minExecutors=1 \
-  --conf spark.dynamicAllocation.shuffleTracking.enabled=true \
-  --conf spark.dynamicAllocation.executorIdleTimeout=60s \
-  --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.options.claimName=rss-juicefs-pvc \
-  --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.options.sizeLimit=4Gi \
-  --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.mount.path=/data \
-  --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.mount.readOnly=false \
-  -i ${setting_sql_file} \
-  -f ${execute_sql_file}
-end=$(date +"%s.%9N")
-echo timediff:`echo "scale=9;$end - $start" | bc`
+echo -e "query,time" > spark-query.csv
+OLD_IFS="$IFS"
+IFS=","
+arr=($1)
+IFS="$OLD_IFS"
+#arr=(2 9)
+#for num in {1..2}
+for num in ${arr[*]}
+do
+  start=$(date +"%s.%9N")
+  spark-submit \
+    --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
+    --name spark-sql-job-test-manual-10-q${num} \
+    --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:3.3.1 \
+    --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+    $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+    -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
+  end=$(date +"%s.%9N")
+  delta=`echo "scale=9;$end - $start" | bc`
+  echo q${num},${delta}
+  echo -e "q$num,${delta}" >> spark-query.csv
+done
+cat spark-query.csv
 
