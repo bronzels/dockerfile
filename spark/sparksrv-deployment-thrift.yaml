@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "sparksrv.fullname" . }}-thrs
+  labels:
+    app: {{ template "sparksrv.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "sparksrv.fullname" . }}-thrs
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "sparksrv.fullname" . }}-thrs
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        release: "{{ .Release.Name }}"
+        heritage: "{{ .Release.Service }}"
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["bash", "-c", "cp /app/hdfs/spark/prepared_conf/bootstrap.sh /tmp/ && chmod +x /tmp/bootstrap.sh && /tmp/bootstrap.sh"]
+        env:
+          - name: HADOOP_USER_NAME
+            value: hdfs
+          - name: SPARK_NO_DAEMONIZE
+            value: "false"
+        volumeMounts:
+          - name: config-init-volume
+            mountPath: /app/hdfs/spark/prepared_conf
+          - name: juicefs-pvc
+            mountPath: "/tmp/sparklogs"
+        ports:
+          - name: http
+            containerPort: {{ .Values.service.internalPortThrift }}
+            protocol: TCP
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        resources:
+{{ toYaml .Values.resources | indent 12 }}
+      volumes:
+        - name: config-init-volume
+          configMap:
+            name: {{ template "sparksrv.fullname" . }}-sparksrv-config
+        - name: juicefs-pvc
+          persistentVolumeClaim:
+            claimName: rss-juicefs-pvc

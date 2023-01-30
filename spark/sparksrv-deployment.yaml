@@ -17,21 +17,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "spark-hs.fullname" . }}
+  name: {{ template "sparksrv.fullname" . }}-hs
   labels:
-    app: {{ template "spark-hs.fullname" . }}
+    app: {{ template "sparksrv.fullname" . }}-hs
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 spec:
   selector:
     matchLabels:
-      app: {{ template "spark-hs.fullname" . }}
+      app: {{ template "sparksrv.fullname" . }}-hs
   replicas: {{ .Values.replicaCount }}
   template:
     metadata:
       labels:
-        app: {{ template "spark-hs.fullname" . }}
+        app: {{ template "sparksrv.fullname" . }}-hs
         chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
         release: "{{ .Release.Name }}"
         heritage: "{{ .Release.Service }}"
@@ -46,10 +46,10 @@ spec:
             value: hdfs
           - name: SPARK_NO_DAEMONIZE
             value: "false"
-          #- name: SPARK_HISTORY_OPTS
-          #  value: {{ printf "-Dspark.history.fs.logDirectory=%s" (include "logDirectoryTag" . )}}
           - name: SPARK_HISTORY_OPTS
-            value: -Dspark.history.fs.logDirectory=file:///tmp/sparklogs
+            value: {{ printf "-Dspark.history.fs.logDirectory=%s" (include "logDirectoryTag" . )}}
+          #- name: SPARK_HISTORY_OPTS
+          #  value: -Dspark.history.fs.logDirectory=file:///tmp/sparklogs
         volumeMounts:
           - name: config-init-volume
             mountPath: /app/hdfs/spark/prepared_conf
@@ -75,11 +75,11 @@ spec:
       volumes:
         - name: config-init-volume
           configMap:
-            name: {{ template "spark-hs.fullname" . }}-spark-hs-config
+            name: {{ template "sparksrv.fullname" . }}-sparksrv-config
       {{- if or (eq $schema "google") ((eq $schema "oracle")) }}
         - name: secret-volume
           secret:
-            secretName: {{ default (printf "%s" (include "spark-hs.fullname" .)) .Values.sparkEventLogStorage.secretName }}
+            secretName: {{ default (printf "%s" (include "sparksrv.fullname" .)) .Values.sparkEventLogStorage.secretName }}
       {{- end }}
         - name: juicefs-pvc
           persistentVolumeClaim:

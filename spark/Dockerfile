@@ -27,6 +27,8 @@ FROM eclipse-temurin:${java_image_tag} as base
 # of the Spark distribution. E.g.:
 # docker build -t spark:latest -f kubernetes/dockerfiles/spark/Dockerfile .
 
+RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list
+
 RUN set -ex && \
     apt-get update && \
     ln -s /lib /lib64 && \
@@ -41,6 +43,8 @@ RUN useradd -d /app/hdfs hdfs
 RUN mkdir -p /app/hdfs
 RUN chown hdfs:hdfs /app/hdfs
 RUN usermod -g root hdfs
+
+RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 USER hdfs
 
@@ -123,6 +127,9 @@ RUN mkdir ${SPARK_HOME}/logs
 COPY --chown=hdfs:root hdfs-site.xml /app/hdfs/spark/conf/
 
 ENV PATH=.:${PATH}:${SPARK_HOME}/bin
+ENV TIME_ZONE Asia/Shanghai
+COPY --chown=hdfs:root spark-sql-job.sh /app/hdfs/spark/work-dir/
+COPY --chown=hdfs:root podgroups /app/hdfs/spark/work-dir/podgroups
 
 WORKDIR /app/hdfs/spark/work-dir
 

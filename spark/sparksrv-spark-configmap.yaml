@@ -2,16 +2,25 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: {{ template "spark-hs.fullname" . }}-spark-hs-config
+  name: {{ template "sparksrv.fullname" . }}-sparksrv-config
 data:
   bootstrap.sh: |-
     #!/bin/bash
-    # append his credentials
+    # append his credentials and others
+    echo "#add from srv cm---start---" >> /app/hdfs/spark/conf/spark-defaults.conf
     envsubst < /app/hdfs/spark/prepared_conf/spark-defaults.conf >> /app/hdfs/spark/conf/spark-defaults.conf
-    # start his server
-    /app/hdfs/spark/sbin/start-history-server.sh
-    #/app/hdfs/spark/bin/spark-class org.apache.spark.deploy.history.HistoryServer
-    # > /app/hdfs/spark/logs/history 2>&1
+    echo "" >> /app/hdfs/spark/conf/spark-defaults.conf
+    echo "#add from srv cm---end---" >> /app/hdfs/spark/conf/spark-defaults.conf
+    
+    if [[ "${HOSTNAME}" =~ "-hs" ]]; then
+      # start his server
+      /app/hdfs/spark/sbin/start-history-server.sh
+      #/app/hdfs/spark/bin/spark-class org.apache.spark.deploy.history.HistoryServer
+      # > /app/hdfs/spark/logs/history 2>&1
+    else
+      # start thrift server
+      /app/hdfs/spark/sbin/start-thriftserver.sh
+    fi
   spark-defaults.conf: |-
     {{- if .Values.sparkEventLogStorage.logDirectory }}
 
@@ -41,6 +50,13 @@ data:
     spark.hadoop.fs.oci.client.auth.fingerprint=$api_key_fingerprint
     spark.hadoop.fs.oci.client.auth.pemfilepath=/opt/spark/conf/secret/api_key
 
+    {{- else }}
+    #spark.history.fs.logDirectory={{ .Values.sparkEventLogStorage.logDirectory }}
+    
     {{- end }}
 
     {{- end }}
+    
+    #other history server conf
+
+    #thrift server conf

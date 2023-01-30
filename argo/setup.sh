@@ -1,8 +1,47 @@
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "Mac detected."
+    #mac
+    os=darwin
+    MYHOME=/Volumes/data
+    SED=gsed
+    bin=/Users/apple/bin
+else
+    echo "Assuming linux by default."
+    #linux
+    os=linux
+    MYHOME=~
+    SED=sed
+    bin=/usr/local/bin
+fi
+
+MYAROGO_HOME=${MYHOME}/workspace/dockerfile/argo
+
+cd ${MYAROGO_HOME}
+
 kubectl create ns argo
 
-wget -c https://raw.githubusercontent.com/argoproj/argo/stable/manifests/install.yaml
-kubectl apply -n argo -f install.yaml
-#kubectl delete -n argo -f install.yaml
+#1，argo cd
+#2个环境都要安装argocd
+kubectl apply -f install-cd.yaml -n argo
+#kubectl delete -f install-cd.yaml -n argo
+:<<\EOF
+http://www.ab126.com/goju/10822.html
+	输入argo56789
+	把加密结果copy到下面的admin.password
+EOF
+kubectl -n argo patch secret argocd-secret   -p '{"stringData": {
+      "admin.password": "$2a$10$x.7L4gBC9CrSXcvjqW6gM.A/1hD8g2fz8APKxboJCnjVX0VRvON8W",
+      "admin.passwordMtime": "'$(date +%FT%T%Z)'"
+    }}'
+#admin/argo56789
+
+
+#2，argo workflow
+argowf_cli_rev=3.4.4
+
+wget -c https://raw.githubusercontent.com/argoproj/argo/stable/manifests/install.yaml -o install-workflow.yaml
+kubectl apply -n argo -f workflow-install.yaml
+#kubectl delete -n argo -f workflow-install.yaml
 wget -c https://raw.githubusercontent.com/argoproj/argo-workflows/stable/manifests/quick-start-postgres.yaml
 #kubectl apply -n argo -f quick-start-postgres.yaml
 #kubectl delete -n argo -f quick-start-postgres.yaml
@@ -23,11 +62,10 @@ status:
   loadBalancer: {}
 EOF
 
-curl -sLO https://github.com/argoproj/argo/releases/download/v3.0.2/argo-linux-amd64.gz
-gunzip argo-linux-amd64.gz
-chmod +x argo-linux-amd64
-#mv ./argo-linux-amd64 /usr/bin/argo
-sudo ln -s ${PWD}/argo-linux-amd64 /usr/bin/argo
+curl -sLO https://github.com/argoproj/argo/releases/download/v${argowf_cli_rev}/argo-${os}-amd64.gz
+gunzip argo-${os}-amd64.gz
+chmod +x argo-${os}-amd64
+mv ./argo-${os}-amd64 ${bin}/
 argo version
 
 cat << \EOF > argowf-hello-world.yaml
@@ -148,3 +186,10 @@ kubectl apply -n batchpy -f cron.yaml
 argo cron list -n batchpy
 argo cron delete -n batchpy minutely-job
 
+
+#3，argo rollout
+
+
+#4，argo dashboard
+git clone git@github.com:tencentmusic/cube-studio.git
+git clone git@github.com:tencentmusic/argo-workflow.git

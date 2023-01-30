@@ -56,7 +56,7 @@ services:
     - GITLAB_HTTPS=false
     - SSL_SELF_SIGNED=false
 
-    - GITLAB_HOST=192.168.0.62
+    - GITLAB_HOST=192.168.3.9
     - GITLAB_PORT=12080
     - GITLAB_SSH_PORT=12022
     - GITLAB_RELATIVE_URL_ROOT=
@@ -78,11 +78,11 @@ services:
     - GITLAB_BACKUP_TIME=01:00
 
     - SMTP_ENABLED=true
-    - SMTP_DOMAIN=acadsoc.com
-    - SMTP_HOST=smtp.mxhichina.com
+    - SMTP_DOMAIN=163.com
+    - SMTP_HOST=smtp.163.com
     - SMTP_PORT=465
-    - SMTP_USER=HadoopWarnMsg@acadsoc.com
-    - SMTP_PASS=Aks@2019Acs2011
+    - SMTP_USER=bronzels@163.com
+    - SMTP_PASS=OGVMXOZRXEBDMPVW
     - SMTP_STARTTLS=false
     - SMTP_AUTHENTICATION=login
 

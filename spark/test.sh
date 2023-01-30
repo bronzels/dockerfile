@@ -352,9 +352,7 @@ test case
   localdir set to OnDemand juicefs PVC
 EOF
 kubectl apply -f rss-juicefs-pvc.yaml -n spark-operator
-kubectl apply -f rss-juicefs-pvc-test-pod.yaml -n spark-operator
 :<<EOF
-kubectl delete -f rss-juicefs-pvc-test-pod.yaml -n spark-operator
 kubectl delete -f rss-juicefs-pvc.yaml -n spark-operator
 EOF
   echo -e "query,time" > spark-query.csv
@@ -1673,15 +1671,16 @@ test case
   Reboot RSS cluster to make sure no impact to job
 EOF
   echo -e "query,time" > spark-query.csv
-  arr=(9)
+  arr=(1)
   #for num in {1..2}
   for num in ${arr[*]}
   do
     start=$(date +"%s.%9N")
     spark-submit \
+      --deploy-mode cluster \
       --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
       --name spark-sql-job-test-manual-10-q${num} \
-      --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1 \
+      --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:3.3.1 \
       --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
       --conf spark.executor.memory=4g \
       $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
@@ -1703,6 +1702,49 @@ Time taken: 671.606 seconds, Fetched 1 row(s)
 357.850483	1038.882336	1721.298328	2404.876780	3086.395444
 Time taken: 738.08 seconds, Fetched 1 row(s)
 q9,752.514148249
+EOF
+
+
+:<<EOF
+test case
+  dynamic allocation without shuffletracking
+  scheduler set to volcano
+  assigned to a queue with half available resource by podgroup file
+  use maxpending to reduce pending executors
+  move common --conf from CLI to spark-defaults.conf
+  RSS cluster enabled
+  Fix executor memory to 4G to avoid executor OOM
+  #Increase off-heap memory to avoid executor OOM
+  Reboot RSS cluster to make sure no impact to job
+  Try spark-sql with volcano
+EOF
+  echo -e "query,time" > spark-query.csv
+  arr=(1)
+  #for num in {1..2}
+  for num in ${arr[*]}
+  do
+    start=$(date +"%s.%9N")
+    #spark-submit \
+    #  --deploy-mode cluster \
+    #  --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
+    #  $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+    spark-sql \
+      --deploy-mode client \
+      --name spark-sql-job-test-manual-10-q${num} \
+      --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:3.3.1 \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+      --conf spark.executor.memory=4g \
+      -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
+    end=$(date +"%s.%9N")
+    delta=`echo "scale=9;$end - $start" | bc`
+    echo q${num},${delta}
+    echo -e "q$num,${delta}" >> spark-query.csv
+  done
+  cat spark-query.csv
+:<<EOF
+volcano需要用podgroup处理driver的资源，但是client模式driver和发起命令的已经存在的pod是同一个，无法处理，所以用volcano就必须用cluster模式
+23/01/30 10:12:51 WARN ExecutorPodsSnapshotsStoreImpl: Exception when notifying snapshot subscriber.
+io.fabric8.kubernetes.client.KubernetesClientException: Failure executing: POST at: https://kubernetes.default.svc.cluster.local/api/v1/namespaces/spark-operator/pods. Message: admission webhook "validatepod.volcano.sh" denied the request: failed to get PodGroup for pod <spark-operator/spark-sql-job-test-manual-10-q1-89a4df860229efaa-exec-3>: podgroups.scheduling.volcano.sh "spark-0f19d22bb4564761a869067c3c54eb51-podgroup" not found. Received status: Status(apiVersion=v1, code=400, details=null, kind=Status, message=admission webhook "validatepod.volcano.sh" denied the request: failed to get PodGroup for pod <spark-operator/spark-sql-job-test-manual-10-q1-89a4df860229efaa-exec-3>: podgroups.scheduling.volcano.sh "spark-0f19d22bb4564761a869067c3c54eb51-podgroup" not found, metadata=ListMeta(_continue=null, remainingItemCount=null, resourceVersion=null, selfLink=null, additionalProperties={}), reason=null, status=Failure, additionalProperties={}).
 EOF
 
 

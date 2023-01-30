@@ -10,7 +10,10 @@ spec:
       - "/bin/sh"
     args:
       - "-c"
-      - "echo 'success' > /mnt/SUCCESS && exit 0 || exit 1"
+      #- "echo 'success' > /mnt/SUCCESS && exit 0 || exit 1"
+      #- "cat /mnt/SUCCESS && exit 0 || exit 1"
+      #- "echo 'success2' > /mnt/SUCCESS && cat /mnt/SUCCESS"
+      - "tail -f /dev/null"
     volumeMounts:
       - name: juicefs-pvc
         mountPath: "/mnt"
