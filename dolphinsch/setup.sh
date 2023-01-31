@@ -48,49 +48,181 @@ EOF
 mvn install clean -Prelease -DskipTests
 #package没法编译
 
-cd dolphinscheduler-worker/src/main/docker
-tar xzvf ${MYDOLPHINSCH_HOME}/apache-dolphinscheduler-${DOLPHINSCH_REV}-src/dolphinscheduler-dist/target/apache-dolphinscheduler-${DOLPHINSCH_REV}-bin.tar.gz
-file=Dockerfile
-cp ${file} ${file}.bk
-$SED -i '/FROM eclipse-temurin:8-jre/a\USER root' ${file}
-$SED -i 's/FROM eclipse-temurin:8-jre/FROM harbor.my.org:1080\/bronzels\/spark-juicefs-volcano-rss:3.3.1/g' ${file}
-$SED -i 's/CMD/ENTRYPOINT/g' ${file}
-$SED -i 's@ADD ./target/worker-server@ADD apache-dolphinscheduler-${DOLPHINSCH_REV}-bin/worker-server@g' ${file}
-$SED -i '/ENV DOCKER true/i\ARG DOLPHINSCH_REV=' ${file}
-docker build ./ --progress=plain --build-arg DOLPHINSCH_REV="${DOLPHINSCH_REV}" --build-arg SPARK_VERSION="${SPARK_VERSION}" -t harbor.my.org:1080/dolphinsch/dolphinscheduler-worker-spark-${SPARK_VERSION}:${DOLPHINSCH_REV}
-docker push harbor.my.org:1080/dolphinsch/dolphinscheduler-worker-spark-${SPARK_VERSION}:${DOLPHINSCH_REV}
-
 #docker
-ansible all -m shell -a"docker images|grep dolphinscheduler-worker-spark"
-ansible all -m shell -a"docker images|grep dolphinscheduler-worker-spark|awk '{print \$3}'|xargs docker rmi -f"
+ansible all -m shell -a"docker images|grep dolphinscheduler"
+ansible all -m shell -a"docker images|grep dolphinscheduler|awk '{print \$3}'|xargs docker rmi -f"
 #containerd
-ansible all -m shell -a"crictl images|grep dolphinscheduler-worker-spark"
-ansible all -m shell -a"crictl images|grep dolphinscheduler-worker-spark|awk '{print \$3}'|xargs crictl rmi"
+ansible all -m shell -a"crictl images|grep dolphinscheduler"
+ansible all -m shell -a"crictl images|grep dolphinscheduler |awk '{print \$3}'|xargs crictl rmi"
 
-arr=(master api alert tools)
-#arr=(alert tools)
+cd ${MYDOLPHINSCH_HOME}/apache-dolphinscheduler-${DOLPHINSCH_REV}-src
+cd deploy/docker
+tar xzvf ${MYDOLPHINSCH_HOME}/apache-dolphinscheduler-${DOLPHINSCH_REV}-src/dolphinscheduler-dist/target/apache-dolphinscheduler-${DOLPHINSCH_REV}-bin.tar.gz
+
+
+cat << \EOF > p1.2
+ARG DOLPHINSCH_REV=
+ENV DOCKER true
+ENV TZ Asia/Shanghai
+ENV DOLPHINSCHEDULER_HOME /opt/dolphinscheduler
+
+WORKDIR $DOLPHINSCHEDULER_HOME
+
+ARG DOLPHINSCH_REV=
+
+EOF
+
+arr=(worker master api alert tools)
 for prj in ${arr[*]}
 do
-  cd ${MYDOLPHINSCH_HOME}/apache-dolphinscheduler-${DOLPHINSCH_REV}-src
-  if [[ "${prj}" =~ "alert" ]]; then
-    cd dolphinscheduler-${prj}/dolphinscheduler-${prj}-server/src/main/docker
+
+  if [[ "${prj}" =~ "worker" || "${prj}" =~ "api" ]]; then
+cat << EOF > p1.1
+FROM harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:3.3.1 AS spark
+
+FROM eclipse-temurin:8-jre AS final
+
+EOF
   else
-    cd dolphinscheduler-${prj}/src/main/docker
+cat << EOF > p1.1
+FROM eclipse-temurin:8-jre
+
+EOF
   fi
-  file=Dockerfile
-  cp ${file} ${file}.bk
-  tar xzf ${MYDOLPHINSCH_HOME}/apache-dolphinscheduler-${DOLPHINSCH_REV}-src/dolphinscheduler-dist/target/apache-dolphinscheduler-${DOLPHINSCH_REV}-bin.tar.gz
+
+  if [[ "${prj}" =~ "worker" ]]; then
+cat << EOF > p2
+RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list
+
+RUN set -ex && \
+    apt-get update && \
+    ln -s /lib /lib64 && \
+    apt install -y bash tini libc6 libpam-modules krb5-user libnss3 procps net-tools && \
+    rm /bin/sh && \
+    ln -sv /bin/bash /bin/sh && \
+    echo "auth required pam_wheel.so use_uid" >> /etc/pam.d/su && \
+    chgrp root /etc/passwd && chmod ug+rw /etc/passwd && \
+    rm -rf /var/cache/apt/* && rm -rf /var/lib/apt/lists/*
+
+RUN useradd -d /app/hdfs hdfs
+RUN mkdir -p /app/hdfs
+RUN chown hdfs:hdfs /app/hdfs
+RUN usermod -g root hdfs
+
+RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+ENV TIME_ZONE Asia/Shanghai
+
+COPY --from=spark --chown=hdfs:root /app/hdfs/spark /app/hdfs/spark
+ENV SPARK_HOME /app/hdfs/spark
+
+COPY --from=spark --chown=hdfs:root /app/hdfs/decom.sh /app/hdfs/decom.sh
+
+COPY --from=spark /usr/local/bin/mc /usr/local/bin/mc
+COPY --from=spark /usr/local/bin/miniogw /usr/local/bin/miniogw
+COPY --from=spark /usr/local/bin/juicefs /usr/local/bin/juicefs
+
+EOF
+  elif [[ "${prj}" =~ "api" ]]; then
+cat << EOF > p2
+RUN useradd -d /app/hdfs hdfs
+RUN mkdir -p /app/hdfs
+RUN chown hdfs:hdfs /app/hdfs
+RUN usermod -g root hdfs
+
+RUN mkdir /app/hdfs/spark
+RUN chown hdfs:root /app/hdfs/spark
+COPY --from=spark --chown=hdfs:root /app/hdfs/spark/conf /app/hdfs/spark/conf
+ENV HADOOP_CONF_DIR /app/hdfs/spark/conf
+
+EOF
+  else
+    echo "" > p2
+  fi
+
   if [[ "${prj}" =~ "tools" ]]; then
-    $SED -i "s@ADD ./target/tools@ADD apache-dolphinscheduler-\${DOLPHINSCH_REV}-bin/tools@g" ${file}
+cat << EOF > p3
+ADD apache-dolphinscheduler-\${DOLPHINSCH_REV}-bin/${prj} \$DOLPHINSCHEDULER_HOME/tools
+EOF
+  elif [[ "${prj}" =~ "api" ]]; then
+cat << EOF > p3
+ADD apache-dolphinscheduler-\${DOLPHINSCH_REV}-bin/${prj}-server \$DOLPHINSCHEDULER_HOME
+COPY --from=spark --chown=hdfs:root /app/hdfs/spark/jars/juicefs-hadoop-1.0.2.jar \$DOLPHINSCHEDULER_HOME/libs
+EOF
   else
-    $SED -i "s@ADD ./target/${prj}-server@ADD apache-dolphinscheduler-\${DOLPHINSCH_REV}-bin/${prj}-server@g" ${file}
+cat << EOF > p3
+ADD apache-dolphinscheduler-\${DOLPHINSCH_REV}-bin/${prj}-server \$DOLPHINSCHEDULER_HOME
+EOF
   fi
-  $SED -i '/ENV DOCKER true/i\ARG DOLPHINSCH_REV=' ${file}
-  ls && cat Dockerfile
-  docker build ./ --progress=plain --build-arg DOLPHINSCH_REV="${DOLPHINSCH_REV}" -t harbor.my.org:1080/dolphinsch/dolphinscheduler-${prj}:${DOLPHINSCH_REV}
-  docker push harbor.my.org:1080/dolphinsch/dolphinscheduler-${prj}:${DOLPHINSCH_REV}
+
+  if [[ "${prj}" =~ "worker" ]]; then
+cat << \EOF > p4
+EXPOSE 1235
+EOF
+  elif [[ "${prj}" =~ "master" ]]; then
+cat << \EOF > p4
+EXPOSE 12345
+EOF
+  elif [[ "${prj}" =~ "api" ]]; then
+cat << \EOF > p4
+EXPOSE 12345 25333
+EOF
+  elif [[ "${prj}" =~ "alert" ]]; then
+cat << \EOF > p4
+EXPOSE 50052 50053
+EOF
+  else
+    echo "" > p4
+  fi
+
+  if [[ "${prj}" =~ "tools" ]]; then
+cat << \EOF > p5
+ENTRYPOINT [ "/bin/bash" ]
+EOF
+  else
+cat << \EOF > p5
+CMD [ "/bin/bash", "./bin/start.sh" ]
+EOF
+  fi
+
+  file=Dockerfile.${prj}
+  cat p1.1 > ${file}
+  cat p1.2 >> ${file}
+  cat p2 >> ${file}
+  cat p3 >> ${file}
+  cat p4 >> ${file}
+  cat p5 >> ${file}
+  cat ${file}
+
+done
+rm -f p*
+
+#设置HADOOP_CONF_DIR，但还是读不到core-site.xml，修改启动脚本，加入juicefs相关hdfs conf到cp
+#加到最前面会被后面hadoop相关jar的空配置文件覆盖，要加到最后面
+arr=(api worker)
+for prj in ${arr[*]}
+do
+  file=apache-dolphinscheduler-${DOLPHINSCH_REV}-bin/${prj}-server/bin/start.sh
+  #cp ${file} ${file}.bk
+  $SED -i 's/*"/*":"$HADOOP_CONF_DIR"/g' ${file}
 done
 
+arr=(worker master api alert tools)
+#arr=(worker api)
+arr=(api)
+arr=(master alert tools)
+for prj in ${arr[*]}
+do
+  if [[ "${prj}" =~ "worker" ]]; then
+    docker build ./ -f Dockerfile.${prj} --progress=plain --build-arg DOLPHINSCH_REV="${DOLPHINSCH_REV}" --build-arg SPARK_VERSION="${SPARK_VERSION}" -t harbor.my.org:1080/dolphinsch/dolphinscheduler-worker-spark-${SPARK_VERSION}:${DOLPHINSCH_REV}
+    docker push harbor.my.org:1080/dolphinsch/dolphinscheduler-worker-spark-${SPARK_VERSION}:${DOLPHINSCH_REV}
+  elif [[ "${prj}" =~ "api" ]]; then
+    docker build ./ -f Dockerfile.${prj} --progress=plain --build-arg DOLPHINSCH_REV="${DOLPHINSCH_REV}" -t harbor.my.org:1080/dolphinsch/dolphinscheduler-api-juicefs:${DOLPHINSCH_REV}
+    docker push harbor.my.org:1080/dolphinsch/dolphinscheduler-api-juicefs:${DOLPHINSCH_REV}
+  else
+    docker build ./ -f Dockerfile.${prj} --progress=plain --build-arg DOLPHINSCH_REV="${DOLPHINSCH_REV}" -t harbor.my.org:1080/dolphinsch/dolphinscheduler-${prj}:${DOLPHINSCH_REV}
+    docker push harbor.my.org:1080/dolphinsch/dolphinscheduler-${prj}:${DOLPHINSCH_REV}
+  fi
+done
 
 cd ${MYDOLPHINSCH_HOME}/apache-dolphinscheduler-${DOLPHINSCH_REV}-src
 cd deploy/kubernetes/dolphinscheduler
@@ -100,6 +232,12 @@ $SED -i 's/          image: {{ include "dolphinscheduler.image.fullname.master" 
 $SED -i 's/          image: {{ include "dolphinscheduler.image.fullname.api" . }}/          image: {{ .Values.image.api }}:{{ .Values.image.tag }}/g' templates/deployment-dolphinscheduler-api.yaml
 $SED -i 's/          image: {{ include "dolphinscheduler.image.fullname.alert" . }}/          image: {{ .Values.image.alert }}:{{ .Values.image.tag }}/g' templates/deployment-dolphinscheduler-alert.yaml
 $SED -i 's/          image: {{ include "dolphinscheduler.image.fullname.tools" . }}/          image: {{ .Values.image.tools }}:{{ .Values.image.tag }}/g' templates/job-dolphinscheduler-schema-initializer.yaml
+
+file=values.yaml
+cp ${file} ${file}.bk
+$SED -i 's@    resource.hdfs.fs.defaultFS: hdfs://mycluster:8020@    resource.hdfs.fs.defaultFS: jfs://miniofs@g' ${file}
+$SED -i 's@    resource.storage.upload.base.path: /dolphinscheduler@    resource.storage.upload.base.path: jfs://miniofs/tmp/k8sup@g' ${file}
+
 helm repo add bitnami https://charts.bitnami.com/bitnami
 helm dependency update .
 kubectl create ns dolphinsch
@@ -108,6 +246,7 @@ helm search repo dolphinscheduler
 :<<EOF
 helm install my bitnami/dolphinscheduler \
   --set image.worker=harbor.my.org:1080/dolphinsch/dolphinscheduler-worker-spark-${SPARK_VERSION} \
+  --set image.api=harbor.my.org:1080/dolphinsch/dolphinscheduler-api-juicefs \
   --set image.tag=${DOLPHINSCH_REV} \
   --set common.configmap.SPARK_HOME1=/app/hdfs/spark \
   --version ${DOLPHINSCH_REV} \
@@ -116,6 +255,7 @@ EOF
 
 #把mysql从Chart.yaml里删除
 helm dependency build
+:<<EOF
 #缺省安装报错：FATAL:  remaining connection slots are reserved for non-replication superuser connections
 #据说缺省maxconnection 100，reserved 3，不知道为什么启动就没有了
 cd charts
@@ -125,18 +265,20 @@ file=postgresql/values.yaml
 cp ${file} ${file}.bk
 $SED -i 's/postgresqlMaxConnections:/postgresqlMaxConnections: 200/g' ${file}
 tar czvf postgresql-10.3.18.tgz postgresql/
-
-arr=(master api alert tools)
+mv charts/postgresql-10.3.18.tgz charts/postgresql-10.3.18-new.tgz
+mv charts/postgresql-10.3.18-bk.tgz charts/postgresql-10.3.18.tgz
+EOF
+#image中配置环境变量会被覆盖，helm install需要重新配置
 helm install my -n dolphinsch -f values.yaml \
-  --set conf.common.resource.hdfs.root.user=hdfs \
-  --set conf.common.resource.hdfs.fs.defaultFS=jfs://miniofs \
+  --set common.configmap.HADOOP_CONF_DIR=/app/hdfs/spark/conf \
+  --set common.configmap.SPARK_HOME1=/app/hdfs/spark \
   --set image.worker=harbor.my.org:1080/dolphinsch/dolphinscheduler-worker-spark-${SPARK_VERSION} \
   --set image.master=harbor.my.org:1080/dolphinsch/dolphinscheduler-master \
-  --set image.api=harbor.my.org:1080/dolphinsch/dolphinscheduler-api \
+  --set image.api=harbor.my.org:1080/dolphinsch/dolphinscheduler-api-juicefs \
   --set image.alert=harbor.my.org:1080/dolphinsch/dolphinscheduler-alert \
   --set image.tools=harbor.my.org:1080/dolphinsch/dolphinscheduler-tools \
   --set image.tag=${DOLPHINSCH_REV} \
-  --set common.configmap.SPARK_HOME1=/app/hdfs/spark \
+  --set postgresql.postgresqlMaxConnections=200 \
   ./
 helm uninstall my -n dolphinsch
 kubectl get pod -n dolphinsch |grep Terminating |awk '{print $1}'| xargs kubectl delete pod "$1" -n dolphinsch --force --grace-period=0
@@ -148,7 +290,29 @@ kubectl run mdpostgre-postgresql-client -n dolphinsch --rm --tty -i --restart='N
   -c "SELECT version()"
 
 #默认的用户名和密码是 admin/dolphinscheduler123
+
+kubectl logs -n dolphinsch `kubectl get pod -n dolphinsch | grep Running | grep my-api | awk '{print $1}'`
+kubectl exec -it -n dolphinsch `kubectl get pod -n dolphinsch | grep Running | grep my-api | awk '{print $1}'` -- bash
+  ps -ef|grep dolphinscheduler
+root         9     1  7 16:15 ?        00:01:18 /opt/java/openjdk/bin/java -Xms512m -Xmx512m -Xmn256m -XX:-UseContainerSupport -cp /opt/dolphinscheduler/conf:/opt/dolphinscheduler/libs/* org.apache.dolphinscheduler.api.ApiApplicationServer
+root       753   108  0 16:32 pts/0    00:00:00 grep --color=auto dolphinscheduler
+
+  lsof -p 9 | grep juicefs
+java      9 root  mem       REG               8,32           874771180 /opt/dolphinscheduler/libs/juicefs-hadoop-1.0.2.jar (path dev=0,482)
+java      9 root  409r      REG              0,482 123976192 874771180 /opt/dolphinscheduler/libs/juicefs-hadoop-1.0.2.jar
+
 :<<EOF
+  --set common.configmap.HADOOP_HOME=/app/hdfs/hadoop \
+  --set common.configmap.HADOOP_CONF_DIR=/app/hdfs/hadoop/etc/hadoop \
+
+set没用，直接修改values
+  --set conf.common.resource.hdfs.root.user=hdfs \
+  --set conf.common.resource.hdfs.fs.defaultFS=jfs://miniofs \
+
+  --set common.resource.hdfs.root.user=hdfs \
+  --set common.resource.hdfs.fs.defaultFS=jfs://miniofs \
+  --set common.resource.storage.upload.base.path=jfs://miniofs/tmp/k8sup \
+
 postgresql有个错误提示
 
 2023-01-30 08:50:27.751 GMT [164] ERROR:  relation "t_ds_worker_group" does not exist at character 23

@@ -110,6 +110,10 @@ EOF
 /opt/java/openjdk/bin/java -cp /app/hdfs/spark/conf/:/app/hdfs/spark/jars/* -Dspark.history.fs.logDirectory=file://app/hdfs/spark/sparklogs -Xmx1g org.apache.spark.deploy.history.HistoryServer
 export SPARK_HISTORY_OPTS="$SPARK_HISTORY_OPTS -Dspark.history.ui.port=18081"
 
+#用volcano就必须用cluster模式，podgroup需要修改driver资源，但是spark-sql只能用client模式提交
+git clone git@github.com:zhfk/spark-sql-cluster-mode.git
+#基于spark3再次手工修改spark-sql-cluster-mode-3，打包jar进入，试用新SQLCli入口函数，用spark-submit方式提交sql作业
+
 kubectl logs -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep mysrv-sparksrv-thrs | awk '{print $1}'`
 kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep mysrv-sparksrv-thrs | awk '{print $1}'` -- bash
   beeline -u jdbc:hive2://mysrv-sparksrv-thrs:4040
@@ -117,6 +121,6 @@ kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Run
   USE tpcds_bin_partitioned_orc_10;
   SHOW TABLES;
   SELECT * FROM store_sales LIMIT 5;
-  #用volcano就必须用cluster模式，但是thrift server是用client方式提交一个作业到集群
+  #thrift server是用client方式提交一个作业到集群
   #实际测试，作业无法执行成功，只好放弃thrift server
   #而且业界同意thrift server不是一个生产级的方案，因为thrift server的client方式driver资源固定，不适合不同类型的作业对driver资源有不同要求
