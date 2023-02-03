@@ -206,10 +206,22 @@ do
   $SED -i 's/*"/*":"$HADOOP_CONF_DIR"/g' ${file}
 done
 
+
+#wget -c https://cdn.mysql.com//archives/mysql-connector-java-8.0/mysql-connector-java-8.0.16.zip
 arr=(worker master api alert tools)
-#arr=(worker api)
-arr=(api)
-arr=(master alert tools)
+for prj in ${arr[*]}
+do
+  if [[ "${prj}" =~ "tools" ]]; then
+    mydir=apache-dolphinscheduler-${DOLPHINSCH_REV}-bin/${prj}/libs
+  else
+    mydir=apache-dolphinscheduler-${DOLPHINSCH_REV}-bin/${prj}-server/libs
+  fi
+  cp ~/.m2/repository/mysql/mysql-connector-java/8.0.16/mysql-connector-java-8.0.16.jar ${mydir}/
+  ls ${mydir}/mysql-connector-java-8.0.16.jar
+done
+
+
+arr=(worker master api alert tools)
 for prj in ${arr[*]}
 do
   if [[ "${prj}" =~ "worker" ]]; then
@@ -236,12 +248,16 @@ $SED -i 's/          image: {{ include "dolphinscheduler.image.fullname.tools" .
 file=values.yaml
 cp ${file} ${file}.bk
 $SED -i 's@    resource.hdfs.fs.defaultFS: hdfs://mycluster:8020@    resource.hdfs.fs.defaultFS: jfs://miniofs@g' ${file}
-$SED -i 's@    resource.storage.upload.base.path: /dolphinscheduler@    resource.storage.upload.base.path: jfs://miniofs/tmp/k8sup@g' ${file}
+kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- bash
+  hadoop fs -mkdir -p /k8sup/dolphinsch
+$SED -i 's@    resource.storage.upload.base.path: /dolphinscheduler@    resource.storage.upload.base.path: jfs://miniofs/k8sup/dolphinsch@g' ${file}
+#$SED -i 's@    storageClass: "-"@    storageClass: "juicefs-sc"@g' ${file}
 
 helm repo add bitnami https://charts.bitnami.com/bitnami
 helm dependency update .
 kubectl create ns dolphinsch
 helm search repo dolphinscheduler
+
 
 :<<EOF
 helm install my bitnami/dolphinscheduler \
@@ -269,6 +285,8 @@ mv charts/postgresql-10.3.18.tgz charts/postgresql-10.3.18-new.tgz
 mv charts/postgresql-10.3.18-bk.tgz charts/postgresql-10.3.18.tgz
 EOF
 #image中配置环境变量会被覆盖，helm install需要重新配置
+#重启以后数据库里查不到表，可能是emptydir的pv重新创建以后数据没了，api启动也异常
+#改用juicefs的pvc后，重启系统无异常
 helm install my -n dolphinsch -f values.yaml \
   --set common.configmap.HADOOP_CONF_DIR=/app/hdfs/spark/conf \
   --set common.configmap.SPARK_HOME1=/app/hdfs/spark \
@@ -278,11 +296,18 @@ helm install my -n dolphinsch -f values.yaml \
   --set image.alert=harbor.my.org:1080/dolphinsch/dolphinscheduler-alert \
   --set image.tools=harbor.my.org:1080/dolphinsch/dolphinscheduler-tools \
   --set image.tag=${DOLPHINSCH_REV} \
-  --set postgresql.postgresqlMaxConnections=200 \
+  --set postgresql.persistence.enabled=true \
+  --set postgresql.persistence.storageClass=juicefs-sc \
+  --set zookeeper.persistence.enabled=true \
+  --set zookeeper.persistence.storageClass=juicefs-sc \
   ./
 helm uninstall my -n dolphinsch
-kubectl get pod -n dolphinsch |grep Terminating |awk '{print $1}'| xargs kubectl delete pod "$1" -n dolphinsch --force --grace-period=0
+kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- bash
+  hadoop fs -rm -r -f /k8sup/dolphinsch
+kubectl get pod -n dolphinsch |grep CrashLoopBackOff |awk '{print $1}'| xargs kubectl delete pod "$1" -n dolphinsch --force --grace-period=0
 watch kubectl get all -n dolphinsch
+kubectl get pvc -n dolphinsch
+kubectl get pv | grep dolphinsch
 kubectl port-forward -n dolphinsch svc/my-api 12345:12345 &
 
 kubectl run mdpostgre-postgresql-client -n dolphinsch --rm --tty -i --restart='Never' --image docker.io/bitnami/postgresql:11.11.0-debian-10-r71 --env="PGPASSWORD=root" --command -- \
@@ -302,7 +327,10 @@ java      9 root  mem       REG               8,32           874771180 /opt/dolp
 java      9 root  409r      REG              0,482 123976192 874771180 /opt/dolphinscheduler/libs/juicefs-hadoop-1.0.2.jar
 
 :<<EOF
-  --set common.configmap.HADOOP_HOME=/app/hdfs/hadoop \
+改到juicefs 做pvc以后不再报类似错误
+  --set postgresql.postgresqlMaxConnections=200 \
+
+和目录无关，和HADOOP_HOME无关
   --set common.configmap.HADOOP_CONF_DIR=/app/hdfs/hadoop/etc/hadoop \
 
 set没用，直接修改values
@@ -314,7 +342,6 @@ set没用，直接修改values
   --set common.resource.storage.upload.base.path=jfs://miniofs/tmp/k8sup \
 
 postgresql有个错误提示
-
 2023-01-30 08:50:27.751 GMT [164] ERROR:  relation "t_ds_worker_group" does not exist at character 23
 2023-01-30 08:50:27.751 GMT [164] STATEMENT:  select *
 	        from t_ds_worker_group
@@ -325,15 +352,75 @@ postgresql有个错误提示
 	        from t_ds_worker_group
 	        order by update_time desc
 
+
 但是查询这个表又显示有
 kubectl run mdpostgre-postgresql-client -n dolphinsch --rm --tty -i --restart='Never' --image docker.io/bitnami/postgresql:11.11.0-debian-10-r71 --env="PGPASSWORD=root" --command -- \
   psql --host my-postgresql -U root -d dolphinscheduler -p 5432 \
-  -c "select * from t_ds_worker_group order by update_time desc"
- id | name | addr_list | create_time | update_time | description | other_params_
-json
-----+------+-----------+-------------+-------------+-------------+--------------
------
-(0 rows)
+  -c "SELECT * FROM pg_tables WHERE tablename NOT LIKE 'pg%' AND tablename NOT LIKE 'sql_%' ORDER BY tablename"
+ schemaname |               tablename                | tableowner | tablespace | hasindexes | hasrules | hastriggers | rowsecurity
+------------+----------------------------------------+------------+------------+------------+----------+-------------+-------------
+ public     | qrtz_blob_triggers                     | root       |            | t          | f        | f           | f
+ public     | qrtz_calendars                         | root       |            | t          | f        | f           | f
+ public     | qrtz_cron_triggers                     | root       |            | t          | f        | f           | f
+ public     | qrtz_fired_triggers                    | root       |            | t          | f        | f           | f
+ public     | qrtz_job_details                       | root       |            | t          | f        | f           | f
+ public     | qrtz_locks                             | root       |            | t          | f        | f           | f
+ public     | qrtz_paused_trigger_grps               | root       |            | t          | f        | f           | f
+ public     | qrtz_scheduler_state                   | root       |            | t          | f        | f           | f
+ public     | qrtz_simple_triggers                   | root       |            | t          | f        | f           | f
+ public     | qrtz_simprop_triggers                  | root       |            | t          | f        | f           | f
+ public     | qrtz_triggers                          | root       |            | t          | f        | f           | f
+ public     | t_ds_access_token                      | root       |            | t          | f        | f           | f
+ public     | t_ds_alert                             | root       |            | t          | f        | f           | f
+ public     | t_ds_alert_plugin_instance             | root       |            | t          | f        | f           | f
+ public     | t_ds_alert_send_status                 | root       |            | t          | f        | f           | f
+ public     | t_ds_alertgroup                        | root       |            | t          | f        | f           | f
+ public     | t_ds_audit_log                         | root       |            | t          | f        | f           | f
+ public     | t_ds_cluster                           | root       |            | t          | f        | f           | f
+ public     | t_ds_command                           | root       |            | t          | f        | f           | f
+ public     | t_ds_datasource                        | root       |            | t          | f        | f           | f
+ public     | t_ds_dq_comparison_type                | root       |            | t          | f        | f           | f
+ public     | t_ds_dq_execute_result                 | root       |            | t          | f        | f           | f
+ public     | t_ds_dq_rule                           | root       |            | t          | f        | f           | f
+ public     | t_ds_dq_rule_execute_sql               | root       |            | t          | f        | f           | f
+ public     | t_ds_dq_rule_input_entry               | root       |            | t          | f        | f           | f
+ public     | t_ds_dq_task_statistics_value          | root       |            | t          | f        | f           | f
+ public     | t_ds_environment                       | root       |            | t          | f        | f           | f
+ public     | t_ds_environment_worker_group_relation | root       |            | t          | f        | f           | f
+ public     | t_ds_error_command                     | root       |            | t          | f        | f           | f
+ public     | t_ds_fav_task                          | root       |            | t          | f        | f           | f
+ public     | t_ds_k8s                               | root       |            | t          | f        | f           | f
+ public     | t_ds_k8s_namespace                     | root       |            | t          | f        | f           | f
+ public     | t_ds_plugin_define                     | root       |            | t          | f        | f           | f
+ public     | t_ds_process_definition                | root       |            | t          | f        | f           | f
+ public     | t_ds_process_definition_log            | root       |            | t          | f        | f           | f
+ public     | t_ds_process_instance                  | root       |            | t          | f        | f           | f
+ public     | t_ds_process_task_relation             | root       |            | t          | f        | f           | f
+ public     | t_ds_process_task_relation_log         | root       |            | t          | f        | f           | f
+ public     | t_ds_project                           | root       |            | t          | f        | f           | f
+ public     | t_ds_queue                             | root       |            | t          | f        | f           | f
+ public     | t_ds_relation_datasource_user          | root       |            | t          | f        | f           | f
+ public     | t_ds_relation_namespace_user           | root       |            | t          | f        | f           | f
+ public     | t_ds_relation_process_instance         | root       |            | t          | f        | f           | f
+ public     | t_ds_relation_project_user             | root       |            | t          | f        | f           | f
+ public     | t_ds_relation_resources_user           | root       |            | t          | f        | f           | f
+ public     | t_ds_relation_rule_execute_sql         | root       |            | t          | f        | f           | f
+ public     | t_ds_relation_rule_input_entry         | root       |            | t          | f        | f           | f
+ public     | t_ds_relation_udfs_user                | root       |            | t          | f        | f           | f
+ public     | t_ds_resources                         | root       |            | t          | f        | f           | f
+ public     | t_ds_schedules                         | root       |            | t          | f        | f           | f
+ public     | t_ds_session                           | root       |            | t          | f        | f           | f
+ public     | t_ds_task_definition                   | root       |            | t          | f        | f           | f
+ public     | t_ds_task_definition_log               | root       |            | t          | f        | f           | f
+ public     | t_ds_task_group                        | root       |            | t          | f        | f           | f
+ public     | t_ds_task_group_queue                  | root       |            | t          | f        | f           | f
+ public     | t_ds_task_instance                     | root       |            | t          | f        | f           | f
+ public     | t_ds_tenant                            | root       |            | t          | f        | f           | f
+ public     | t_ds_udfs                              | root       |            | t          | f        | f           | f
+ public     | t_ds_user                              | root       |            | t          | f        | f           | f
+ public     | t_ds_version                           | root       |            | t          | f        | f           | f
+ public     | t_ds_worker_group                      | root       |            | t          | f        | f           | f
+(61 rows)
 
 NAME: my
 LAST DEPLOYED: Sun Jan 29 20:14:11 2023

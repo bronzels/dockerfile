@@ -75,7 +75,7 @@ kubectl delete -f rss-juicefs-pvc-test-pod.yaml -n spark-operator
 kubectl exec -it -n spark-operator rss-juicefs-pvc-test-pod -- /bin/bash
 
 kubectl port-forward -n spark-operator svc/mysrv-sparksrv-hs 2080:80 &
-kubectl port-forward -n spark-operator svc/mysrv-sparksrv-thrs 4040:4040 &
+#kubectl port-forward -n spark-operator svc/mysrv-sparksrv-thrs 4040:4040 &
 
 hadoop fs -get /jobhistory/sparklogs sparklogs
 kubectl cp -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'`:/app/hdfs/hive/sparklogs sparklogs
