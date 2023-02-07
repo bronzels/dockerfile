@@ -97,7 +97,7 @@ RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list
 RUN set -ex && \
     apt-get update && \
     ln -s /lib /lib64 && \
-    apt install -y bash tini libc6 libpam-modules krb5-user libnss3 procps net-tools && \
+    apt install -y bash tini libc6 libpam-modules krb5-user libnss3 procps net-tools sudo && \
     rm /bin/sh && \
     ln -sv /bin/bash /bin/sh && \
     echo "auth required pam_wheel.so use_uid" >> /etc/pam.d/su && \
@@ -222,6 +222,7 @@ done
 
 
 arr=(worker master api alert tools)
+#arr=(worker)
 for prj in ${arr[*]}
 do
   if [[ "${prj}" =~ "worker" ]]; then
@@ -238,6 +239,7 @@ done
 
 cd ${MYDOLPHINSCH_HOME}/apache-dolphinscheduler-${DOLPHINSCH_REV}-src
 cd deploy/kubernetes/dolphinscheduler
+
 cp -rf templates templates.bk
 $SED -i 's/          image: {{ include "dolphinscheduler.image.fullname.worker" . }}/          image: {{ .Values.image.worker }}:{{ .Values.image.tag }}/g' templates/statefulset-dolphinscheduler-worker.yaml
 $SED -i 's/          image: {{ include "dolphinscheduler.image.fullname.master" . }}/          image: {{ .Values.image.master }}:{{ .Values.image.tag }}/g' templates/statefulset-dolphinscheduler-master.yaml
@@ -286,7 +288,7 @@ mv charts/postgresql-10.3.18-bk.tgz charts/postgresql-10.3.18.tgz
 EOF
 #image中配置环境变量会被覆盖，helm install需要重新配置
 #重启以后数据库里查不到表，可能是emptydir的pv重新创建以后数据没了，api启动也异常
-#改用juicefs的pvc后，重启系统无异常
+#改用juicefs的pvc后，重启系统无异常，但是重启以后负责这postgresql的pvc的juicefs pod（kube-system）需要恢复正常，postgresql pod才能正常mount，可能需要手工删除重新mount
 helm install my -n dolphinsch -f values.yaml \
   --set common.configmap.HADOOP_CONF_DIR=/app/hdfs/spark/conf \
   --set common.configmap.SPARK_HOME1=/app/hdfs/spark \
@@ -304,6 +306,7 @@ helm install my -n dolphinsch -f values.yaml \
 helm uninstall my -n dolphinsch
 kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- bash
   hadoop fs -rm -r -f /k8sup/dolphinsch
+kubectl get pod -n dolphinsch |grep Terminating |awk '{print $1}'| xargs kubectl delete pod "$1" -n dolphinsch --force --grace-period=0
 kubectl get pod -n dolphinsch |grep CrashLoopBackOff |awk '{print $1}'| xargs kubectl delete pod "$1" -n dolphinsch --force --grace-period=0
 watch kubectl get all -n dolphinsch
 kubectl get pvc -n dolphinsch
@@ -327,6 +330,10 @@ java      9 root  mem       REG               8,32           874771180 /opt/dolp
 java      9 root  409r      REG              0,482 123976192 874771180 /opt/dolphinscheduler/libs/juicefs-hadoop-1.0.2.jar
 
 :<<EOF
+sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list
+apt update
+apt install -y sudo
+
 改到juicefs 做pvc以后不再报类似错误
   --set postgresql.postgresqlMaxConnections=200 \
 
@@ -354,7 +361,7 @@ postgresql有个错误提示
 
 
 但是查询这个表又显示有
-kubectl run mdpostgre-postgresql-client -n dolphinsch --rm --tty -i --restart='Never' --image docker.io/bitnami/postgresql:11.11.0-debian-10-r71 --env="PGPASSWORD=root" --command -- \
+kubectl run postgresql-client -n dolphinsch --rm --tty -i --restart='Never' --image docker.io/bitnami/postgresql:11.11.0-debian-10-r71 --env="PGPASSWORD=root" --command -- \
   psql --host my-postgresql -U root -d dolphinscheduler -p 5432 \
   -c "SELECT * FROM pg_tables WHERE tablename NOT LIKE 'pg%' AND tablename NOT LIKE 'sql_%' ORDER BY tablename"
  schemaname |               tablename                | tableowner | tablespace | hasindexes | hasrules | hastriggers | rowsecurity
@@ -454,3 +461,5 @@ Access DolphinScheduler UI URL by:
 
   DolphinScheduler UI URL: http://127.0.0.1:12345/dolphinscheduler
 EOF
+
+kubectl exec -it -n dolphinsch `kubectl get pod -n dolphinsch | grep Running | grep worker-0 | awk '{print $1}'` -- bash

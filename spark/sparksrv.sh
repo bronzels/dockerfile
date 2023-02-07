@@ -64,6 +64,7 @@ helm install mysrv -n spark-operator -f values.yaml \
 helm uninstall mysrv -n spark-operator
 #卸载以后重新安装，会出现history pvc无法挂载的情况，需要删除几个和Running pvc pod在同一节点的几个Terminating的pod
 kubectl get pod -n kube-system -o wide | grep juicefs | grep pvc
+kubectl get pod -n kube-system | grep juicefs | grep pvc | grep Terminating | awk '{print $1}' | xargs kubectl delete pod n kube-system --force --grace-period=0
 kubectl get pod -n kube-system | grep juicefs | grep pvc | grep Terminating | awk '{print $1}' | xargs kubectl patch pod $1 -n kube-system -p '{"metadata":{"finalizers":null}}'
 kubectl get pod -n kube-system -o wide | grep juicefs | grep pvc
 
