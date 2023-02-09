@@ -1,0 +1,77 @@
+---
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: doris-fe
+  labels:
+    app: doris-fe
+spec:
+  replicas: 3
+  serviceName: fe-service
+  selector:
+    matchLabels:
+      app: doris-fe
+  template:
+    metadata:
+      labels:
+        app: doris-fe
+    spec:
+      nodeSelector:
+        component.doris/fe: enabled
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      #nodeName: worker-1
+      containers:
+        - name: doris-fe
+          env:
+          - name: FE_IPADDRESS
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          image: harbor.my.org:1080/doris/doris-fe:1.2.1
+          command: [ "/bin/bash", "-ce", "/opt/apache-doris/fe/bin/start_fe.sh --daemon;tail -f /dev/null" ]
+          livenessProbe:
+            httpGet:
+              path: /api/bootstrap
+              port: 8030
+            initialDelaySeconds: 300
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3      
+          ports:
+            - containerPort: 8030
+              protocol: TCP
+            - containerPort: 9020
+              protocol: TCP
+            - containerPort: 9030
+              protocol: TCP
+            - containerPort: 9010
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 2
+              memory: 4G
+            requests:
+              cpu: 200m
+              memory: 1G
+          volumeMounts:
+            - mountPath: /opt/apache-doris/fe/doris-meta
+              name: volume-fe
+            - name: config-init-volume
+              mountPath: /tmp/preconf
+      volumes:
+        - name: config-init-volume
+          configMap:
+            name: doris-configmap
+            defaultMode: 493
+  volumeClaimTemplates:
+    - metadata:
+        name: volume-fe
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: "doris-local-storage-fe"
+        volumeMode: Filesystem

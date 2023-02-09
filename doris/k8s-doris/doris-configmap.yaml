@@ -1,0 +1,67 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: doris-configmap
+data:
+  #busybox用的是sh，其他image一般是bash，第一句需要注意修改
+  wait-es.sh: |-
+    #!/bin/bash
+    prj=$1
+    echo "prj:${prj}"
+    srvs=$2
+    echo "srvs:${srvs}"
+    let srvmaxno=${srvs}-1
+    echo "srvmaxno:${srvmaxno}"
+    lookupstr=''
+    for num in `seq 0 ${srvmaxno}`
+    do
+      echo "num:$num"
+      if [[ $num -eq 0 ]]; then
+        prefix=""
+      else 
+        prefix=" && "
+      fi
+      numstr="nslookup doris-${prj}-${num}.${prj}-service"
+      lookupstr=${lookupstr}${prefix}${numstr}
+    done
+    echo "lookupstr:${lookupstr}"
+    until eval $lookupstr;do
+      echo waiting for all ${prj}s ready
+      sleep 2
+    done
+    echo great!!! all ${srvs} ${prj}s ready
+
+  add-bes.sh: |-
+    #!/bin/bash
+    let srvs=$1
+    echo "srvs:${srvs}"
+    let srvmaxno=${srvs}-1
+    echo "srvmaxno:${srvmaxno}"
+    let added=0
+    for num in `seq 0 ${srvmaxno}`
+    do
+      let flagarr[num]=0
+    done
+    echo "flagarr:${flagarr[*]}"
+    until [ $added -eq ${srvs} ]
+    do
+      echo adding all $srvs bes
+      for num in `seq 0 ${srvmaxno}`
+      do
+        echo "num:$num"
+        if [[ ${flagarr[num]} -eq 0 ]]; then
+          mysql --default-character-set=utf8 -h fe-service -P 9030 -u'root' -e'ALTER SYSTEM ADD BACKEND "doris-be-'${num}'.be-service:9050"'
+          #DECOMMISSION
+          #错误主机名：ERROR 1105 (HY000) at line 1: errCode = 2, detailMessage = Unknown host: doris1-be-0: Name or service not known
+          #成功：空
+          if [[ $? -eq 0 ]]; then
+            let flagarr[num]=1
+            let added+=1
+            echo "$added bes are added, flagarr:${flagarr[*]}"
+          fi
+        fi
+      done
+      sleep 2
+    done
+    echo great!!! all ${srvs} bes added
+    mysql --default-character-set=utf8 -h fe-service -P 9030 -u'root' -e"SHOW PROC '/backends'"

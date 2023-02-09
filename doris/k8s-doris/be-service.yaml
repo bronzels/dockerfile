@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: be-service
+  labels:
+    app: doris-be
+spec:
+  sessionAffinity: ClientIP
+  selector:
+    app: doris-be
+  ports:
+    - name: heartbeat
+      port: 9050
+    - name: http
+      port: 8040
