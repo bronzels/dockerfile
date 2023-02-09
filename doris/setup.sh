@@ -282,25 +282,27 @@ kubectl get pvc -n doris | awk '{print $1}' | xargs kubectl delete pvc -n doris
 kubectl delete -f pvs/
 ansible all -m shell -a"rm -rf /data0/doris;mkdir -p /data0/doris/fe;mkdir -p /data0/doris/be"
 
-#kubectl delete -f k8s-doris/add-bes2fe-job.yaml -n doris
+kubectl apply -n doris -f k8s-doris/doris-configmap.yaml
+kubectl apply -n doris -f k8s-doris/add-bes2fe-job.yaml
+
+kubectl delete -f k8s-doris/add-bes2fe-job.yaml -n doris
 kubectl delete -f k8s-doris/doris-configmap.yaml -n doris
 kubectl get pod -n doris |grep Terminating |awk '{print $1}'| xargs kubectl delete pod "$1" -n doris --force --grace-period=0
 
-kubectl apply -n doris -f k8s-doris/doris-configmap.yaml
-#kubectl apply -n doris -f k8s-doris/add-bes2fe-job.yaml
 
-:<<EOF
+kubectl describe pod -n doris `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'`
+
 kubectl logs -n doris -c wait-bes-ready `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'`
 kubectl logs -n doris -c wait-fes-ready `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'`
 kubectl logs -n doris -c add-bes2fe `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'`
-EOF
 
 kubectl describe pod -n doris doris-be-0
 kubectl logs -n doris doris-be-0
 kubectl describe pod -n doris doris-fe-0
 kubectl logs -n doris doris-fe-0
 
-kubectl exec -it -n doris -c wait-bes-ready `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'` -- sh
+kubectl exec -it -n doris -c wait-bes-ready `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'` -- bash
+kubectl exec -it -n doris -c wait-fes-ready `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'` -- bash
 kubectl exec -it -n doris -c add-bes2fe `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'` -- bash
 
 kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-be-0 | awk '{print $1}'` -- \
@@ -335,13 +337,16 @@ kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-
 cat /opt/apache-doris/fe/log/fe.gc.log*
 
 
-kubectl run mysql-client --rm --tty -i --restart='Never' --image docker.io/library/mysql:5.7 --command -- \
+kubectl run mysql-client -n doris --rm --tty -i --restart='Never' --image docker.io/library/mysql:5.7 --command -- bash
   mysql --default-character-set=utf8 -h fe-service -P 9030 -u'root' -e"SHOW PROC '/backends'"
+#不知道为什么执行执行不行，必须bash进入交互模式
 
 kubectl port-forward -n doris svc/fe-service 9030:9030 &
 kubectl port-forward -n doris svc/fe-service 8030:8030 &
 
-kubectl port-forward -n doris svc/be-service 8040:8040 &
+kubectl port-forward -n doris doris-be-0 8040:8040 &
+kubectl port-forward -n doris doris-be-1 8041:8040 &
+kubectl port-forward -n doris doris-be-2 8042:8040 &
 
 kubectl run mysql-client --rm --tty -i --restart='Never' --image docker.io/library/mysql:5.7 --command -- \
   mysql --default-character-set=utf8 -h fe-service.doris.svc.cluster.local -P 9030 -u'root' \
