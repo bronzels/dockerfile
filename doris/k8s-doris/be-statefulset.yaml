@@ -27,8 +27,16 @@ spec:
               valueFrom:
                  fieldRef:
                    fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           image: harbor.my.org:1080/doris/doris-be:1.2.1
-          command: [ "/bin/bash", "-ce", "/opt/apache-doris/be/bin/start_be.sh --daemon;tail -f /dev/null" ]
+          #command: [ "/bin/bash", "-ce", "/opt/apache-doris/be/bin/start_be.sh --daemon;tail -f /dev/null" ]
+          command: [ "/bin/bash", "-ce", "/tmp/preconf/bootstrap.sh 3 9050 9030 9010;tail -f /dev/null" ]
+          #command: [ "/tmp/preconf/bootstrap.sh", "3", "9050", "9030", "9010", "tail", "-f", "/dev/null" ]
+          #args: hosts be_hearbeat_port fe_mysql_port
+          #bootstrap.sh will assemble args and call init_be/fe.sh
           livenessProbe:
             httpGet:
               path: /api/health
@@ -36,7 +44,14 @@ spec:
             initialDelaySeconds: 300
             periodSeconds: 30
             timeoutSeconds: 5
-            failureThreshold: 3            
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - bash
+                  - -c
+                  - '/tmp/preconf/shutdown.sh 3 9030 > /stop.log 2>&1>'
           ports:
             - containerPort: 9060
               protocol: TCP

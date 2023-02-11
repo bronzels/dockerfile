@@ -76,8 +76,14 @@ do
   if [[ "${prj}" =~ "be" ]]; then
     $SED -i '/FROM openjdk:8u342-jdk/i\FROM harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:3.3.1 AS spark' ${file}
     cp ../apache-doris-dependencies-${DORIS_REV}-bin-x86_64/java-udf-jar-with-dependencies.jar resource/
+  else
+    $SED -i 's@-bin@-bin-x86_64@g' ${file}
   fi
 :<<EOF
+  yatfile=resource/init_${prj}.sh
+  mv ${yatfile} ${yatfile}.bk
+  cp ${DORIS_HOME}/init_${prj}.sh resource/
+
   if [[ "${prj}" =~ "broker" ]]; then
     #mv ${DORIS_HOME}/apache-doris-${DORIS_REV}-src/fs_brokers/apache_hdfs_broker/output/apache_hdfs_broker.tar.gz resource/
     echo ""
@@ -89,9 +95,6 @@ EOF
   $SED -i 's@x.x.x@${DORIS_REV}@g' ${file}
   $SED -i 's@FROM openjdk:8u342-jdk@FROM registry.cn-hangzhou.aliyuncs.com/bronzels/openjdk-8u342-jdk:1.0@g' ${file}
   $SED -i 's@.tar.gz@.tar.xz@g' ${file}
-  if [[ "${prj}" =~ "fe" ]]; then
-    $SED -i 's@-bin@-bin-x86_64@g' ${file}
-  fi
   $SED -i '/ADD resource\/init_be.sh \/opt\/apache-doris\/be\/bin/a\ADD resource\/java-udf-jar-with-dependencies.jar \/opt\/apache-doris\/be\/lib' ${file}
   if [[ "${prj}" =~ "be" ]]; then
 cat << EOF >> ${file}
@@ -105,14 +108,19 @@ RUN sed -i '/export CLASSPATH=/a\export CLASSPATH="${CLASSPATH}:/opt/spark/jars/
 RUN cat \${_STARTUP_SH}
 EOF
   fi
+  $SED -i "/ENTRYPOINT/i\RUN sed -i -E 's/(deb|security).debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list && apt-get update
+                         RUN apt install -y dnsutils
+" ${file}
+  $SED -i '/ADD resource\/init/,+1d' ${file}
+  $SED -i '/RUN chmod 755 \/opt\/apache-doris/,+1d' ${file}
   cd ..
 done
 
 #arr=(fe be broker)
 #arr=(broker)
-arr=(fe be)
 arr=(fe)
 arr=(be)
+arr=(fe be)
 for prj in ${arr[*]}
 do
   cd ${prj}
@@ -127,6 +135,9 @@ ansible all -m shell -a"docker images|grep doris-|awk '{print \$3}'|xargs docker
 #containerd
 ansible all -m shell -a"crictl images|grep doris-"
 ansible all -m shell -a"crictl images|grep doris-|awk '{print \$3}'|xargs crictl rmi"
+
+
+cd ${DORIS_HOME}
 
 #git clone git@github.com:mfanoffice/dataease-helm.git
 git clone git@github.com:mfanoffice/k8s-doris.git k8s-doris-orig
@@ -265,45 +276,112 @@ kubectl label node mdubu component.doris/be=enabled
 kubectl label node mdlapubu component.doris/be=enabled
 
 kubectl apply -f pvs/
+
+kubectl create cm doris-configmap -n doris --from-file=k8s-doris/conf
 kubectl apply -n doris -f k8s-doris/
 
 watch kubectl get all -n doris
 kubectl get all -n doris
 
+kubectl logs -f -n doris doris-be-0
+kubectl describe pod -n doris doris-be-0
+
+kubectl logs -f -n doris doris-fe-0
+kubectl describe pod -n doris doris-fe-0
+kubectl logs -f -n doris doris-fe-1
+kubectl describe pod -n doris doris-fe-1
+
 kubectl get pvc -n doris
 kubectl get pv | grep doris
 
 kubectl delete -n doris -f k8s-doris/
+kubectl delete cm doris-configmap -n doris
 ###
-kubectl get pod -n doris |grep Terminating |awk '{print $1}'| xargs kubectl delete pod "$1" -n doris --force --grace-period=0
-kubectl get pod -n doris |grep CrashLoopBackOff |awk '{print $1}'| xargs kubectl delete pod "$1" -n doris --force --grace-period=0
+kubectl get pod -n doris |grep -v Running |awk '{print $1}'| xargs kubectl delete pod "$1" -n doris --force --grace-period=0
+#kubectl get pod -n doris |grep -v Running |awk '{print $1}'| xargs kubectl delete pod "$1" -n doris --grace-period=200
 ###
 kubectl get pvc -n doris | awk '{print $1}' | xargs kubectl delete pvc -n doris
 kubectl delete -f pvs/
 ansible all -m shell -a"rm -rf /data0/doris;mkdir -p /data0/doris/fe;mkdir -p /data0/doris/be"
 
-kubectl apply -n doris -f k8s-doris/doris-configmap.yaml
-kubectl apply -n doris -f k8s-doris/add-bes2fe-job.yaml
+ansible all -m shell -a"ls /data0/doris/"
 
-kubectl delete -f k8s-doris/add-bes2fe-job.yaml -n doris
-kubectl delete -f k8s-doris/doris-configmap.yaml -n doris
-kubectl get pod -n doris |grep Terminating |awk '{print $1}'| xargs kubectl delete pod "$1" -n doris --force --grace-period=0
+#HA测试
+#fe.conf
+#metadata_failure_recovery=true
 
-
-kubectl describe pod -n doris `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'`
-
-kubectl logs -n doris -c wait-bes-ready `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'`
-kubectl logs -n doris -c wait-fes-ready `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'`
-kubectl logs -n doris -c add-bes2fe `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'`
-
-kubectl describe pod -n doris doris-be-0
+kubectl delete pod -n doris --force --grace-period=0 doris-be-0
 kubectl logs -n doris doris-be-0
-kubectl describe pod -n doris doris-fe-0
+kubectl logs -f -n doris doris-be-0
+kubectl delete pod -n doris --force --grace-period=0 doris-fe-1
+kubectl logs -n doris doris-fe-1
+kubectl logs -f -n doris doris-fe-1
+kubectl delete pod -n doris --force --grace-period=0 doris-fe-0
 kubectl logs -n doris doris-fe-0
+kubectl logs -f -n doris doris-fe-0
 
-kubectl exec -it -n doris -c wait-bes-ready `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'` -- bash
-kubectl exec -it -n doris -c wait-fes-ready `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'` -- bash
-kubectl exec -it -n doris -c add-bes2fe `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'` -- bash
+kubectl port-forward -n doris svc/fe-service 8030:8030 &
+kubectl port-forward -n doris svc/fe-service 9030:9030 &
+
+kubectl port-forward -n doris doris-be-0 8040:8040 &
+kubectl port-forward -n doris doris-be-1 8041:8040 &
+kubectl port-forward -n doris doris-be-2 8042:8040 &
+
+kubectl run mysql-client -n doris --rm --tty -i --restart='Never' --image docker.io/library/mysql:5.7 --command -- \
+  mysql --default-character-set=utf8 -h fe-service -P 9030 -u'root' -e"SHOW PROC '/frontends'"
+
+kubectl run mysql-client -n doris --rm --tty -i --restart='Never' --image docker.io/library/mysql:5.7 --command -- \
+  mysql --default-character-set=utf8 -h fe-service -P 9030 -u'root' -e"SHOW PROC '/backends'"
+
+
+kubectl delete pod -n doris doris-fe-0
+kubectl delete pod -n doris doris-fe-0 --grace-period=200
+kubectl exec -it -n doris `kubectl get pod -n doris | grep doris-fe-0 | awk '{print $1}'` -- tail -f /stop.log
+
+kubectl delete pod -n doris doris-fe-1
+kubectl delete pod -n doris doris-fe-1 --grace-period=120
+kubectl exec -it -n doris `kubectl get pod -n doris | grep doris-fe-1 | awk '{print $1}'` -- tail -f /stop.log
+
+kubectl delete pods --all --grace-period=120 -n doris
+kubectl delete pods --all --grace-period=200 -n doris
+kubectl delete pods --all --grace-period=360 -n doris
+
+#重启host集群以后，fe状态不正常无法恢复，需要在重启以前先删除所有pod，调用stop_be/fe.sh，重启host集群以后才能正常
+kubectl cp k8s-doris/conf/shutdown.sh -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-1 | awk '{print $1}'`:/root/
+#!/bin/bash
+nmb1=1676123468.580202864
+nmb2=1676123598.941084000
+var1=`echo "scale=9;$nmb2 - $nmb1"|bc`
+echo "$var1"
+#130.360881136
+#205.253036653
+#372.109651414
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-1 | awk '{print $1}'` -- \
+cat /stop.log
+
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
+cat /opt/apache-doris/fe/doris-meta/common.conf
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-be-0 | awk '{print $1}'` -- \
+cat /opt/apache-doris/be/storage/common.conf
+
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-1 | awk '{print $1}'` -- \
+bash
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
+cat /opt/apache-doris/fe/log/fe.out
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
+cat /opt/apache-doris/fe/log/fe.log
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
+cat /opt/apache-doris/fe/log/fe.log | grep 'master client, get client from cache failed.host'
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
+cat /opt/apache-doris/fe/log/fe.log | grep 'failed'
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
+cat /opt/apache-doris/fe/log/fe.warn.log
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
+ls /opt/apache-doris/fe/log/
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
+cat /opt/apache-doris/fe/log/fe.gc.log.20230209-020244
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
+cat /opt/apache-doris/fe/conf/fe.conf
 
 kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-be-0 | awk '{print $1}'` -- \
 bash
@@ -313,8 +391,12 @@ kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-
 cat /opt/apache-doris/be/log/be.WARNING
 kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-be-0 | awk '{print $1}'` -- \
 cat /opt/apache-doris/be/log/be.INFO
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-be-0 | awk '{print $1}'` -- \
+cat /opt/apache-doris/be/log/be.INFO | grep 'waiting to receive first heartbeat from frontend'
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-be-0 | awk '{print $1}'` -- \
+cat /opt/apache-doris/be/log/be.INFO | grep 'waiting'
 :<<EOF
-重新安装，没有删除hostpath，会有如下报错
+重新安装，没有删除hostpath，会有如下报错，重启也发生类似报错
 0
 W0207 08:26:51.680299  1104 heartbeat_server.cpp:97] invalid cluster id: 1150857714. ignore.
 1
@@ -324,32 +406,112 @@ W0207 08:26:02.154709  1099 heartbeat_server.cpp:97] invalid cluster id: 1126033
 W0207 08:27:29.726495  1102 heartbeat_server.cpp:97] invalid cluster id: 829007597. ignore.
 W0207 08:27:31.780303  1105 heartbeat_server.cpp:97] invalid cluster id: 1150857714. ignore.
 EOF
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-be-0 | awk '{print $1}'` -- \
+cat /opt/apache-doris/be/conf/be.conf
 
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
-bash
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
-cat /opt/apache-doris/fe/log/fe.log
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
-ls /opt/apache-doris/fe/log/
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
-cat /opt/apache-doris/fe/log/fe.out
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
-cat /opt/apache-doris/fe/log/fe.gc.log*
-
-
-kubectl run mysql-client -n doris --rm --tty -i --restart='Never' --image docker.io/library/mysql:5.7 --command -- bash
-  mysql --default-character-set=utf8 -h fe-service -P 9030 -u'root' -e"SHOW PROC '/backends'"
-#不知道为什么执行执行不行，必须bash进入交互模式
-
-kubectl port-forward -n doris svc/fe-service 9030:9030 &
-kubectl port-forward -n doris svc/fe-service 8030:8030 &
-
-kubectl port-forward -n doris doris-be-0 8040:8040 &
-kubectl port-forward -n doris doris-be-1 8041:8040 &
-kubectl port-forward -n doris doris-be-2 8042:8040 &
+srvmaxno=2
+for num in `seq 0 ${srvmaxno}`
+do
+  kubectl run curl-json -it --image=radial/busyboxplus:curl --restart=Never --rm -- \
+    curl http://doris-fe-${srvmaxno}.fe-service.doris.svc.cluster.local:8030/api/bootstrap
+  kubectl run curl-json -it --image=radial/busyboxplus:curl --restart=Never --rm -- \
+    curl http://doris-be-${srvmaxno}.be-service.doris.svc.cluster.local:8040/api/health
+done
+:<<EOF
+{"msg":"success","code":0,"data":{"replayedJournalId":0,"queryPort":0,"rpcPort":0,"version":""},"count":0}pod "curl-json" deleted
+{"status": "OK","msg": "To Be Added"}pod "curl-json" deleted
+{"msg":"success","code":0,"data":{"replayedJournalId":0,"queryPort":0,"rpcPort":0,"version":""},"count":0}pod "curl-json" deleted
+{"status": "OK","msg": "To Be Added"}pod "curl-json" deleted
+{"msg":"success","code":0,"data":{"replayedJournalId":0,"queryPort":0,"rpcPort":0,"version":""},"count":0}pod "curl-json" deleted
+{"status": "OK","msg": "To Be Added"}pod "curl-json" deleted
+EOF
 
 kubectl run mysql-client --rm --tty -i --restart='Never' --image docker.io/library/mysql:5.7 --command -- \
   mysql --default-character-set=utf8 -h fe-service.doris.svc.cluster.local -P 9030 -u'root' \
   -e'SHOW DATABASES'
-
 #默认的用户名和密码是 root/空的
+
+
+
+:<<EOF
+  #busybox用的是sh，其他image一般是bash，第一句需要注意修改
+  wait-es.sh: |-
+    #!/bin/bash
+    prj=$1
+    echo "prj:${prj}"
+    srvs=$2
+    echo "srvs:${srvs}"
+    let srvmaxno=${srvs}-1
+    echo "srvmaxno:${srvmaxno}"
+    lookupstr=''
+    for num in `seq 0 ${srvmaxno}`
+    do
+      echo "num:$num"
+      if [[ $num -eq 0 ]]; then
+        prefix=""
+      else
+        prefix=" && "
+      fi
+      numstr="nslookup doris-${prj}-${num}.${prj}-service"
+      lookupstr=${lookupstr}${prefix}${numstr}
+    done
+    echo "lookupstr:${lookupstr}"
+    until eval $lookupstr;do
+      echo waiting for all ${prj}s ready
+      sleep 2
+    done
+    echo great!!! all ${srvs} ${prj}s ready
+
+
+  add-bes.sh: |-
+    #!/bin/bash
+    let srvs=$1
+    echo "srvs:${srvs}"
+    let srvmaxno=${srvs}-1
+    echo "srvmaxno:${srvmaxno}"
+    let added=0
+    for num in `seq 0 ${srvmaxno}`
+    do
+      let flagarr[num]=0
+    done
+    echo "flagarr:${flagarr[*]}"
+    until [ $added -eq ${srvs} ]
+    do
+      echo adding all $srvs bes
+      for num in `seq 0 ${srvmaxno}`
+      do
+        echo "num:$num"
+        if [[ ${flagarr[num]} -eq 0 ]]; then
+          error=$(mysql --default-character-set=utf8 -h fe-service -P 9030 -u'root' -e'ALTER SYSTEM ADD BACKEND "doris-be-'${num}'.be-service:9050"' 2>&1 1>/dev/null)
+          if [[ $? -eq 0 || $msg =~ "Same backend already exists" ]]; then
+            let flagarr[num]=1
+            let added+=1
+            echo "$added bes are added, flagarr:${flagarr[*]}"
+          fi
+        fi
+      done
+      sleep 2
+    done
+    echo great!!! all ${srvs} bes added
+    mysql --default-character-set=utf8 -h fe-service -P 9030 -u'root' -e"SHOW PROC '/backends'"
+
+EOF
+
+:<<EOF
+kubectl apply -n doris -f k8s-doris/doris-configmap.yaml
+kubectl apply -n doris -f k8s-doris/add-bes2fe-job.yaml
+
+kubectl delete -f k8s-doris/add-bes2fe-job.yaml -n doris
+kubectl delete -f k8s-doris/doris-configmap.yaml -n doris
+kubectl get pod -n doris |grep Terminating |awk '{print $1}'| xargs kubectl delete pod "$1" -n doris --force --grace-period=0
+
+kubectl describe pod -n doris `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'`
+
+kubectl logs -n doris -c wait-bes-ready `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'`
+kubectl logs -n doris -c wait-fes-ready `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'`
+kubectl logs -n doris -c add-bes2fe `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'`
+
+kubectl exec -it -n doris -c wait-bes-ready `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'` -- bash
+kubectl exec -it -n doris -c wait-fes-ready `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'` -- bash
+kubectl exec -it -n doris -c add-bes2fe `kubectl get pod -n doris | grep doris-add-bes2fe | awk '{print $1}'` -- bash
+EOF
