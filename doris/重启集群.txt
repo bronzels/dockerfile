@@ -1,0 +1,5 @@
+1. 停掉所有fe，备份所有fe的元数据
+2. 在master节点fe 的配置里面加上metadata_failure_recovery=true ，启动fe ,启动正常后，mysql-clint 连接，把其他两台fe ,从集群中移除掉
+3. 删掉其他两台fe的元数据，下来启动另外两台fe , 启动命令 sh bin/start_fe.sh --helper master节点ip：9010 --daemon
+4. 启动后 在mysql-client 中重新加入其他两台fe
+5.集群正常后，master节点中fe 配置文件中的metadata_failure_recovery=true 删掉

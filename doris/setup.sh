@@ -262,8 +262,10 @@ done
 
 cp fe-service.yaml k8s-doris/
 cp be-service.yaml k8s-doris/
+:<<EOF
 cp doris-configmap.yaml k8s-doris/
 cp add-bes2fe-job.yaml k8s-doris/
+EOF
 
 kubectl create ns doris
 
@@ -337,6 +339,7 @@ kubectl run mysql-client -n doris --rm --tty -i --restart='Never' --image docker
 kubectl delete pod -n doris doris-fe-0
 kubectl delete pod -n doris doris-fe-0 --grace-period=200
 kubectl exec -it -n doris `kubectl get pod -n doris | grep doris-fe-0 | awk '{print $1}'` -- tail -f /stop.log
+kubectl exec -it -n doris `kubectl get pod -n doris | grep doris-fe-0 | awk '{print $1}'` -- cat /stop.log
 
 kubectl delete pod -n doris doris-fe-1
 kubectl delete pod -n doris doris-fe-1 --grace-period=120
@@ -347,7 +350,7 @@ kubectl delete pods --all --grace-period=200 -n doris
 kubectl delete pods --all --grace-period=360 -n doris
 
 #重启host集群以后，fe状态不正常无法恢复，需要在重启以前先删除所有pod，调用stop_be/fe.sh，重启host集群以后才能正常
-kubectl cp k8s-doris/conf/shutdown.sh -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-1 | awk '{print $1}'`:/root/
+kubectl cp k8s-doris/conf/shutdown.sh -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'`:/root/
 #!/bin/bash
 nmb1=1676123468.580202864
 nmb2=1676123598.941084000
@@ -356,8 +359,11 @@ echo "$var1"
 #130.360881136
 #205.253036653
 #372.109651414
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-1 | awk '{print $1}'` -- \
+kubectl exec -it -n doris `kubectl get pod -n doris | grep doris-fe-0 | awk '{print $1}'` -- \
 cat /stop.log
+kubectl exec -it -n doris `kubectl get pod -n doris | grep doris-fe-0 | awk '{print $1}'` -- \
+tail -f /stop.log
+kubectl exec -it -n doris `kubectl get pod -n doris | grep doris-fe-2 | awk '{print $1}'` -- ls -l /opt/apache-doris/fe/doris-meta
 
 kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
 cat /opt/apache-doris/fe/doris-meta/common.conf
@@ -380,7 +386,7 @@ kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-
 ls /opt/apache-doris/fe/log/
 kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
 cat /opt/apache-doris/fe/log/fe.gc.log.20230209-020244
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-1 | awk '{print $1}'` -- \
 cat /opt/apache-doris/fe/conf/fe.conf
 
 kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-be-0 | awk '{print $1}'` -- \

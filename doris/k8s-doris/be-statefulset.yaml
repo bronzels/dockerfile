@@ -33,7 +33,7 @@ spec:
                   fieldPath: metadata.name
           image: harbor.my.org:1080/doris/doris-be:1.2.1
           #command: [ "/bin/bash", "-ce", "/opt/apache-doris/be/bin/start_be.sh --daemon;tail -f /dev/null" ]
-          command: [ "/bin/bash", "-ce", "/tmp/preconf/bootstrap.sh 3 9050 9030 9010;tail -f /dev/null" ]
+          command: [ "/bin/bash", "-ce", "/tmp/preconf/bootstrap.sh 3 9050 9030 9010 /opt/apache-doris/fe/doris-meta;tail -f /dev/null" ]
           #command: [ "/tmp/preconf/bootstrap.sh", "3", "9050", "9030", "9010", "tail", "-f", "/dev/null" ]
           #args: hosts be_hearbeat_port fe_mysql_port
           #bootstrap.sh will assemble args and call init_be/fe.sh
@@ -51,7 +51,7 @@ spec:
                 command:
                   - bash
                   - -c
-                  - '/tmp/preconf/shutdown.sh 3 9030 > /stop.log 2>&1>'
+                  - '/tmp/preconf/shutdown.sh 3 9030 /opt/apache-doris/fe/doris-meta > /stop.log 2>&1>'
           ports:
             - containerPort: 9060
               protocol: TCP

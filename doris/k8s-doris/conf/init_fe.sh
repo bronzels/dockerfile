@@ -105,7 +105,13 @@ registerShell="/opt/apache-doris/fe/bin/start_fe.sh --helper 'doris-fe-0.fe-serv
 EOF
 
 checkFrontends="mysql -u'root' -P ${FE_MYSQL_PORT} -h ${feIpArray[FE_MASTER_ID]} -e \"SHOW PROC '/frontends'\""
+registerMySQL="mysql -u'root' -P ${FE_MYSQL_PORT} -h ${feIpArray[FE_MASTER_ID]} -e \"ALTER SYSTEM ADD FOLLOWER '${feIpArray[FE_ID]}:${feEditLogPortArray[FE_ID]}'\""
+registerShell="/opt/apache-doris/fe/bin/start_fe.sh --daemon --helper '${feIpArray[FE_MASTER_ID]}:${feEditLogPortArray[FE_MASTER_ID]}'"
+
 echo "DEBUG >>>>>> checkFrontends = 【${checkFrontends}】"
+echo "DEBUG >>>>>> registerMySQL = 【${registerMySQL}】"
+echo "DEBUG >>>>>> registerShell = 【${registerShell}】"
+
 masterLive=1
 if [[ "${FE_ID}" != "${FE_MASTER_ID}" ]]; then
     ## if current node is not master
@@ -113,18 +119,12 @@ if [[ "${FE_ID}" != "${FE_MASTER_ID}" ]]; then
     ## STEP2: registe follower from mysql client
     ## STEP3: call start_fe.sh using --help optional
     ## STEP4: check this follower status
-
-    registerMySQL="mysql -u'root' -P ${FE_MYSQL_PORT} -h ${feIpArray[FE_MASTER_ID]} -e \"ALTER SYSTEM ADD FOLLOWER '${feIpArray[FE_ID]}:${feEditLogPortArray[FE_ID]}'\""
-    registerShell="/opt/apache-doris/fe/bin/start_fe.sh --daemon --helper '${feIpArray[FE_MASTER_ID]}:${feEditLogPortArray[FE_MASTER_ID]}'"
-
     echo "DEBUG >>>>>> FE is follower, fe_id = ${FE_ID}"
-    echo "DEBUG >>>>>> registerMySQL = 【${registerMySQL}】"
-    echo "DEBUG >>>>>> registerShell = 【${registerShell}】"
 
     retJoined=1
     retStarted=1
     followerJoined=1
-    until [[ "${retJoined}" == 0 && "${retStarted}" == 0 && "${followerJoined}" == 0 ]]
+    until [[ "${retStarted}" == 0 && "${retJoined}" == 0 && "${followerJoined}" == 0 ]]
     do
         sleep 2
 
@@ -139,6 +139,19 @@ if [[ "${FE_ID}" != "${FE_MASTER_ID}" ]]; then
               sleep 5
               continue
           fi
+        fi
+
+        ## STEP3: call start_fe.sh using --help optional
+        if [[ "${retStarted}" != 0 ]]; then
+          echo "Run registerShell command, [ registerShell = ${registerShell} ]"
+          eval "${registerShell}"
+          retStarted=$?
+          echo "The resutl of run registerShell command, [ res = $retStarted ]"
+          if [[ "${retStarted}" != 0 ]]; then
+              echo "DEBUG >>>>>> continue in STEP3: call start_fe.sh using --help optional"
+              continue
+          fi
+          sleep 15
         fi
 
         ## STEP2: register follower from mysql client
@@ -159,19 +172,6 @@ if [[ "${FE_ID}" != "${FE_MASTER_ID}" ]]; then
             fi
           fi
           sleep 2
-        fi
-
-        ## STEP3: call start_fe.sh using --help optional
-        if [[ "${retStarted}" != 0 ]]; then
-          echo "Run registerShell command, [ registerShell = ${registerShell} ]"
-          eval "${registerShell}"
-          retStarted=$?
-          echo "The resutl of run registerShell command, [ res = $retStarted ]"
-          if [[ "${retStarted}" != 0 ]]; then
-              echo "DEBUG >>>>>> continue in STEP3: call start_fe.sh using --help optional"
-              continue
-          fi
-          sleep 15
         fi
 
         ## STEP4: check this follower status
