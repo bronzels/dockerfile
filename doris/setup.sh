@@ -362,6 +362,31 @@ fe-1成为master而且ReplayedJournalId最大，集群正常，svc portforward�
 
 12，fe-1是leader情况下，重启物理机集群
 fe-1是master而且ReplayedJournalId最大，集群正常，svc portforward需要重新执行
+  把物理集群重启后，会出现偶尔连不上fe master的query端口，fe的log和warn log也有一些打印
+  mysql命令-h参数，不管是指定svc，svc的ip，还是master的直连ip，3种方式都有1/10概率连不上，直连ip出问题概率还要大一点，感觉不是网络或者负载均衡问题的问题
+
+mysql连接问题，把fe的内存limit改到12g以后，连续测试20次
+  pod.svc，，出现1次
+  svc，出现3次
+  svc的ip，出现1次
+  还是master的直连ip，没出现
+
+let success_sum=0
+test_rounds=80
+for num in `seq 1 ${test_rounds}`
+do
+  kubectl run mysql-client -n doris --rm --tty -i --restart='Never' --image docker.io/library/mysql:5.7 --command -- \
+    mysql --default-character-set=utf8 -h doris-fe-1.fe-service -P 9030 -u'root' -e"SHOW PROC '/frontends'" \
+    | grep "FOLLOWER | true"
+  if [[ $? == "0" ]]; then
+    let success_sum+=1
+  fi
+done
+echo "success_sum:${success_sum}"
+
+40，没问题
+80，没问题
+可能livenessprobe有问题，导致k8s负载均衡有问题
 
 EOF
 
@@ -431,7 +456,7 @@ cat /opt/apache-doris/be/storage/common.conf
 
 kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-1 | awk '{print $1}'` -- \
 bash
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-1 | awk '{print $1}'` -- \
 cat /opt/apache-doris/fe/log/fe.out
 kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
 cat /opt/apache-doris/fe/log/fe.log
@@ -439,7 +464,7 @@ kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-
 cat /opt/apache-doris/fe/log/fe.log | grep 'master client, get client from cache failed.host'
 kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
 cat /opt/apache-doris/fe/log/fe.log | grep 'failed'
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-1 | awk '{print $1}'` -- \
 cat /opt/apache-doris/fe/log/fe.warn.log
 kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
 ls /opt/apache-doris/fe/log/

@@ -1,0 +1,417 @@
+2023-02-13 02:56:47,879 WARN (UNKNOWN 192.168.3.14_9010_1676253488768(-1)|1) [Env.notifyNewFETypeTransfer():2363] notify new FE type transfer: UNKNOWN
+2023-02-13 02:56:47,889 WARN (RepNode 192.168.3.14_9010_1676253488768(-1)|79) [Env.notifyNewFETypeTransfer():2363] notify new FE type transfer: MASTER
+2023-02-13 02:56:48,098 WARN (heartbeat-mgr-pool-1|116) [HeartbeatMgr$BackendHeartbeatHandler.call():268] backend heartbeat got exception
+org.apache.thrift.transport.TTransportException: java.net.ConnectException: Connection refused (Connection refused)
+	at org.apache.thrift.transport.TSocket.open(TSocket.java:226) ~[spark-dpp-1.0-SNAPSHOT.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.GenericPool$ThriftClientFactory.create(GenericPool.java:143) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.GenericPool$ThriftClientFactory.create(GenericPool.java:126) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.commons.pool2.BaseKeyedPooledObjectFactory.makeObject(BaseKeyedPooledObjectFactory.java:62) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.commons.pool2.impl.GenericKeyedObjectPool.create(GenericKeyedObjectPool.java:1012) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.commons.pool2.impl.GenericKeyedObjectPool.borrowObject(GenericKeyedObjectPool.java:356) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.commons.pool2.impl.GenericKeyedObjectPool.borrowObject(GenericKeyedObjectPool.java:277) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.doris.common.GenericPool.borrowObject(GenericPool.java:95) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.system.HeartbeatMgr$BackendHeartbeatHandler.call(HeartbeatMgr.java:225) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.system.HeartbeatMgr$BackendHeartbeatHandler.call(HeartbeatMgr.java:203) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266) ~[?:1.8.0_342]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[?:1.8.0_342]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[?:1.8.0_342]
+	at java.lang.Thread.run(Thread.java:750) ~[?:1.8.0_342]
+Caused by: java.net.ConnectException: Connection refused (Connection refused)
+	at java.net.PlainSocketImpl.socketConnect(Native Method) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:350) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:206) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:188) ~[?:1.8.0_342]
+	at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:392) ~[?:1.8.0_342]
+	at java.net.Socket.connect(Socket.java:607) ~[?:1.8.0_342]
+	at org.apache.thrift.transport.TSocket.open(TSocket.java:221) ~[spark-dpp-1.0-SNAPSHOT.jar:1.0-SNAPSHOT]
+	... 13 more
+2023-02-13 02:56:48,098 WARN (ForkJoinPool-2-worker-1|121) [TabletStatMgr.lambda$null$0():70] task exec error. backend[10005]
+org.apache.thrift.transport.TTransportException: java.net.ConnectException: Connection refused (Connection refused)
+	at org.apache.thrift.transport.TSocket.open(TSocket.java:226) ~[spark-dpp-1.0-SNAPSHOT.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.GenericPool$ThriftClientFactory.create(GenericPool.java:143) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.GenericPool$ThriftClientFactory.create(GenericPool.java:126) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.commons.pool2.BaseKeyedPooledObjectFactory.makeObject(BaseKeyedPooledObjectFactory.java:62) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.commons.pool2.impl.GenericKeyedObjectPool.create(GenericKeyedObjectPool.java:1012) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.commons.pool2.impl.GenericKeyedObjectPool.borrowObject(GenericKeyedObjectPool.java:356) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.commons.pool2.impl.GenericKeyedObjectPool.borrowObject(GenericKeyedObjectPool.java:277) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.doris.common.GenericPool.borrowObject(GenericPool.java:95) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.catalog.TabletStatMgr.lambda$null$0(TabletStatMgr.java:63) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183) ~[?:1.8.0_342]
+	at com.google.common.collect.CollectSpliterators$1WithCharacteristics.lambda$forEachRemaining$1(CollectSpliterators.java:67) ~[spark-dpp-1.0-SNAPSHOT.jar:1.0-SNAPSHOT]
+	at java.util.stream.Streams$RangeIntSpliterator.forEachRemaining(Streams.java:110) ~[?:1.8.0_342]
+	at com.google.common.collect.CollectSpliterators$1WithCharacteristics.forEachRemaining(CollectSpliterators.java:67) ~[spark-dpp-1.0-SNAPSHOT.jar:1.0-SNAPSHOT]
+	at java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:482) ~[?:1.8.0_342]
+	at java.util.stream.ForEachOps$ForEachTask.compute(ForEachOps.java:290) ~[?:1.8.0_342]
+	at java.util.concurrent.CountedCompleter.exec(CountedCompleter.java:731) ~[?:1.8.0_342]
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:289) ~[?:1.8.0_342]
+	at java.util.concurrent.ForkJoinTask.doInvoke(ForkJoinTask.java:401) ~[?:1.8.0_342]
+	at java.util.concurrent.ForkJoinTask.invoke(ForkJoinTask.java:734) ~[?:1.8.0_342]
+	at java.util.stream.ForEachOps$ForEachOp.evaluateParallel(ForEachOps.java:159) ~[?:1.8.0_342]
+	at java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateParallel(ForEachOps.java:173) ~[?:1.8.0_342]
+	at java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:233) ~[?:1.8.0_342]
+	at java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:485) ~[?:1.8.0_342]
+	at java.util.stream.ReferencePipeline$Head.forEach(ReferencePipeline.java:650) ~[?:1.8.0_342]
+	at org.apache.doris.catalog.TabletStatMgr.lambda$runAfterCatalogReady$1(TabletStatMgr.java:57) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at java.util.concurrent.ForkJoinTask$AdaptedRunnableAction.exec(ForkJoinTask.java:1386) ~[?:1.8.0_342]
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:289) ~[?:1.8.0_342]
+	at java.util.concurrent.ForkJoinPool$WorkQueue.runTask(ForkJoinPool.java:1056) ~[?:1.8.0_342]
+	at java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:1692) ~[?:1.8.0_342]
+	at java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:175) ~[?:1.8.0_342]
+Caused by: java.net.ConnectException: Connection refused (Connection refused)
+	at java.net.PlainSocketImpl.socketConnect(Native Method) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:350) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:206) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:188) ~[?:1.8.0_342]
+	at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:392) ~[?:1.8.0_342]
+	at java.net.Socket.connect(Socket.java:607) ~[?:1.8.0_342]
+	at org.apache.thrift.transport.TSocket.open(TSocket.java:221) ~[spark-dpp-1.0-SNAPSHOT.jar:1.0-SNAPSHOT]
+	... 29 more
+2023-02-13 02:56:48,106 WARN (ForkJoinPool-2-worker-1|121) [TabletStatMgr.lambda$null$0():70] task exec error. backend[10003]
+org.apache.thrift.transport.TTransportException: java.net.ConnectException: Connection refused (Connection refused)
+	at org.apache.thrift.transport.TSocket.open(TSocket.java:226) ~[spark-dpp-1.0-SNAPSHOT.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.GenericPool$ThriftClientFactory.create(GenericPool.java:143) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.GenericPool$ThriftClientFactory.create(GenericPool.java:126) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.commons.pool2.BaseKeyedPooledObjectFactory.makeObject(BaseKeyedPooledObjectFactory.java:62) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.commons.pool2.impl.GenericKeyedObjectPool.create(GenericKeyedObjectPool.java:1012) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.commons.pool2.impl.GenericKeyedObjectPool.borrowObject(GenericKeyedObjectPool.java:356) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.commons.pool2.impl.GenericKeyedObjectPool.borrowObject(GenericKeyedObjectPool.java:277) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.doris.common.GenericPool.borrowObject(GenericPool.java:95) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.catalog.TabletStatMgr.lambda$null$0(TabletStatMgr.java:63) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183) ~[?:1.8.0_342]
+	at com.google.common.collect.CollectSpliterators$1WithCharacteristics.lambda$forEachRemaining$1(CollectSpliterators.java:67) ~[spark-dpp-1.0-SNAPSHOT.jar:1.0-SNAPSHOT]
+	at java.util.stream.Streams$RangeIntSpliterator.forEachRemaining(Streams.java:110) ~[?:1.8.0_342]
+	at com.google.common.collect.CollectSpliterators$1WithCharacteristics.forEachRemaining(CollectSpliterators.java:67) ~[spark-dpp-1.0-SNAPSHOT.jar:1.0-SNAPSHOT]
+	at java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:482) ~[?:1.8.0_342]
+	at java.util.stream.ForEachOps$ForEachTask.compute(ForEachOps.java:290) ~[?:1.8.0_342]
+	at java.util.concurrent.CountedCompleter.exec(CountedCompleter.java:731) ~[?:1.8.0_342]
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:289) ~[?:1.8.0_342]
+	at java.util.concurrent.ForkJoinPool.helpComplete(ForkJoinPool.java:1870) ~[?:1.8.0_342]
+	at java.util.concurrent.ForkJoinPool.awaitJoin(ForkJoinPool.java:2045) ~[?:1.8.0_342]
+	at java.util.concurrent.ForkJoinTask.doInvoke(ForkJoinTask.java:404) ~[?:1.8.0_342]
+	at java.util.concurrent.ForkJoinTask.invoke(ForkJoinTask.java:734) ~[?:1.8.0_342]
+	at java.util.stream.ForEachOps$ForEachOp.evaluateParallel(ForEachOps.java:159) ~[?:1.8.0_342]
+	at java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateParallel(ForEachOps.java:173) ~[?:1.8.0_342]
+	at java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:233) ~[?:1.8.0_342]
+	at java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:485) ~[?:1.8.0_342]
+	at java.util.stream.ReferencePipeline$Head.forEach(ReferencePipeline.java:650) ~[?:1.8.0_342]
+	at org.apache.doris.catalog.TabletStatMgr.lambda$runAfterCatalogReady$1(TabletStatMgr.java:57) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at java.util.concurrent.ForkJoinTask$AdaptedRunnableAction.exec(ForkJoinTask.java:1386) ~[?:1.8.0_342]
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:289) ~[?:1.8.0_342]
+	at java.util.concurrent.ForkJoinPool$WorkQueue.runTask(ForkJoinPool.java:1056) ~[?:1.8.0_342]
+	at java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:1692) ~[?:1.8.0_342]
+	at java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:175) ~[?:1.8.0_342]
+Caused by: java.net.ConnectException: Connection refused (Connection refused)
+	at java.net.PlainSocketImpl.socketConnect(Native Method) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:350) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:206) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:188) ~[?:1.8.0_342]
+	at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:392) ~[?:1.8.0_342]
+	at java.net.Socket.connect(Socket.java:607) ~[?:1.8.0_342]
+	at org.apache.thrift.transport.TSocket.open(TSocket.java:221) ~[spark-dpp-1.0-SNAPSHOT.jar:1.0-SNAPSHOT]
+	... 31 more
+2023-02-13 02:56:48,097 WARN (heartbeat-mgr-pool-2|117) [HeartbeatMgr$BackendHeartbeatHandler.call():268] backend heartbeat got exception
+org.apache.thrift.transport.TTransportException: java.net.ConnectException: Connection refused (Connection refused)
+	at org.apache.thrift.transport.TSocket.open(TSocket.java:226) ~[spark-dpp-1.0-SNAPSHOT.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.GenericPool$ThriftClientFactory.create(GenericPool.java:143) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.GenericPool$ThriftClientFactory.create(GenericPool.java:126) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.commons.pool2.BaseKeyedPooledObjectFactory.makeObject(BaseKeyedPooledObjectFactory.java:62) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.commons.pool2.impl.GenericKeyedObjectPool.create(GenericKeyedObjectPool.java:1012) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.commons.pool2.impl.GenericKeyedObjectPool.borrowObject(GenericKeyedObjectPool.java:356) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.commons.pool2.impl.GenericKeyedObjectPool.borrowObject(GenericKeyedObjectPool.java:277) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.doris.common.GenericPool.borrowObject(GenericPool.java:95) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.system.HeartbeatMgr$BackendHeartbeatHandler.call(HeartbeatMgr.java:225) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.system.HeartbeatMgr$BackendHeartbeatHandler.call(HeartbeatMgr.java:203) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266) ~[?:1.8.0_342]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[?:1.8.0_342]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[?:1.8.0_342]
+	at java.lang.Thread.run(Thread.java:750) ~[?:1.8.0_342]
+Caused by: java.net.ConnectException: Connection refused (Connection refused)
+	at java.net.PlainSocketImpl.socketConnect(Native Method) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:350) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:206) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:188) ~[?:1.8.0_342]
+	at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:392) ~[?:1.8.0_342]
+	at java.net.Socket.connect(Socket.java:607) ~[?:1.8.0_342]
+	at org.apache.thrift.transport.TSocket.open(TSocket.java:221) ~[spark-dpp-1.0-SNAPSHOT.jar:1.0-SNAPSHOT]
+	... 13 more
+2023-02-13 02:56:48,125 WARN (stream_load_record_manager|30) [StreamLoadRecordMgr.runAfterCatalogReady():326] task exec error. backend[10005]
+org.apache.thrift.transport.TTransportException: java.net.ConnectException: Connection refused (Connection refused)
+	at org.apache.thrift.transport.TSocket.open(TSocket.java:226) ~[spark-dpp-1.0-SNAPSHOT.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.GenericPool$ThriftClientFactory.create(GenericPool.java:143) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.GenericPool$ThriftClientFactory.create(GenericPool.java:126) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.commons.pool2.BaseKeyedPooledObjectFactory.makeObject(BaseKeyedPooledObjectFactory.java:62) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.commons.pool2.impl.GenericKeyedObjectPool.create(GenericKeyedObjectPool.java:1012) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.commons.pool2.impl.GenericKeyedObjectPool.borrowObject(GenericKeyedObjectPool.java:356) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.commons.pool2.impl.GenericKeyedObjectPool.borrowObject(GenericKeyedObjectPool.java:277) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.doris.common.GenericPool.borrowObject(GenericPool.java:95) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.load.StreamLoadRecordMgr.runAfterCatalogReady(StreamLoadRecordMgr.java:243) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.util.MasterDaemon.runOneCycle(MasterDaemon.java:58) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.util.Daemon.run(Daemon.java:116) ~[doris-fe.jar:1.0-SNAPSHOT]
+Caused by: java.net.ConnectException: Connection refused (Connection refused)
+	at java.net.PlainSocketImpl.socketConnect(Native Method) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:350) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:206) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:188) ~[?:1.8.0_342]
+	at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:392) ~[?:1.8.0_342]
+	at java.net.Socket.connect(Socket.java:607) ~[?:1.8.0_342]
+	at org.apache.thrift.transport.TSocket.open(TSocket.java:221) ~[spark-dpp-1.0-SNAPSHOT.jar:1.0-SNAPSHOT]
+	... 10 more
+2023-02-13 02:56:48,126 WARN (stream_load_record_manager|30) [StreamLoadRecordMgr.runAfterCatalogReady():326] task exec error. backend[10003]
+org.apache.thrift.transport.TTransportException: java.net.ConnectException: Connection refused (Connection refused)
+	at org.apache.thrift.transport.TSocket.open(TSocket.java:226) ~[spark-dpp-1.0-SNAPSHOT.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.GenericPool$ThriftClientFactory.create(GenericPool.java:143) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.GenericPool$ThriftClientFactory.create(GenericPool.java:126) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.commons.pool2.BaseKeyedPooledObjectFactory.makeObject(BaseKeyedPooledObjectFactory.java:62) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.commons.pool2.impl.GenericKeyedObjectPool.create(GenericKeyedObjectPool.java:1012) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.commons.pool2.impl.GenericKeyedObjectPool.borrowObject(GenericKeyedObjectPool.java:356) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.commons.pool2.impl.GenericKeyedObjectPool.borrowObject(GenericKeyedObjectPool.java:277) ~[commons-pool2-2.2.jar:2.2]
+	at org.apache.doris.common.GenericPool.borrowObject(GenericPool.java:95) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.load.StreamLoadRecordMgr.runAfterCatalogReady(StreamLoadRecordMgr.java:243) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.util.MasterDaemon.runOneCycle(MasterDaemon.java:58) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.util.Daemon.run(Daemon.java:116) ~[doris-fe.jar:1.0-SNAPSHOT]
+Caused by: java.net.ConnectException: Connection refused (Connection refused)
+	at java.net.PlainSocketImpl.socketConnect(Native Method) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:350) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:206) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:188) ~[?:1.8.0_342]
+	at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:392) ~[?:1.8.0_342]
+	at java.net.Socket.connect(Socket.java:607) ~[?:1.8.0_342]
+	at org.apache.thrift.transport.TSocket.open(TSocket.java:221) ~[spark-dpp-1.0-SNAPSHOT.jar:1.0-SNAPSHOT]
+	... 10 more
+2023-02-13 02:56:48,127 WARN (heartbeat mgr|21) [HeartbeatMgr.runAfterCatalogReady():139] get bad heartbeat response: type: BACKEND, status: BAD, msg: java.net.ConnectException: Connection refused (Connection refused), beId: 10005, beHost: 192.168.3.6, bePort: 0, httpPort: 0, brpcPort: 0
+2023-02-13 02:56:48,127 WARN (heartbeat mgr|21) [Backend.handleHbResponse():721] Backend [id=10005, host=192.168.3.6, heartbeatPort=9050, alive=false, tags: {location=default}] is dead,
+2023-02-13 02:56:48,128 WARN (heartbeat mgr|21) [HeartbeatMgr.runAfterCatalogReady():139] get bad heartbeat response: type: BACKEND, status: BAD, msg: java.net.ConnectException: Connection refused (Connection refused), beId: 10003, beHost: 192.168.3.103, bePort: 0, httpPort: 0, brpcPort: 0
+2023-02-13 02:56:48,128 WARN (heartbeat mgr|21) [Backend.handleHbResponse():721] Backend [id=10003, host=192.168.3.103, heartbeatPort=9050, alive=false, tags: {location=default}] is dead,
+2023-02-13 02:56:48,129 WARN (heartbeat mgr|21) [HeartbeatMgr.runAfterCatalogReady():139] get bad heartbeat response: type: FRONTEND, status: BAD, msg: java.net.ConnectException: Connection refused (Connection refused), name: 192.168.3.103_9010_1676255454906, version: null, queryPort: 0, rpcPort: 0, replayedJournalId: 0
+2023-02-13 02:56:48,129 WARN (heartbeat mgr|21) [HeartbeatMgr.runAfterCatalogReady():139] get bad heartbeat response: type: FRONTEND, status: BAD, msg: java.net.ConnectException: Connection refused (Connection refused), name: 192.168.3.6_9010_1676255458126, version: null, queryPort: 0, rpcPort: 0, replayedJournalId: 0
+2023-02-13 02:56:48,300 ERROR (leaderCheckpointer|94) [Checkpoint.doCheckpoint():202] Exception when pushing image file. url = http://192.168.3.103:8030/put?version=2886&port=8030
+java.net.ConnectException: Connection refused (Connection refused)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method) ~[?:1.8.0_342]
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62) ~[?:1.8.0_342]
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45) ~[?:1.8.0_342]
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection$10.run(HttpURLConnection.java:1952) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection$10.run(HttpURLConnection.java:1947) ~[?:1.8.0_342]
+	at java.security.AccessController.doPrivileged(Native Method) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.getChainedException(HttpURLConnection.java:1946) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.getInputStream0(HttpURLConnection.java:1516) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1500) ~[?:1.8.0_342]
+	at org.apache.doris.master.MetaHelper.getRemoteFile(MetaHelper.java:81) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.master.Checkpoint.doCheckpoint(Checkpoint.java:199) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.master.Checkpoint.runAfterCatalogReady(Checkpoint.java:76) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.util.MasterDaemon.runOneCycle(MasterDaemon.java:58) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.util.Daemon.run(Daemon.java:116) ~[doris-fe.jar:1.0-SNAPSHOT]
+Caused by: java.net.ConnectException: Connection refused (Connection refused)
+	at java.net.PlainSocketImpl.socketConnect(Native Method) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:350) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:206) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:188) ~[?:1.8.0_342]
+	at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:392) ~[?:1.8.0_342]
+	at java.net.Socket.connect(Socket.java:607) ~[?:1.8.0_342]
+	at sun.net.NetworkClient.doConnect(NetworkClient.java:175) ~[?:1.8.0_342]
+	at sun.net.www.http.HttpClient.openServer(HttpClient.java:463) ~[?:1.8.0_342]
+	at sun.net.www.http.HttpClient.openServer(HttpClient.java:558) ~[?:1.8.0_342]
+	at sun.net.www.http.HttpClient.<init>(HttpClient.java:242) ~[?:1.8.0_342]
+	at sun.net.www.http.HttpClient.New(HttpClient.java:339) ~[?:1.8.0_342]
+	at sun.net.www.http.HttpClient.New(HttpClient.java:357) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.getNewHttpClient(HttpURLConnection.java:1228) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.plainConnect0(HttpURLConnection.java:1162) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.plainConnect(HttpURLConnection.java:1056) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.connect(HttpURLConnection.java:990) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.getInputStream0(HttpURLConnection.java:1572) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1500) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.getHeaderField(HttpURLConnection.java:3063) ~[?:1.8.0_342]
+	at org.apache.doris.master.MetaHelper.getRemoteFile(MetaHelper.java:76) ~[doris-fe.jar:1.0-SNAPSHOT]
+	... 4 more
+2023-02-13 02:56:48,301 ERROR (leaderCheckpointer|94) [Checkpoint.doCheckpoint():202] Exception when pushing image file. url = http://192.168.3.6:8030/put?version=2886&port=8030
+java.net.ConnectException: Connection refused (Connection refused)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method) ~[?:1.8.0_342]
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62) ~[?:1.8.0_342]
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45) ~[?:1.8.0_342]
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection$10.run(HttpURLConnection.java:1952) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection$10.run(HttpURLConnection.java:1947) ~[?:1.8.0_342]
+	at java.security.AccessController.doPrivileged(Native Method) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.getChainedException(HttpURLConnection.java:1946) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.getInputStream0(HttpURLConnection.java:1516) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1500) ~[?:1.8.0_342]
+	at org.apache.doris.master.MetaHelper.getRemoteFile(MetaHelper.java:81) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.master.Checkpoint.doCheckpoint(Checkpoint.java:199) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.master.Checkpoint.runAfterCatalogReady(Checkpoint.java:76) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.util.MasterDaemon.runOneCycle(MasterDaemon.java:58) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.common.util.Daemon.run(Daemon.java:116) ~[doris-fe.jar:1.0-SNAPSHOT]
+Caused by: java.net.ConnectException: Connection refused (Connection refused)
+	at java.net.PlainSocketImpl.socketConnect(Native Method) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:350) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:206) ~[?:1.8.0_342]
+	at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:188) ~[?:1.8.0_342]
+	at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:392) ~[?:1.8.0_342]
+	at java.net.Socket.connect(Socket.java:607) ~[?:1.8.0_342]
+	at sun.net.NetworkClient.doConnect(NetworkClient.java:175) ~[?:1.8.0_342]
+	at sun.net.www.http.HttpClient.openServer(HttpClient.java:463) ~[?:1.8.0_342]
+	at sun.net.www.http.HttpClient.openServer(HttpClient.java:558) ~[?:1.8.0_342]
+	at sun.net.www.http.HttpClient.<init>(HttpClient.java:242) ~[?:1.8.0_342]
+	at sun.net.www.http.HttpClient.New(HttpClient.java:339) ~[?:1.8.0_342]
+	at sun.net.www.http.HttpClient.New(HttpClient.java:357) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.getNewHttpClient(HttpURLConnection.java:1228) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.plainConnect0(HttpURLConnection.java:1162) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.plainConnect(HttpURLConnection.java:1056) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.connect(HttpURLConnection.java:990) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.getInputStream0(HttpURLConnection.java:1572) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1500) ~[?:1.8.0_342]
+	at sun.net.www.protocol.http.HttpURLConnection.getHeaderField(HttpURLConnection.java:3063) ~[?:1.8.0_342]
+	at org.apache.doris.master.MetaHelper.getRemoteFile(MetaHelper.java:76) ~[doris-fe.jar:1.0-SNAPSHOT]
+	... 4 more
+2023-02-13 02:56:53,161 WARN (heartbeat mgr|21) [HeartbeatMgr.runAfterCatalogReady():139] get bad heartbeat response: type: FRONTEND, status: BAD, msg: java.net.ConnectException: Connection refused (Connection refused), name: 192.168.3.103_9010_1676255454906, version: null, queryPort: 0, rpcPort: 0, replayedJournalId: 0
+2023-02-13 02:56:53,161 WARN (heartbeat mgr|21) [HeartbeatMgr.runAfterCatalogReady():139] get bad heartbeat response: type: FRONTEND, status: BAD, msg: java.net.ConnectException: Connection refused (Connection refused), name: 192.168.3.6_9010_1676255458126, version: null, queryPort: 0, rpcPort: 0, replayedJournalId: 0
+2023-02-13 02:56:58,164 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10016], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 02:56:58,164 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10016] from backend[10003] because not found in meta
+2023-02-13 02:56:58,164 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10018], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 02:56:58,164 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10018] from backend[10003] because not found in meta
+2023-02-13 02:56:58,164 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10022], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 02:56:58,164 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10022] from backend[10003] because not found in meta
+2023-02-13 02:56:58,164 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10026], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 02:56:58,164 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10026] from backend[10003] because not found in meta
+2023-02-13 02:56:58,164 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10012], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 02:56:58,164 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10012] from backend[10003] because not found in meta
+2023-02-13 02:56:58,164 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10014], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 02:56:58,164 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10014] from backend[10003] because not found in meta
+2023-02-13 02:56:58,172 WARN (heartbeat mgr|21) [HeartbeatMgr.runAfterCatalogReady():139] get bad heartbeat response: type: FRONTEND, status: BAD, msg: java.net.ConnectException: Connection refused (Connection refused), name: 192.168.3.103_9010_1676255454906, version: null, queryPort: 0, rpcPort: 0, replayedJournalId: 0
+2023-02-13 02:56:58,172 WARN (heartbeat mgr|21) [HeartbeatMgr.runAfterCatalogReady():139] get bad heartbeat response: type: FRONTEND, status: BAD, msg: java.net.ConnectException: Connection refused (Connection refused), name: 192.168.3.6_9010_1676255458126, version: null, queryPort: 0, rpcPort: 0, replayedJournalId: 0
+2023-02-13 02:57:03,178 WARN (heartbeat mgr|21) [HeartbeatMgr.runAfterCatalogReady():139] get bad heartbeat response: type: FRONTEND, status: BAD, msg: java.net.ConnectException: Connection refused (Connection refused), name: 192.168.3.103_9010_1676255454906, version: null, queryPort: 0, rpcPort: 0, replayedJournalId: 0
+2023-02-13 02:57:03,178 WARN (heartbeat mgr|21) [HeartbeatMgr.runAfterCatalogReady():139] get bad heartbeat response: type: FRONTEND, status: BAD, msg: java.net.ConnectException: Connection refused (Connection refused), name: 192.168.3.6_9010_1676255458126, version: null, queryPort: 0, rpcPort: 0, replayedJournalId: 0
+2023-02-13 02:57:06,417 ERROR (mysql-nio-pool-0|233) [BDBHA.removeElectableNode():215] the deleting electable node is not found 192.168.3.6_9010_1676255458126
+com.sleepycat.je.rep.MemberNotFoundException: (JE 18.3.12) Node: 192.168.3.6_9010_1676255458126 is not a member of the group: PALO_JOURNAL_GROUP
+	at com.sleepycat.je.rep.util.ReplicationGroupAdmin.checkMember(ReplicationGroupAdmin.java:568) ~[je-18.3.13-doris-SNAPSHOT.jar:18.3.13-doris-SNAPSHOT]
+	at com.sleepycat.je.rep.util.ReplicationGroupAdmin.removeMember(ReplicationGroupAdmin.java:315) ~[je-18.3.13-doris-SNAPSHOT.jar:18.3.13-doris-SNAPSHOT]
+	at org.apache.doris.ha.BDBHA.removeElectableNode(BDBHA.java:213) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.catalog.Env.dropFrontend(Env.java:2585) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.alter.SystemHandler.process(SystemHandler.java:166) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.alter.Alter.processAlterCluster(Alter.java:655) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.catalog.Env.alterCluster(Env.java:4425) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.qe.DdlExecutor.execute(DdlExecutor.java:227) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.qe.StmtExecutor.handleDdlStmt(StmtExecutor.java:1722) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.qe.StmtExecutor.execute(StmtExecutor.java:563) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.qe.StmtExecutor.execute(StmtExecutor.java:407) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.qe.ConnectProcessor.handleQuery(ConnectProcessor.java:322) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.qe.ConnectProcessor.dispatch(ConnectProcessor.java:463) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.qe.ConnectProcessor.processOnce(ConnectProcessor.java:690) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.mysql.nio.ReadListener.lambda$handleEvent$0(ReadListener.java:52) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[?:1.8.0_342]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[?:1.8.0_342]
+	at java.lang.Thread.run(Thread.java:750) ~[?:1.8.0_342]
+2023-02-13 02:57:06,429 ERROR (mysql-nio-pool-0|233) [BDBHA.removeElectableNode():215] the deleting electable node is not found 192.168.3.103_9010_1676255454906
+com.sleepycat.je.rep.MemberNotFoundException: (JE 18.3.12) Node: 192.168.3.103_9010_1676255454906 is not a member of the group: PALO_JOURNAL_GROUP
+	at com.sleepycat.je.rep.util.ReplicationGroupAdmin.checkMember(ReplicationGroupAdmin.java:568) ~[je-18.3.13-doris-SNAPSHOT.jar:18.3.13-doris-SNAPSHOT]
+	at com.sleepycat.je.rep.util.ReplicationGroupAdmin.removeMember(ReplicationGroupAdmin.java:315) ~[je-18.3.13-doris-SNAPSHOT.jar:18.3.13-doris-SNAPSHOT]
+	at org.apache.doris.ha.BDBHA.removeElectableNode(BDBHA.java:213) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.catalog.Env.dropFrontend(Env.java:2585) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.alter.SystemHandler.process(SystemHandler.java:166) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.alter.Alter.processAlterCluster(Alter.java:655) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.catalog.Env.alterCluster(Env.java:4425) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.qe.DdlExecutor.execute(DdlExecutor.java:227) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.qe.StmtExecutor.handleDdlStmt(StmtExecutor.java:1722) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.qe.StmtExecutor.execute(StmtExecutor.java:563) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.qe.StmtExecutor.execute(StmtExecutor.java:407) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.qe.ConnectProcessor.handleQuery(ConnectProcessor.java:322) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.qe.ConnectProcessor.dispatch(ConnectProcessor.java:463) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.qe.ConnectProcessor.processOnce(ConnectProcessor.java:690) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at org.apache.doris.mysql.nio.ReadListener.lambda$handleEvent$0(ReadListener.java:52) ~[doris-fe.jar:1.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[?:1.8.0_342]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[?:1.8.0_342]
+	at java.lang.Thread.run(Thread.java:750) ~[?:1.8.0_342]
+2023-02-13 02:57:44,190 WARN (qtp1519451306-211|211) [MetaService.isFromValidFe():64] request is not from valid FE. client: 192.168.3.103
+2023-02-13 02:57:45,783 WARN (qtp1519451306-206|206) [MetaService.isFromValidFe():64] request is not from valid FE. client: 192.168.3.6
+2023-02-13 02:57:49,265 WARN (qtp1519451306-209|209) [MetaService.isFromValidFe():64] request is not from valid FE. client: 192.168.3.103
+2023-02-13 02:57:50,798 WARN (qtp1519451306-213|213) [MetaService.isFromValidFe():64] request is not from valid FE. client: 192.168.3.6
+2023-02-13 02:57:54,272 WARN (qtp1519451306-209|209) [MetaService.isFromValidFe():64] request is not from valid FE. client: 192.168.3.103
+2023-02-13 02:57:55,808 WARN (qtp1519451306-213|213) [MetaService.isFromValidFe():64] request is not from valid FE. client: 192.168.3.6
+2023-02-13 02:57:58,251 WARN (heartbeat mgr|21) [HeartbeatMgr.runAfterCatalogReady():139] get bad heartbeat response: type: FRONTEND, status: BAD, msg: java.net.ConnectException: Connection refused (Connection refused), name: 192.168.3.103_9010_1676257076331, version: null, queryPort: 0, rpcPort: 0, replayedJournalId: 0
+2023-02-13 02:57:58,252 WARN (heartbeat mgr|21) [HeartbeatMgr.runAfterCatalogReady():139] get bad heartbeat response: type: FRONTEND, status: BAD, msg: java.net.ConnectException: Connection refused (Connection refused), name: 192.168.3.6_9010_1676257077185, version: null, queryPort: 0, rpcPort: 0, replayedJournalId: 0
+2023-02-13 02:58:00,153 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10022], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 02:58:00,153 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10022] from backend[10003] because not found in meta
+2023-02-13 02:58:00,154 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10026], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 02:58:00,154 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10026] from backend[10003] because not found in meta
+2023-02-13 02:58:03,258 WARN (heartbeat mgr|21) [HeartbeatMgr.runAfterCatalogReady():139] get bad heartbeat response: type: FRONTEND, status: BAD, msg: java.net.ConnectException: Connection refused (Connection refused), name: 192.168.3.103_9010_1676257076331, version: null, queryPort: 0, rpcPort: 0, replayedJournalId: 0
+2023-02-13 02:58:03,259 WARN (heartbeat mgr|21) [HeartbeatMgr.runAfterCatalogReady():139] get bad heartbeat response: type: FRONTEND, status: BAD, msg: java.net.ConnectException: Connection refused (Connection refused), name: 192.168.3.6_9010_1676257077185, version: null, queryPort: 0, rpcPort: 0, replayedJournalId: 0
+2023-02-13 02:58:08,283 WARN (heartbeat mgr|21) [HeartbeatMgr.runAfterCatalogReady():139] get bad heartbeat response: type: FRONTEND, status: BAD, msg: Internal error processing ping, name: 192.168.3.103_9010_1676257076331, version: null, queryPort: 0, rpcPort: 0, replayedJournalId: 0
+2023-02-13 02:58:08,283 WARN (heartbeat mgr|21) [HeartbeatMgr.runAfterCatalogReady():139] get bad heartbeat response: type: FRONTEND, status: BAD, msg: java.net.ConnectException: Connection refused (Connection refused), name: 192.168.3.6_9010_1676257077185, version: null, queryPort: 0, rpcPort: 0, replayedJournalId: 0
+2023-02-13 02:58:13,297 WARN (heartbeat mgr|21) [HeartbeatMgr.runAfterCatalogReady():139] get bad heartbeat response: type: FRONTEND, status: BAD, msg: Internal error processing ping, name: 192.168.3.103_9010_1676257076331, version: null, queryPort: 0, rpcPort: 0, replayedJournalId: 0
+2023-02-13 02:58:13,305 WARN (heartbeat mgr|21) [HeartbeatMgr.runAfterCatalogReady():139] get bad heartbeat response: type: FRONTEND, status: BAD, msg: Internal error processing ping, name: 192.168.3.6_9010_1676257077185, version: null, queryPort: 0, rpcPort: 0, replayedJournalId: 0
+2023-02-13 02:58:18,321 WARN (heartbeat mgr|21) [HeartbeatMgr.runAfterCatalogReady():139] get bad heartbeat response: type: FRONTEND, status: BAD, msg: Internal error processing ping, name: 192.168.3.6_9010_1676257077185, version: null, queryPort: 0, rpcPort: 0, replayedJournalId: 0
+2023-02-13 02:58:56,146 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10016], backend[10004]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 02:58:56,146 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10016] from backend[10004] because not found in meta
+2023-02-13 02:58:56,147 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10018], backend[10004]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 02:58:56,147 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10018] from backend[10004] because not found in meta
+2023-02-13 02:58:56,147 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10026], backend[10004]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 02:58:56,147 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10026] from backend[10004] because not found in meta
+2023-02-13 02:58:56,147 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10012], backend[10004]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 02:58:56,147 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10012] from backend[10004] because not found in meta
+2023-02-13 03:00:00,149 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10026], backend[10004]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:00:00,149 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10026] from backend[10004] because not found in meta
+2023-02-13 03:01:10,166 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10018], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:01:10,166 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10018] from backend[10003] because not found in meta
+2023-02-13 03:01:10,166 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10022], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:01:10,166 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10022] from backend[10003] because not found in meta
+2023-02-13 03:01:10,166 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10026], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:01:10,166 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10026] from backend[10003] because not found in meta
+2023-02-13 03:01:10,166 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10012], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:01:10,166 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10012] from backend[10003] because not found in meta
+2023-02-13 03:01:10,167 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10014], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:01:10,167 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10014] from backend[10003] because not found in meta
+2023-02-13 03:03:14,172 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10016], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:03:14,172 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10016] from backend[10003] because not found in meta
+2023-02-13 03:03:14,172 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10018], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:03:14,172 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10018] from backend[10003] because not found in meta
+2023-02-13 03:03:14,172 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10026], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:03:14,173 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10026] from backend[10003] because not found in meta
+2023-02-13 03:03:14,173 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10012], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:03:14,173 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10012] from backend[10003] because not found in meta
+2023-02-13 03:03:14,173 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10014], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:03:14,173 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10014] from backend[10003] because not found in meta
+2023-02-13 03:04:12,154 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10016], backend[10004]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:04:12,154 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10016] from backend[10004] because not found in meta
+2023-02-13 03:04:12,154 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10018], backend[10004]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:04:12,154 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10018] from backend[10004] because not found in meta
+2023-02-13 03:04:12,154 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10026], backend[10004]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:04:12,154 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10026] from backend[10004] because not found in meta
+2023-02-13 03:04:12,154 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10012], backend[10004]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:04:12,154 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10012] from backend[10004] because not found in meta
+2023-02-13 03:04:12,154 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10014], backend[10004]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:04:12,155 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10014] from backend[10004] because not found in meta
+2023-02-13 03:05:17,155 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10018], backend[10004]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:05:17,155 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10018] from backend[10004] because not found in meta
+2023-02-13 03:06:21,156 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10012], backend[10004]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:06:21,156 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10012] from backend[10004] because not found in meta
+2023-02-13 03:07:24,172 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10016], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:07:24,172 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10016] from backend[10003] because not found in meta
+2023-02-13 03:10:35,169 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10016], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:10:35,169 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10016] from backend[10003] because not found in meta
+2023-02-13 03:10:35,170 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10018], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:10:35,170 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10018] from backend[10003] because not found in meta
+2023-02-13 03:10:35,170 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10022], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:10:35,170 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10022] from backend[10003] because not found in meta
+2023-02-13 03:10:35,170 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10026], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:10:35,170 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10026] from backend[10003] because not found in meta
+2023-02-13 03:10:35,170 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10012], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:10:35,170 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10012] from backend[10003] because not found in meta
+2023-02-13 03:11:33,161 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10016], backend[10004]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:11:33,161 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10016] from backend[10004] because not found in meta
+2023-02-13 03:11:33,161 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10018], backend[10004]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:11:33,161 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10018] from backend[10004] because not found in meta
+2023-02-13 03:11:33,162 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10026], backend[10004]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:11:33,162 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10026] from backend[10004] because not found in meta
+2023-02-13 03:11:33,162 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10012], backend[10004]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:11:33,162 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10012] from backend[10004] because not found in meta
+2023-02-13 03:12:41,171 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10022], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:12:41,171 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10022] from backend[10003] because not found in meta
+2023-02-13 03:12:41,172 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10012], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:12:41,172 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10012] from backend[10003] because not found in meta
+2023-02-13 03:13:40,164 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10018], backend[10004]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:13:40,164 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10018] from backend[10004] because not found in meta
+2023-02-13 03:13:40,164 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10026], backend[10004]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:13:40,164 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10026] from backend[10004] because not found in meta
+2023-02-13 03:14:44,165 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10018], backend[10004]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:14:44,165 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10018] from backend[10004] because not found in meta
+2023-02-13 03:14:46,172 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():691] failed add to meta. tablet[10022], backend[10003]. errCode = 7, detailMessage = replica is enough[1-tag.location.default: 1]
+2023-02-13 03:14:46,172 WARN (Thread-61|114) [ReportHandler.deleteFromBackend():707] delete tablet[10022] from backend[10003] because not found in meta
