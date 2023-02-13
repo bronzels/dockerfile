@@ -17,8 +17,9 @@ else
   prj="fe"
   FE_ID=`echo ${MY_POD_NAME} | sed 's/doris-fe-//g'`
   echo "FE_ID:${FE_ID}"
+  cat ${FE_PVC_DIR}/common.conf
 
-  trimmed=`mysql -u'root' -P ${FE_MYSQL_PORT} -h fe-service -e"SHOW PROC '/frontends'" | sed 's/|//g' | grep -E "FOLLOWER[[:space:]]true" | grep -E "true[[:space:]]true"`
+  trimmed=`mysql -u'root' -P ${FE_MYSQL_PORT} -h 127.0.0.1 -e"SHOW PROC '/frontends'" | sed 's/|//g' | grep -E "FOLLOWER[[:space:]]true" | grep -E "true[[:space:]]true"`
   ismaster=$?
   echo "trimmed:\n${trimmed}"
   gracestr=""

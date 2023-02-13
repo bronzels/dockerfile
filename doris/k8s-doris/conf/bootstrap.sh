@@ -74,20 +74,26 @@ echo ${map_num2ip[@]}
 echo ${!map_num2ip[@]}
 
 FE_MASTER_ID=""
-trimmed=`mysql -u'root' -P ${FE_MYSQL_PORT} -h fe-service -e"SHOW PROC '/frontends'" | sed 's/|//g' | grep -E "FOLLOWER[[:space:]]true" | grep -E "true[[:space:]]true"`
-ismaster=$?
-echo "trimmed:\n${trimmed}"
-if [[ "${ismaster}" == 0 ]]; then
-  arr=($trimmed)
-  echo "arr:${arr[*]}"
-  ip=${arr[1]}
-  echo "ip:${ip}"
-  FE_MASTER_ID=${map_ip2num[${ip}]}
-  echo "DEBUG >>>>>> FE leader found"
-else
-  echo "DEBUG >>>>>> no FE leader found"
-fi
+for num in `seq 0 ${srvmaxno}`
+do
+  trimmed=`mysql -u'root' -P ${FE_MYSQL_PORT} -h ${map_num2ip["${num}"]} -e "SHOW PROC '/frontends'" | sed 's/|//g' | grep -E "FOLLOWER[[:space:]]true" | grep -E "true[[:space:]]true"`
+  masterLive=$?
+  echo "The resutl of run masterLive checkFrontendsByNum command, [ res = $masterLive ]"
+  if [[ "${masterLive}" != 0 ]]; then
+      echo "DEBUG >>>>>> continue in check master fe works and which fe num it is"
+      continue
+  else
+    arr=($trimmed)
+    echo "arr:${arr[*]}"
+    master_ip=${arr[1]}
+    echo "master_ip:${master_ip}"
+    FE_MASTER_ID=${map_ip2num["${master_ip}"]}
+    break
+  fi
+done
 echo "FE_MASTER_ID:${FE_MASTER_ID}"
+
+
 let _DEFAULT_FE_MASTER_ID=0
 if [[ -z ${FE_MASTER_ID} ]]; then
     let _COALESCED_FE_MASTER_ID=${_DEFAULT_FE_MASTER_ID}
@@ -110,8 +116,6 @@ cat ${proof_file}
 if [[ -f ${proof_file} ]]; then
   echo "not the 1st time bootup"
   if [[ "${prj}" == "be" ]]; then
-    echo "DEBUG >>>>>> be sleeps to wait fes all started"
-    sleep 10
     echo "DEBUG >>>>>> start be"
     registerShell="/opt/apache-doris/be/bin/start_be.sh --daemon"
     echo "DEBUG >>>>>> registerShell = ${registerShell}"
@@ -155,35 +159,40 @@ if [[ -f ${proof_file} ]]; then
         echo "The resutl of run dropMySQL command, [ res = $? ]"
       done
     else
-      echo "DEBUG >>>>>> fe not master sleeps to wait master fe started"
-      sleep 60
-      echo "DEBUG >>>>>> fe not master is out of sleep to wait master fe started"
+      if [[ -z ${FE_MASTER_ID} ]]; then
+        echo "DEBUG >>>>>> fe not master, also no master found, sleeps to wait master fe started"
+        sleep 60
+        echo "DEBUG >>>>>> fe not master is out of sleep to wait master fe started"
 
-      masterLive=1
-      until [[ "${masterLive}" == 0 ]]
-      do
-        sleep 5
-        for num in `seq 0 ${srvmaxno}`
+        masterLive=1
+        until [[ "${masterLive}" == 0 ]]
         do
-          trimmed=`mysql -u'root' -P ${FE_MYSQL_PORT} -h ${map_num2ip["${num}"]} -e "SHOW PROC '/frontends'" | sed 's/|//g' | grep -E "FOLLOWER[[:space:]]true" | grep -E "true[[:space:]]true"`
-          masterLive=$?
-          echo "The resutl of run masterLive checkFrontendsByNum command, [ res = $masterLive ]"
-          if [[ "${masterLive}" != 0 ]]; then
-              echo "DEBUG >>>>>> continue in check master fe works and which fe num it is"
-              continue
-          else
-            arr=($trimmed)
-            echo "arr:${arr[*]}"
-            master_ip=${arr[1]}
-            echo "master_ip:${master_ip}"
-            FE_MASTER_ID=${map_ip2num["${master_ip}"]}
-            break 2
-          fi
+          sleep 5
+          for num in `seq 0 ${srvmaxno}`
+          do
+            trimmed=`mysql -u'root' -P ${FE_MYSQL_PORT} -h ${map_num2ip["${num}"]} -e "SHOW PROC '/frontends'" | sed 's/|//g' | grep -E "FOLLOWER[[:space:]]true" | grep -E "true[[:space:]]true"`
+            masterLive=$?
+            echo "The resutl of run masterLive checkFrontendsByNum command, [ res = $masterLive ]"
+            if [[ "${masterLive}" != 0 ]]; then
+                echo "DEBUG >>>>>> continue in check master fe works and which fe num it is"
+                continue
+            else
+              arr=($trimmed)
+              echo "arr:${arr[*]}"
+              master_ip=${arr[1]}
+              echo "master_ip:${master_ip}"
+              FE_MASTER_ID=${map_ip2num["${master_ip}"]}
+              break 2
+            fi
+          done
         done
-      done
-      echo "FE_MASTER_ID:${FE_MASTER_ID}"
+        echo "FE_MASTER_ID:${FE_MASTER_ID}"
+      fi
 
-      rm -rf ${FE_PVC_DIR}/*
+      #rm -rf ${FE_PVC_DIR}/*
+      #不能删除common.conf用来标识是否是初次安装启动
+      ls -d ${FE_PVC_DIR}/* | grep -v common.conf | xargs rm -rf
+      cat ${FE_PVC_DIR}/common.conf
       fe_master_optionstr="--fe_master_id ${FE_MASTER_ID}"
       echo "fe_master_optionstr:${fe_master_optionstr}"
       /tmp/preconf/init_fe.sh --edit_log_port ${EDIT_LOG_PORT} ${fe_master_optionstr} --fe_mysql_port ${FE_MYSQL_PORT} --fe_id ${FE_ID} --fe_servers ${FE_SERVERS}

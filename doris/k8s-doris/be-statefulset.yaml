@@ -51,7 +51,7 @@ spec:
                 command:
                   - bash
                   - -c
-                  - '/tmp/preconf/shutdown.sh 3 9030 /opt/apache-doris/fe/doris-meta > /stop.log 2>&1>'
+                  - '/tmp/preconf/shutdown.sh 3 9030 /opt/apache-doris/fe/doris-meta > /opt/apache-doris/be/storage/stop.log 2>&1>'
           ports:
             - containerPort: 9060
               protocol: TCP

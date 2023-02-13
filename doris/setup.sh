@@ -308,9 +308,62 @@ ansible all -m shell -a"rm -rf /data0/doris;mkdir -p /data0/doris/fe;mkdir -p /d
 
 ansible all -m shell -a"ls /data0/doris/"
 
+kubectl get pod -n doris -o wide
+:<<EOF
+0     192.168.3.6     mdlapubu
+1     192.168.3.14    dtpct
+2     192.168.3.103   mdub
+
 #HA测试
-#fe.conf
-#metadata_failure_recovery=true
+:<<EOF
+fe.conf
+metadata_failure_recovery=true
+
+关机脚本需要加入，或者关机之前执行：
+kubectl delete pods --all --grace-period=60 -n doris
+
+集群正常
+1, mysql --default-character-set=utf8 -h fe-service -P 9030 -u'root' -e"SHOW PROC '/frontends'"
+2, mysql --default-character-set=utf8 -h fe-service -P 9030 -u'root' -e"SHOW PROC '/backends'"
+3，8030 fe-service转发的web界面查询已有数据正常
+
+1, 初次安装fe-0缺省是leader，重启集群多次以后，第1次杀掉fe-0
+fe-1成为master而且ReplayedJournalId最大，集群正常
+
+2, fe-1是leader情况下，第2次杀掉fe-0
+集群正常
+
+3, fe-1是leader情况下，重启整个集群delete all pods
+集群正常
+
+4, fe-1是leader情况下，第3次杀掉fe-0
+集群正常
+
+5，fe-1是leader情况下，第1次杀掉fe-2
+集群正常
+
+6, fe-1是leader情况下，重启整个集群，删除yaml重新创建
+集群正常
+
+7，fe-1是leader情况下，第1次杀掉be-0
+集群正常
+
+8，fe-1是leader情况下，第2次杀掉be-0
+集群正常
+
+9，fe-1是leader情况下，第1次杀掉fe-1
+fe-0成为master而且ReplayedJournalId最大，集群正常
+
+10，fe-0是leader情况下，第2次杀掉fe-1
+集群正常
+
+11，fe-0是leader情况下，杀掉fe-0
+fe-1成为master而且ReplayedJournalId最大，集群正常，svc portforward需要重新执行
+
+12，fe-1是leader情况下，重启物理机集群
+fe-1是master而且ReplayedJournalId最大，集群正常，svc portforward需要重新执行
+
+EOF
 
 kubectl delete pod -n doris --force --grace-period=0 doris-be-0
 kubectl logs -n doris doris-be-0
@@ -337,13 +390,19 @@ kubectl run mysql-client -n doris --rm --tty -i --restart='Never' --image docker
 
 
 kubectl delete pod -n doris doris-fe-0
-kubectl delete pod -n doris doris-fe-0 --grace-period=200
-kubectl exec -it -n doris `kubectl get pod -n doris | grep doris-fe-0 | awk '{print $1}'` -- tail -f /stop.log
-kubectl exec -it -n doris `kubectl get pod -n doris | grep doris-fe-0 | awk '{print $1}'` -- cat /stop.log
+kubectl delete pod -n doris doris-fe-0 --grace-period=30
+kubectl exec -it -n doris `kubectl get pod -n doris | grep doris-fe-0 | awk '{print $1}'` -- tail -f /opt/apache-doris/fe/doris-meta/stop.log
+kubectl exec -it -n doris `kubectl get pod -n doris | grep doris-fe-0 | awk '{print $1}'` -- cat /opt/apache-doris/fe/doris-meta/stop.log
 
 kubectl delete pod -n doris doris-fe-1
-kubectl delete pod -n doris doris-fe-1 --grace-period=120
-kubectl exec -it -n doris `kubectl get pod -n doris | grep doris-fe-1 | awk '{print $1}'` -- tail -f /stop.log
+kubectl delete pod -n doris doris-fe-1 --grace-period=30
+kubectl exec -it -n doris `kubectl get pod -n doris | grep doris-fe-1 | awk '{print $1}'` -- tail -f /opt/apache-doris/fe/doris-meta/stop.log
+kubectl exec -it -n doris `kubectl get pod -n doris | grep doris-fe-1 | awk '{print $1}'` -- cat /opt/apache-doris/fe/doris-meta/stop.log
+
+kubectl delete pod -n doris doris-be-0
+kubectl delete pod -n doris doris-be-0 --grace-period=30
+kubectl exec -it -n doris `kubectl get pod -n doris | grep doris-be-0 | awk '{print $1}'` -- tail -f /opt/apache-doris/be/storage/stop.log
+kubectl exec -it -n doris `kubectl get pod -n doris | grep doris-be-0 | awk '{print $1}'` -- cat /opt/apache-doris/be/storage/stop.log
 
 kubectl delete pods --all --grace-period=120 -n doris
 kubectl delete pods --all --grace-period=200 -n doris
