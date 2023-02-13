@@ -371,22 +371,49 @@ mysql连接问题，把fe的内存limit改到12g以后，连续测试20次
   svc的ip，出现1次
   还是master的直连ip，没出现
 
+  #kubectl run mysql-client -n doris --rm --tty -i --restart='Never' --image docker.io/library/mysql:5.7 --command -- \
+myhost="fe-service"
+#myhost="doris-fe-1.fe-service"
+#myhost="10.96.3.161"
+#myhost="192.168.3.14"
 let success_sum=0
-test_rounds=80
+let test_rounds=320
+#sedstr="FOLLOWER | true"
+sedstr="FOLLOWER	true"
 for num in `seq 1 ${test_rounds}`
 do
-  kubectl run mysql-client -n doris --rm --tty -i --restart='Never' --image docker.io/library/mysql:5.7 --command -- \
-    mysql --default-character-set=utf8 -h doris-fe-1.fe-service -P 9030 -u'root' -e"SHOW PROC '/frontends'" \
-    | grep "FOLLOWER | true"
+    mysql --default-character-set=utf8 -h ${myhost} -P 9030 -u'root' -e"SHOW PROC '/frontends'" \
+    | grep "${sedstr}"
   if [[ $? == "0" ]]; then
     let success_sum+=1
   fi
 done
 echo "success_sum:${success_sum}"
 
+myhost="192.168.3.14"
+160，出现3次
+
+myhost="doris-fe-1.fe-service"
 40，没问题
-80，没问题
-可能livenessprobe有问题，导致k8s负载均衡有问题
+80，出现1次
+
+myhost="doris-fe-1.fe-service"
+把request和limit增到到一样
+80，出现2次
+
+myhost="192.168.3.14"，进入不同非master pod执行
+320，没问题
+
+myhost="10.96.3.161"，进入不同非master pod执行
+320，没问题
+
+myhost="doris-fe-1.fe-service"，进入不同非master pod执行
+320，没问题
+
+myhost="fe-service"，进入不同非master pod执行
+320，没问题
+
+是kubectl run有问题
 
 EOF
 
@@ -454,7 +481,7 @@ cat /opt/apache-doris/fe/doris-meta/common.conf
 kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-be-0 | awk '{print $1}'` -- \
 cat /opt/apache-doris/be/storage/common.conf
 
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-1 | awk '{print $1}'` -- \
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
 bash
 kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-1 | awk '{print $1}'` -- \
 cat /opt/apache-doris/fe/log/fe.out
