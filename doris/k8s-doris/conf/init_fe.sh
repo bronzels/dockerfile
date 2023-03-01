@@ -99,9 +99,9 @@ echo "DEBUG >>>>>> currentFe = ${feIpArray[FE_ID]}:${feEditLogPortArray[FE_ID]}"
 
 
 :<<EOF
-checkFrontends="mysql -u'root' -P 9030 -h doris-fe-0.fe-service -e \"SHOW PROC '/frontends'\""
-registerMySQL="mysql -u'root' -P 9030 -h doris-fe-0.fe-service -e \"alter system add follower 'doris-fe-1.fe-service:9010'\""
-registerShell="/opt/apache-doris/fe/bin/start_fe.sh --helper 'doris-fe-0.fe-service:9010'"
+checkFrontends="mysql -u'root' -P 9030 -h doris-fe-0.fe -e \"SHOW PROC '/frontends'\""
+registerMySQL="mysql -u'root' -P 9030 -h doris-fe-0.fe -e \"alter system add follower 'doris-fe-1.fe:9010'\""
+registerShell="/opt/apache-doris/fe/bin/start_fe.sh --helper 'doris-fe-0.fe:9010'"
 EOF
 
 checkFrontends="mysql -u'root' -P ${FE_MYSQL_PORT} -h ${feIpArray[FE_MASTER_ID]} -e \"SHOW PROC '/frontends'\""

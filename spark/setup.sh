@@ -10,6 +10,9 @@ else
     SED=sed
 fi
 
+WORK_HOME=${MYHOME}/workspace
+PRJ_HOME=${WORK_HOME}/dockerfile
+
 #SPARK_VERSION=3.3.0
 SPARK_VERSION=3.3.1
 HADOOP_VERSION=3.2.1
@@ -28,8 +31,39 @@ mv ../spark-${SPARK_VERSION}-bin-volcano-rss.tgz ./
 docker build ./ --progress=plain --build-arg SPARK_VERSION="${SPARK_VERSION}" --build-arg HADOOP_VERSION="${HADOOP_VERSION}" --build-arg HIVEREV="${HIVEREV}" --build-arg RSS_VERSION="${RSS_VERSION}" -t harbor.my.org:1080/bronzels/spark-juicefs:${SPARK_VERSION}
 docker push harbor.my.org:1080/bronzels/spark-juicefs:${SPARK_VERSION}
 EOF
-docker build ./ --progress=plain --build-arg SPARK_VERSION="${SPARK_VERSION}" --build-arg HADOOP_VERSION="${HADOOP_VERSION}" --build-arg HIVEREV="${HIVEREV}" --build-arg RSS_VERSION="${RSS_VERSION}" -t harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:${SPARK_VERSION}
+
+#doris integration
+#git clone https://github.com/apache/doris-spark-connector.git
+unzip -x doris-spark-connector-master.zip
+cd doris-spark-connector-master
+cp custom_env.sh.tpl custom_env.sh
+$SED -i 's@#export THRIFT_BIN=@export THRIFT_BIN=/usr/local/bin/thrift@g' custom_env.sh
+cd spark-doris-connector/
+GETOPT_PATH=`brew --prefix gnu-getopt`   # get the gnu-getopt execute path
+export PATH="${GETOPT_PATH}/bin:$PATH"         # set gnu-getopt as default getopt
+sh build.sh --spark 3.3.1 --scala 2.12
+
+#hudi integration
+HUDI_VERSION=0.13.0
+wget -c https://github.com/apache/hudi/archive/refs/tags/release-${HUDI_VERSION}.tar.gz
+tar xzvf hudi-release-${HUDI_VERSION}.tar.gz
+cd hudi-release-${HUDI_VERSION}
+mvn clean package -DskipTests -Dspark3.3 -Dflink1.15 -Dscala-2.12 -Dhadoop.version=3.2.1 -Pflink-bundle-shade-hive3
+  mvn install:install-file -DgroupId=io.confluent -DartifactId=kafka-avro-serializer -Dversion=5.3.4 -Dpackaging=jar -Dfile=kafka-avro-serializer-5.3.4.jar
+  mvn install:install-file -DgroupId=io.confluent -DartifactId=common-config -Dversion=5.3.4 -Dpackaging=jar -Dfile=common-config-5.3.4.jar
+  mvn install:install-file -DgroupId=io.confluent -DartifactId=common-utils -Dversion=5.3.4 -Dpackaging=jar -Dfile=common-utils-5.3.4.jar
+  mvn install:install-file -DgroupId=io.confluent -DartifactId=kafka-schema-registry-client -Dversion=5.3.4 -Dpackaging=jar -Dfile=kafka-schema-registry-client-5.3.4.jar
+#0.12.2以下版本
+#修改hadoop3兼容问题
+file=hudi-common/src/main/java/org/apache/hudi/common/table/log/block/HoodieParquetDataBlock.java
+$SED -i 's@try (FSDataOutputStream outputStream = new FSDataOutputStream(baos))@try (FSDataOutputStream outputStream = new FSDataOutputStream(baos, null))@g' ${file}
+
+cp ${PRJ_HOME}/juicefs/core-site.xml ./
+
+DOCKER_BUILDKIT=1 docker build ./ --progress=plain --build-arg java_image_tag=8-jre --build-arg SPARK_VERSION="${SPARK_VERSION}" --build-arg HADOOP_VERSION="${HADOOP_VERSION}" --build-arg HIVEREV="${HIVEREV}" --build-arg RSS_VERSION="${RSS_VERSION}" -t harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:${SPARK_VERSION}
 docker push harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:${SPARK_VERSION}
+
+ansible all -m shell -a"crictl images|grep spark-juicefs-volcano-rss|awk '{print \$3}'|xargs crictl rmi"
 
 #mv ./spark-${SPARK_VERSION}-bin-hadoop3.tgz ../
 mv ./spark-${SPARK_VERSION}-bin-volcano-rss.tgz ../
@@ -39,7 +73,7 @@ cp ../image/sources-22.04.list sources.list
 docker build ./ -f Dockerfile.tpc --progress=plain -t harbor.my.org:1080/bronzels/spark-juicefs-tpc:${SPARK_VERSION}
 docker push harbor.my.org:1080/bronzels/spark-juicefs-tpc:${SPARK_VERSION}
 EOF
-docker build ./ -f Dockerfile.tpc --progress=plain -t harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:${SPARK_VERSION}
+DOCKER_BUILDKIT=1 docker build ./ -f Dockerfile.tpc --progress=plain -t harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:${SPARK_VERSION}
 docker push harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:${SPARK_VERSION}
 
 helm repo add spark-operator https://googlecloudplatform.github.io/spark-on-k8s-operator

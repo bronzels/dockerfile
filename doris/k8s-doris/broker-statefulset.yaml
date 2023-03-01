@@ -1,0 +1,73 @@
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: doris-broker
+  labels:
+    app: doris-broker
+spec:
+  replicas: 3
+  serviceName: broker
+  selector:
+    matchLabels:
+      app: doris-broker
+  template:
+    metadata:
+      labels:
+        app: doris-broker
+    spec:
+      #nodeName: master-1
+      nodeSelector:
+        component.doris/broker: enabled
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: doris-broker
+          env:
+            - name: BROKER_IPADDRESS
+              valueFrom:
+                 fieldRef:
+                   fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          image: harbor.my.org:1080/doris/doris-broker:1.2.2
+          command: [ "/bin/bash", "-ce", "/tmp/preconf/bootstrap.sh 3 9050 9030 9010 /opt/apache-doris/broker/storage 8000;tail -f /dev/null" ]
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - bash
+                  - -c
+                  - '/tmp/preconf/shutdown.sh 3 9030 /opt/apache-doris/broker/storage > /opt/apache-doris/broker/storage/stop.log 2>&1'
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 2
+              memory: 6G
+            requests:
+              cpu: 200m
+              memory: 1G
+          volumeMounts:
+            - mountPath: /opt/apache-doris/broker/storage
+              name: volume-broker
+            - name: config-init-volume
+              mountPath: /tmp/preconf
+      volumes:
+        - name: config-init-volume
+          configMap:
+            name: doris-configmap
+            defaultMode: 493
+  volumeClaimTemplates:
+    - metadata:
+        name: volume-broker
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: "doris-local-storage-broker"
+        volumeMode: Filesystem

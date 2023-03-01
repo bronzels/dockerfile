@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-catalog
+  labels:
+    app: {{ template "presto-kube.name" . }}
+    chart: {{ template "presto-kube.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  {{- range $name, $properties := .Values.catalog }}
+  {{ $name }}.properties: |-
+    {{- $properties | nindent 4 }}
+  {{- end }}

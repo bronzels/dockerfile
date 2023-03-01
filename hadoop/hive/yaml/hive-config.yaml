@@ -118,7 +118,7 @@ data:
       </property>
       <property>
         <name>hive.server2.authentication</name>
-        <value>NOSASL</value>
+        <value>NONE</value>
       </property>
       <property>
         <name>hive.metastore.schema.verification</name>

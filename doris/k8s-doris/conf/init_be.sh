@@ -127,7 +127,8 @@ do
       eval "${registerMySQL}" 2> step2_errfile
       retJoined=$?
       echo "The resutl of run registerMySQL command, [ res retJoined = $retJoined ]"
-      cat step2_errfile | grep "errCode = 2, detailMessage = Same backend already exists"
+      cat step2_errfile | grep "errCode = 2, detailMessage = already exists"
+      #Same backend already exists
       alreadyExists=$?
       echo "The resutl of run registerMySQL command, [ res alreadyExists = $alreadyExists ]"
       if [[ "${retJoined}" != 0 ]]; then
@@ -158,6 +159,6 @@ do
     echo "Run be joined checkBackends command, [ checkBackends = ${checkBackends} ]"
     eval "${checkBackends}" | sed 's/|//g' | grep "[[:space:]]${be_ip}[[:space:]]" | grep "[[:space:]]${be_heartbeat_port}[[:space:]]" | grep -E "true[[:space:]]false[[:space:]]false"
     beJoined=$?
-    echo "The resutl of run followerJoined checkFrontends command, [ res = $beJoined ]"
+    echo "The resutl of run checkFrontends command, [ res = $beJoined ]"
 done
 echo "DEBUG >>>>>> BE "${MY_POD_NAME}" is registered and started to FE master successfully and checked status OK"

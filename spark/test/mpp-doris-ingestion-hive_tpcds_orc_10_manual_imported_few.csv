@@ -1,0 +1,17 @@
+query,time
+tmp-mpp-doris-ingestion-hive_tpcds_orc_10_manual_imported_few-date_dim-sql,27.776708626
+tmp-mpp-doris-ingestion-hive_tpcds_orc_10_manual_imported_few-store_returns-sql,71.006577969
+tmp-mpp-doris-ingestion-hive_tpcds_orc_10_manual_imported_few-store-sql,21.054008889
+tmp-mpp-doris-ingestion-hive_tpcds_orc_10_manual_imported_few-customer-sql,37.999886904
+tmp-mpp-doris-ingestion-hive_tpcds_orc_10_manual_imported_few-web_sales-sql,226.149207076
+tmp-mpp-doris-ingestion-hive_tpcds_orc_10_manual_imported_few-catalog_sales-sql,326.414209315
+tmp-mpp-doris-ingestion-hive_tpcds_orc_10_manual_imported_few-store_sales-sql,573.102039392
+tmp-mpp-doris-ingestion-hive_tpcds_orc_10_manual_imported_few-reason-sql,25.165514476
+tmp-mpp-doris-ingestion-hive_tpcds_orc_10_manual_imported_few-date_dim-sql,23.221719738
+tmp-mpp-doris-ingestion-hive_tpcds_orc_10_manual_imported_few-store_returns-sql,70.776393088
+tmp-mpp-doris-ingestion-hive_tpcds_orc_10_manual_imported_few-store-sql,23.108728188
+tmp-mpp-doris-ingestion-hive_tpcds_orc_10_manual_imported_few-customer-sql,37.574038086
+tmp-mpp-doris-ingestion-hive_tpcds_orc_10_manual_imported_few-web_sales-sql,202.465424495
+tmp-mpp-doris-ingestion-hive_tpcds_orc_10_manual_imported_few-catalog_sales-sql,291.777614422
+tmp-mpp-doris-ingestion-hive_tpcds_orc_10_manual_imported_few-store_sales-sql,565.641852969
+tmp-mpp-doris-ingestion-hive_tpcds_orc_10_manual_imported_few-reason-sql,23.398947935

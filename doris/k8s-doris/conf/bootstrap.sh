@@ -7,8 +7,10 @@ FE_MYSQL_PORT=$3
 echo "FE_MYSQL_PORT:${FE_MYSQL_PORT}"
 EDIT_LOG_PORT=$4
 echo "EDIT_LOG_PORT:${EDIT_LOG_PORT}"
-FE_PVC_DIR=$5
-echo "FE_PVC_DIR:${FE_PVC_DIR}"
+PVC_DIR=$5
+echo "PVC_DIR:${PVC_DIR}"
+BROKER_IPC_PORT=$6
+echo "BROKER_IPC_PORT:${BROKER_IPC_PORT}"
 let srvmaxno=${srvs}-1
 echo "srvmaxno:${srvmaxno}"
 
@@ -17,10 +19,14 @@ if [[ "${MY_POD_NAME}" =~ "doris-be-" ]]; then
   prj="be"
   BE_ADDR=${BE_IPADDRESS}:${be_heartbeat_port}
   echo "BE_ADDR:${BE_ADDR}"
-else
+elif [[ "${MY_POD_NAME}" =~ "doris-fe-" ]]; then
   prj="fe"
   FE_ID=`echo ${MY_POD_NAME} | sed 's/doris-fe-//g'`
   echo "FE_ID:${FE_ID}"
+else
+  prj="broker"
+  BROKER_ADDR=${BROKER_IPADDRESS}:${BROKER_IPC_PORT}
+  echo "BROKER_ADDR:${BROKER_ADDR}"
 fi
 echo "prj:${prj}"
 
@@ -35,7 +41,7 @@ do
   else
     prefix=","
   fi
-  numstr="doris-fe-${num}.fe-service:${EDIT_LOG_PORT}"
+  numstr="doris-fe-${num}.fe:${EDIT_LOG_PORT}"
   FE_SERVERS=${FE_SERVERS}${prefix}${numstr}
 done
 echo "FE_SERVERS:${FE_SERVERS}"
@@ -52,7 +58,7 @@ do
     if [[ ${iparr[num]} == 1 ]]; then
       continue
     fi
-    lookup_rst=(`nslookup -sil doris-fe-${num}.fe-service 2>/dev/null | grep Address: | sed '1d' | sed 's/Address://g'`)
+    lookup_rst=(`nslookup -sil doris-fe-${num}.fe 2>/dev/null | grep Address: | sed '1d' | sed 's/Address://g'`)
     if [[ $? -ne 0 || -z ${lookup_rst} ]]; then
       continue
     fi
@@ -102,15 +108,16 @@ else
 fi
 echo "_COALESCED_FE_MASTER_ID:${_COALESCED_FE_MASTER_ID}"
 
-
-conf=/opt/apache-doris/${prj}/conf/${prj}.conf
+if [[ "${prj}" == "apache_hdfs_broker" ]]; then
+  conf=/opt/apache-doris/${prj}/conf/apache_hdfs_broker.conf
+else
+  conf=/opt/apache-doris/${prj}/conf/${prj}.conf
+fi
 cat /tmp/preconf/common.conf >> ${conf}
 cat /tmp/preconf/${prj}.conf >> ${conf}
-if [[ "${prj}" == "be" ]]; then
-  pvcmnt="/opt/apache-doris/be/storage"
-else
-  pvcmnt="/opt/apache-doris/fe/doris-meta"
-fi
+
+pvcmnt=${PVC_DIR}
+
 proof_file=${pvcmnt}/common.conf
 cat ${proof_file}
 if [[ -f ${proof_file} ]]; then
@@ -120,13 +127,19 @@ if [[ -f ${proof_file} ]]; then
     registerShell="/opt/apache-doris/be/bin/start_be.sh --daemon"
     echo "DEBUG >>>>>> registerShell = ${registerShell}"
     eval "${registerShell}"
+  elif [[ "${prj}" == "broker" ]]; then
+    echo "DEBUG >>>>>> start broker"
+    registerShell="/opt/apache-doris/broker/bin/start_broker.sh --daemon"
+    echo "DEBUG >>>>>> registerShell = ${registerShell}"
+    eval "${registerShell}"
   else
     echo "DEBUG >>>>>> fe to start"
     #整个集群在已经有数据情况下重启
-    ls -l ${FE_PVC_DIR}/
-    if [[ -z ${FE_MASTER_ID} && -f ${FE_PVC_DIR}/last_time_master ]]; then
+    ls -l ${PVC_DIR}/
+    if [[ -z ${FE_MASTER_ID} && -f ${PVC_DIR}/last_time_master ]]; then
       echo "DEBUG >>>>>> add to fe.conf"
       meta_recovery="metadata_failure_recovery=true"
+      echo "" >> ${conf}
       echo "${meta_recovery}" >> ${conf}
       cat ${conf}
       echo "DEBUG >>>>>> start fe leader as last it was"
@@ -189,10 +202,10 @@ if [[ -f ${proof_file} ]]; then
         echo "FE_MASTER_ID:${FE_MASTER_ID}"
       fi
 
-      #rm -rf ${FE_PVC_DIR}/*
+      #rm -rf ${PVC_DIR}/*
       #不能删除common.conf用来标识是否是初次安装启动
-      ls -d ${FE_PVC_DIR}/* | grep -v common.conf | xargs rm -rf
-      cat ${FE_PVC_DIR}/common.conf
+      ls -d ${PVC_DIR}/* | grep -v common.conf | xargs rm -rf
+      cat ${PVC_DIR}/common.conf
       fe_master_optionstr="--fe_master_id ${FE_MASTER_ID}"
       echo "fe_master_optionstr:${fe_master_optionstr}"
       /tmp/preconf/init_fe.sh --edit_log_port ${EDIT_LOG_PORT} ${fe_master_optionstr} --fe_mysql_port ${FE_MYSQL_PORT} --fe_id ${FE_ID} --fe_servers ${FE_SERVERS}
@@ -205,6 +218,8 @@ else
   echo "fe_master_optionstr:${fe_master_optionstr}"
   if [[ "${prj}" == "be" ]]; then
     /tmp/preconf/init_be.sh ${fe_master_optionstr} --fe_mysql_port ${FE_MYSQL_PORT} --fe_servers ${FE_SERVERS} --be_addr ${BE_ADDR}
+  elif [[ "${prj}" == "broker" ]]; then
+    /tmp/preconf/init_broker.sh ${fe_master_optionstr} --fe_mysql_port ${FE_MYSQL_PORT} --fe_servers ${FE_SERVERS} --broker_addr ${BROKER_ADDR}
   else
     /tmp/preconf/init_fe.sh --edit_log_port ${EDIT_LOG_PORT} ${fe_master_optionstr} --fe_mysql_port ${FE_MYSQL_PORT} --fe_id ${FE_ID} --fe_servers ${FE_SERVERS}
   fi

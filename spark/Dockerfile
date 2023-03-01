@@ -39,7 +39,7 @@ RUN set -ex && \
     chgrp root /etc/passwd && chmod ug+rw /etc/passwd && \
     rm -rf /var/cache/apt/* && rm -rf /var/lib/apt/lists/*
 
-RUN useradd -d /app/hdfs hdfs
+RUN useradd -u 10001 -d /app/hdfs hdfs
 RUN mkdir -p /app/hdfs
 RUN chown hdfs:hdfs /app/hdfs
 RUN usermod -g root hdfs
@@ -103,13 +103,12 @@ ENTRYPOINT [ "/app/hdfs/entrypoint.sh" ]
 RUN mkdir /app/hdfs/spark/conf
 
 COPY --from=hadoop --chown=hdfs:root /app/hdfs/hadoop/share/hadoop/common/lib/juicefs-hadoop-1.0.2.jar /app/hdfs/spark/jars
-COPY --from=hadoop --chown=hdfs:root /app/hdfs/hadoop/etc/hadoop/core-site.xml /app/hdfs/spark/conf
+#COPY --from=hadoop --chown=hdfs:root /app/hdfs/hadoop/etc/hadoop/core-site.xml /app/hdfs/spark/conf
+COPY --chown=hdfs:root core-site.xml /app/hdfs/spark/conf
 
 COPY --from=hadoop /usr/local/bin/mc /usr/local/bin/mc
 COPY --from=hadoop /usr/local/bin/miniogw /usr/local/bin/miniogw
 COPY --from=hadoop /usr/local/bin/juicefs /usr/local/bin/juicefs
-
-RUN juicefs
 
 COPY --chown=hdfs:root hive-site.xml /app/hdfs/spark/conf/
 #RUN ln -s  /app/hdfs/hive/lib/mysql-connector-java.jar  /app/hdfs/spark/jars/mysql-connector-java.jar
@@ -133,3 +132,4 @@ COPY --chown=hdfs:root podgroups /app/hdfs/spark/work-dir/podgroups
 
 WORKDIR /app/hdfs/spark/work-dir
 
+COPY --chown=hdfs:root doris-spark-connector-master/spark-doris-connector/target/spark-doris-connector-3.3_2.12-1.0.0-SNAPSHOT.jar /app/hdfs/spark/jars/

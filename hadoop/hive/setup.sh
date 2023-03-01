@@ -210,7 +210,9 @@ kubectl delete -n hadoop -f hadoop-configmap.yaml
 #kubectl apply -f meta-pvc.yaml -n hadoop
 kubectl apply -n hadoop -f yaml/
 kubectl delete -n hadoop -f yaml/
+kubectl get pod -n hadoop |grep -v Running |awk '{print $1}'| xargs kubectl delete pod "$1" -n hadoop --force --grace-period=0
 #kubectl delete -f meta-pvc.yaml -n hadoop
+kubectl logs -n hadoop `kubectl get pod -n hadoop | grep hive-serv | awk '{print $1}'`
 
 cat << students.txt > EOF
 EOF

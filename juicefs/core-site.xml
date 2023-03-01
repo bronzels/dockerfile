@@ -56,4 +56,17 @@
         <name>hadoop.tmp.dir</name>
         <value>/app/hdfs/hadoop/tmpdir</value>
     </property>
+
+<!--    <property>
+        <name>hadoop.proxyuser.kyuubi.hosts</name>
+        <value>*</value>
+    </property>
+    <property>
+        <name>hadoop.proxyuser.kyuubi.users</name>
+        <value>*</value>
+    </property>
+    <property>
+        <name>hadoop.proxyuser.kyuubi.groups</name>
+        <value>*</value>
+    </property>-->
 </configuration>

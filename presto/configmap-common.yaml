@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-common
+  labels:
+    app: {{ template "presto-kube.name" . }}
+    chart: {{ template "presto-kube.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  start-presto.sh: |-
+    #!/bin/bash
+    echo "HOSTNAME:${HOSTNAME}"
+    #echo "MY_SERVICE_NAME:${MY_SERVICE_NAME}"
+    if [[ "${HOSTNAME}" =~ "coordinator" ]]; then
+        ${PRESTO_SERVER_HOME}/bin/launcher run
+    else
+        #until nslookup ${MY_SERVICE_NAME}; do sleep 5; echo waiting svc ready; done && until curl http://${MY_SERVICE_NAME}:8080; do sleep 5; echo waiting http end ready; done && ${PRESTO_SERVER_HOME}/bin/launcher run
+        until nslookup {{ template "presto-kube.fullname" . }}; do sleep 5; echo waiting svc ready; done && until curl http://{{ template "presto-kube.fullname" . }}:8080; do sleep 5; echo waiting http end ready; done && ${PRESTO_SERVER_HOME}/bin/launcher run
+    fi

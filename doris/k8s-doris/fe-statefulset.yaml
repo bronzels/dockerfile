@@ -7,7 +7,7 @@ metadata:
     app: doris-fe
 spec:
   replicas: 3
-  serviceName: fe-service
+  serviceName: fe
   selector:
     matchLabels:
       app: doris-fe
@@ -32,9 +32,9 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
-          image: harbor.my.org:1080/doris/doris-fe:1.2.1
+          image: harbor.my.org:1080/doris/doris-fe:1.2.2
           #command: [ "/bin/bash", "-ce", "/opt/apache-doris/fe/bin/start_fe.sh --daemon;tail -f /dev/null" ]
-          command: [ "/bin/bash", "-ce", "/tmp/preconf/bootstrap.sh 3 9050 9030 9010 /opt/apache-doris/fe/doris-meta;tail -f /dev/null" ]
+          command: [ "/bin/bash", "-ce", "/tmp/preconf/bootstrap.sh 3 9050 9030 9010 /opt/apache-doris/fe/doris-meta 8000;tail -f /dev/null" ]
           #command: [ "/tmp/preconf/bootstrap.sh", "3", "9050", "9030", "9010", "tail", "-f", "/dev/null" ]
           #args: hosts be_hearbeat_port fe_mysql_port
           #bootstrap.sh will assemble args and call init_be/fe.sh
