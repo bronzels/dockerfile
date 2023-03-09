@@ -103,12 +103,31 @@ distfs=juicefs
 distfs=cubefs
 
 
+#！！！tpcds数据生成时meta和client都需要足够资源，平时使用时为了节省系统资源删除资源配置
 file=yaml/hive-deploy.yaml
 cp -f ${file}.template ${file}
 $SED -i "s@harbor.my.org:1080/bronzels/hive-ubussh:0.1@harbor.my.org:1080/bronzels/hive-ubussh-${distfs}:0.1@g" ${file}
+:<<EOF
+          resources:
+            requests:
+              memory: "8Gi"
+              cpu: "2000m"
+            limits:
+              memory: "20Gi"
+              cpu: "2000m"
+EOF
 file=yaml/hive-client.yaml
 cp -f ${file}.template ${file}
 $SED -i "s@harbor.my.org:1080/bronzels/hive-ubussh:0.1@harbor.my.org:1080/bronzels/hive-ubussh-${distfs}:0.1@g" ${file}
+:<<EOF
+          resources:
+            requests:
+              memory: "8Gi"
+              cpu: "2000m"
+            limits:
+              memory: "20Gi"
+              cpu: "2000m"
+EOF
 
 :<<EOF
 beeline -n hive -u "jdbc:hive2://hive-service:9083/;auth=noSasl"

@@ -1,0 +1,83 @@
+FROM debian:11
+USER root
+WORKDIR /root
+RUN sed -i -E 's/(deb|security).debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list
+RUN apt update && apt upgrade -y
+RUN apt install -y libncurses-dev bison flex build-essential wget
+
+RUN gcc --version
+RUN g++ --version
+RUN make --version
+
+ENV MY_HOME=/root
+WORKDIR ${MY_HOME}
+
+ADD go1.19.2.linux-amd64.tar.gz ./
+ENV PATH ${MY_HOME}/go/bin:$PATH
+ENV GOPROXY https://goproxy.cn
+
+ENV GOPATH ${MY_HOME}/gopath
+COPY apache-maven-3.8.6 ${MY_HOME}/apache-maven
+ENV PATH $PATH:${MY_HOME}/apache-maven/bin
+
+RUN apt install -y apt-transport-https ca-certificates dirmngr gnupg software-properties-common
+RUN wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | apt-key add -
+RUN add-apt-repository --yes https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/
+RUN apt update
+RUN apt install -y adoptopenjdk-8-hotspot
+
+RUN apt install -y default-jre default-jdk
+RUN apt install -y openjdk-17-jre openjdk-17-jdk
+ADD jdk-17_linux-x64_bin.tar.gz /usr/lib/jvm/
+RUN update-alternatives --install /usr/bin/java java /usr/lib/jvm/jdk-17.0.1/bin/java 3
+RUN update-alternatives --install /usr/bin/javac javac /usr/lib/jvm/jdk-17.0.1/bin/javac 3
+RUN update-alternatives --install /usr/bin/javap javap /usr/lib/jvm/jdk-17.0.1/bin/javap 3
+RUN update-alternatives --install /usr/bin/javadoc javadoc /usr/lib/jvm/jdk-17.0.1/bin/javadoc 3
+RUN update-alternatives --install /usr/bin/jstack jstack /usr/lib/jvm/jdk-17.0.1/bin/jstack 3
+#RUN update-alternatives --install /usr/bin/jshell jshell /usr/lib/jvm/jdk-17.0.1/bin/jshell 3
+RUN update-alternatives --install /usr/bin/jar jar /usr/lib/jvm/jdk-17.0.1/bin/jar 3
+RUN update-alternatives --install /usr/bin/jstat jstat /usr/lib/jvm/jdk-17.0.1/bin/jstat 3
+
+ENV PRIORITY_JDK_8 800
+ENV PRIORITY_JDK_11 11000
+ENV PRIORITY_JDK_17 1700
+
+RUN update-alternatives --install /usr/bin/java java /usr/lib/jvm/adoptopenjdk-8-hotspot-amd64/bin/java ${PRIORITY_JDK_8}
+RUN update-alternatives --install /usr/bin/javac javac /usr/lib/jvm/adoptopenjdk-8-hotspot-amd64/bin/javac ${PRIORITY_JDK_8}
+RUN update-alternatives --install /usr/bin/javap javap /usr/lib/jvm/adoptopenjdk-8-hotspot-amd64/bin/javap ${PRIORITY_JDK_8}
+RUN update-alternatives --install /usr/bin/javadoc javadoc /usr/lib/jvm/adoptopenjdk-8-hotspot-amd64/bin/javadoc ${PRIORITY_JDK_8}
+RUN update-alternatives --install /usr/bin/jstack jstack /usr/lib/jvm/adoptopenjdk-8-hotspot-amd64/bin/jstack ${PRIORITY_JDK_8}
+#RUN update-alternatives --install /usr/bin/jshell jshell /usr/lib/jvm/adoptopenjdk-8-hotspot-amd64/bin/jshell ${PRIORITY_JDK_8}
+RUN update-alternatives --install /usr/bin/jstat jstat /usr/lib/jvm/adoptopenjdk-8-hotspot-amd64/bin/jstat ${PRIORITY_JDK_8}
+RUN update-alternatives --install /usr/bin/jar jar /usr/lib/jvm/adoptopenjdk-8-hotspot-amd64/bin/jar ${PRIORITY_JDK_8}
+
+RUN update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-11-openjdk-amd64/bin/java ${PRIORITY_JDK_11}
+RUN update-alternatives --install /usr/bin/javac javac /usr/lib/jvm/java-11-openjdk-amd64/bin/javac ${PRIORITY_JDK_11}
+RUN update-alternatives --install /usr/bin/javap javap /usr/lib/jvm/java-11-openjdk-amd64/bin/javap ${PRIORITY_JDK_11}
+RUN update-alternatives --install /usr/bin/javadoc javadoc /usr/lib/jvm/java-11-openjdk-amd64/bin/javadoc ${PRIORITY_JDK_11}
+RUN update-alternatives --install /usr/bin/jstack jstack /usr/lib/jvm/java-11-openjdk-amd64/bin/jstack ${PRIORITY_JDK_11}
+#RUN update-alternatives --install /usr/bin/jshell jshell /usr/lib/jvm/java-11-openjdk-amd64/bin/jshell ${PRIORITY_JDK_11}
+RUN update-alternatives --install /usr/bin/jar jar /usr/lib/jvm/java-11-openjdk-amd64/bin/jar ${PRIORITY_JDK_11}
+RUN update-alternatives --install /usr/bin/jstat jstat /usr/lib/jvm/java-11-openjdk-amd64/bin/jstat ${PRIORITY_JDK_11}
+
+RUN update-alternatives --install /usr/bin/java java /usr/lib/jvm/jdk-17.0.1/bin/java ${PRIORITY_JDK_17}
+RUN update-alternatives --install /usr/bin/javac javac /usr/lib/jvm/jdk-17.0.1/bin/javac ${PRIORITY_JDK_17}
+RUN update-alternatives --install /usr/bin/javap javap /usr/lib/jvm/jdk-17.0.1/bin/javap ${PRIORITY_JDK_17}
+RUN update-alternatives --install /usr/bin/javadoc javadoc /usr/lib/jvm/jdk-17.0.1/bin/javadoc ${PRIORITY_JDK_17}
+RUN update-alternatives --install /usr/bin/jstack jstack /usr/lib/jvm/jdk-17.0.1/bin/jstack ${PRIORITY_JDK_17}
+#RUN update-alternatives --install /usr/bin/jshell jshell /usr/lib/jvm/jdk-17.0.1/bin/jshell ${PRIORITY_JDK_17}
+RUN update-alternatives --install /usr/bin/jar jar /usr/lib/jvm/jdk-17.0.1/bin/jar ${PRIORITY_JDK_17}
+RUN update-alternatives --install /usr/bin/jstat jstat /usr/lib/jvm/jdk-17.0.1/bin/jstat ${PRIORITY_JDK_17}
+
+RUN update-alternatives --auto java
+RUN java -version
+RUN update-alternatives --auto javac
+RUN javac -version
+RUN update-alternatives --auto javap
+RUN javap -version
+RUN update-alternatives --auto javadoc
+RUN update-alternatives --auto jstack
+#RUN update-alternatives --auto jshell
+#RUN jshell -version
+RUN update-alternatives --auto jar
+RUN update-alternatives --auto jstat

@@ -23,10 +23,13 @@ DORIS_REV=1.2.2
 
 STARROCKS_REV=2.5.2
 STARROCKS_OP_REV=1.3
+#STARROCKS_OP_REV=master
 
 JUICEFS_VERSION=1.0.2
 
 cd ${DORIS_HOME}
+
+kubectl create ns doris
 
 # doris start--------------------------------------------
 
@@ -293,8 +296,6 @@ cp doris-configmap.yaml k8s-doris/
 cp add-bes2fe-job.yaml k8s-doris/
 EOF
 
-kubectl create ns doris
-
 kubectl label node dtpct component.doris/fe=enabled
 kubectl label node mdubu component.doris/fe=enabled
 kubectl label node mdlapubu component.doris/fe=enabled
@@ -332,22 +333,14 @@ kubectl delete pod -n doris --force --grace-period=0 doris-broker-0
 kubectl logs -n doris doris-broker-0
 kubectl logs -f -n doris doris-broker-0
 
-kubectl run mysql-client -n doris --rm --tty -i --restart='Never' --image docker.io/library/mysql:5.7 --command -- \
-  mysql --default-character-set=utf8 -h fe -P 9030 -u'root' -e"SHOW PROC '/frontends'"
-
-kubectl run mysql-client -n doris --rm --tty -i --restart='Never' --image docker.io/library/mysql:5.7 --command -- \
-  mysql --default-character-set=utf8 -h fe -P 9030 -u'root' -e"SHOW PROC '/backends'"
-
-kubectl run mysql-client -n doris --rm --tty -i --restart='Never' --image docker.io/library/mysql:5.7 --command -- \
-  mysql --default-character-set=utf8 -h fe -P 9030 -u'root' -e"SHOW PROC '/brokers'"
-
 
 kubectl get pvc -n doris
 kubectl get pv | grep doris
 
 kubectl delete -n doris -f k8s-doris/
 kubectl delete cm doris-configmap -n doris --grace-period=5
-kubectl delete cm doris-configmap -n doris
+sleep 3
+#kubectl delete cm doris-configmap -n doris
 ###
 kubectl get pod -n doris |grep -v Running |awk '{print $1}'| xargs kubectl delete pod "$1" -n doris --force --grace-period=0
 #kubectl get pod -n doris |grep -v Running |awk '{print $1}'| xargs kubectl delete pod "$1" -n doris --grace-period=200
@@ -515,51 +508,6 @@ cat /opt/apache-doris/fe/doris-meta/common.conf
 kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-be-0 | awk '{print $1}'` -- \
 cat /opt/apache-doris/be/storage/common.conf
 
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
-bash
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
-cat /opt/apache-doris/fe/log/fe.out
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
-cat /opt/apache-doris/fe/log/fe.log
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
-cat /opt/apache-doris/fe/log/fe.log | grep 'master client, get client from cache failed.host'
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
-cat /opt/apache-doris/fe/log/fe.log | grep 'failed'
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-2 | awk '{print $1}'` -- \
-cat /opt/apache-doris/fe/log/fe.warn.log
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
-ls /opt/apache-doris/fe/log/
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
-cat /opt/apache-doris/fe/log/fe.gc.log.20230209-020244
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-1 | awk '{print $1}'` -- \
-cat /opt/apache-doris/fe/conf/fe.conf
-
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-be-0 | awk '{print $1}'` -- \
-bash
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-be-0 | awk '{print $1}'` -- \
-cat /opt/apache-doris/be/log/be.out
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-be-0 | awk '{print $1}'` -- \
-cat /opt/apache-doris/be/log/be.WARNING
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-be-0 | awk '{print $1}'` -- \
-cat /opt/apache-doris/be/log/be.INFO
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-be-0 | awk '{print $1}'` -- \
-cat /opt/apache-doris/be/log/be.INFO | grep 'waiting to receive first heartbeat from frontend'
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-be-0 | awk '{print $1}'` -- \
-cat /opt/apache-doris/be/log/be.INFO | grep 'waiting'
-:<<EOF
-重新安装，没有删除hostpath，会有如下报错，重启也发生类似报错
-0
-W0207 08:26:51.680299  1104 heartbeat_server.cpp:97] invalid cluster id: 1150857714. ignore.
-1
-W0207 08:26:01.544231  1101 heartbeat_server.cpp:97] invalid cluster id: 1150857714. ignore.
-W0207 08:26:02.154709  1099 heartbeat_server.cpp:97] invalid cluster id: 1126033748. ignore.
-2
-W0207 08:27:29.726495  1102 heartbeat_server.cpp:97] invalid cluster id: 829007597. ignore.
-W0207 08:27:31.780303  1105 heartbeat_server.cpp:97] invalid cluster id: 1150857714. ignore.
-EOF
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-be-0 | awk '{print $1}'` -- \
-cat /opt/apache-doris/be/conf/be.conf
-
 
 kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-broker-0 | awk '{print $1}'` -- \
 bash
@@ -597,10 +545,285 @@ kubectl run mysql-client --rm --tty -i --restart='Never' --image docker.io/libra
 
 
 # starrocks start--------------------------------------------
-wget -c https://github.com/StarRocks/starrocks/archive/refs/tags/${STARROCKS_REV}.tar.gz
-tar xzvf starrocks-${STARROCKS_REV}.tar.gz
+cd ${DORIS_HOME}
 
+wget -c https://releases.starrocks.io/starrocks/StarRocks-${STARROCKS_REV}.tar.gz
+tar xzvf StarRocks-${STARROCKS_REV}.tar.gz
+
+mkdir starrocks-src
+wget -c https://github.com/StarRocks/starrocks/archive/refs/tags/${STARROCKS_REV}.tar.gz -O starrocks-src/
+cd starrocks-src/
+tar xzvf starrocks-${STARROCKS_REV}.tar.gz
+mkdir ../tmp/
+mv starrocks-2.5.2.tar.gz ../tmp/
+
+cd ${DORIS_HOME}/starrocks-src/starrocks-${STARROCKS_REV}
+
+mv ${DORIS_HOME}/StarRocks-${STARROCKS_REV} ${DORIS_HOME}/starrocks-src/starrocks-${STARROCKS_REV}/output
+
+arr=(Dockerfile_fe_alpine Dockerfile_be_centos Dockerfile_cn_centos)
+for dfile in ${arr[*]}
+do
+  echo "DEBUG >>>>>> dfile:${dfile}"
+  OLD_IFS="$IFS"
+  IFS="_"
+  arr=($dfile)
+  IFS="$OLD_IFS"
+  prj=${arr[1]}
+  echo "DEBUG >>>>>> prj:${prj}"
+
+  if [[ "${prj}" == "be" ]]; then
+  if [[ "${prj}" == "fe" ]]; then
+    cp docker/dockerfiles/${dfile} docker/dockerfiles/${dfile}.bk
+    #$SED -i 's/RUN yum install -y tzdata openssl curl vim ca-certificates fontconfig gzip tar mysql java-11-openjdk/RUN yum install -y tzdata openssl curl vim ca-certificates fontconfig gzip tar mysql java-11-openjdk bc/g' docker/dockerfiles/${dfile}
+    $SED -i 's/apk add --update openjdk11 tzdata curl unzip bash mysql-client procps vim  eudev-dev /apk add --update openjdk11 tzdata curl unzip bash mysql-client procps vim  eudev-dev bc /g' docker/dockerfiles/${dfile}
+  fi
+  DOCKER_BUILDKIT=1 docker build ./ -f docker/dockerfiles/${dfile} --progress=plain -t harbor.my.org:1080/doris/starrocks-${prj}:${STARROCKS_REV}
+  docker push harbor.my.org:1080/doris/starrocks-${prj}:${STARROCKS_REV}
+done
+
+arr=(Dockerfile_fe_alpine Dockerfile_be_centos Dockerfile_cn_centos)
+for dfile in ${arr[*]}
+do
+  echo "DEBUG >>>>>> dfile:${dfile}"
+  OLD_IFS="$IFS"
+  IFS="_"
+  arr=($dfile)
+  IFS="$OLD_IFS"
+  prj=${arr[1]}
+  echo "DEBUG >>>>>> prj:${prj}"
+
+  #if [[ "${prj}" != "be" ]]; then
+  if [[ "${prj}" != "fe" ]]; then
+    cp docker/dockerfiles/${dfile} docker/dockerfiles/${dfile}.bk
+  fi
+cat << EOF >> docker/dockerfiles/${dfile}
+COPY juicefs-hadoop-1.0.2-jdk11.jar /opt/starrocks/${prj}/lib/
+COPY core-site.xml /opt/starrocks/${prj}/conf/
+COPY hdfs-site.xml /opt/starrocks/${prj}/conf/
+COPY hive-site.xml /opt/starrocks/${prj}/conf/
+EOF
+done
+
+arr=(Dockerfile_fe_alpine Dockerfile_be_centos Dockerfile_cn_centos)
+for dfile in ${arr[*]}
+do
+  echo "DEBUG >>>>>> dfile:${dfile}"
+  OLD_IFS="$IFS"
+  IFS="_"
+  arr=($dfile)
+  IFS="$OLD_IFS"
+  prj=${arr[1]}
+  echo "DEBUG >>>>>> prj:${prj}"
+
+  DOCKER_BUILDKIT=1 docker build ./ -f docker/dockerfiles/${dfile} --progress=plain -t harbor.my.org:1080/doris/starrocks-juicefs-${prj}:${STARROCKS_REV}
+  docker push harbor.my.org:1080/doris/starrocks-juicefs-${prj}:${STARROCKS_REV}
+done
+
+#docker
+ansible all -m shell -a"docker images|grep starrocks-"
+ansible all -m shell -a"docker images|grep starrocks-|awk '{print \$3}'|xargs docker rmi -f"
+#containerd
+ansible all -m shell -a"crictl images|grep starrocks-"
+ansible all -m shell -a"crictl images|grep starrocks-|awk '{print \$3}'|xargs crictl rmi"
+
+#docker
+ansible all -m shell -a"docker images|grep starrocks-juicefs"
+ansible all -m shell -a"docker images|grep starrocks-juicefs|awk '{print \$3}'|xargs docker rmi -f"
+#containerd
+ansible all -m shell -a"crictl images|grep starrocks-juicefs"
+ansible all -m shell -a"crictl images|grep starrocks-juicefs|awk '{print \$3}'|xargs crictl rmi"
+
+
+cd ${DORIS_HOME}
+
+#2023-3-2
+git clone git@github.com:StarRocks/starrocks-kubernetes-operator.git
+mv starrocks-kubernetes-operator starrocks-kubernetes-operator-master
+:<<EOF
 wget -c https://github.com/StarRocks/starrocks-kubernetes-operator/archive/refs/tags/v${STARROCKS_OP_REV}.tar.gz
 tar xzvf starrocks-kubernetes-operator-${STARROCKS_OP_REV}.tar.gz
+EOF
+
+file=${DORIS_HOME}/starrocks-kubernetes-operator-${STARROCKS_OP_REV}/deploy/operator.yaml
+#cp ${file}.bk ${file}
+cp ${file} ${file}.bk
+#cp ${file} ${file}.doris.ns
+#cp ${file}.doris.ns ${file}
+$SED -i '1,7d' ${file}
+$SED -i 's/namespace: starrocks/namespace: doris/g' ${file}
+EOF
+
+kubectl apply -f ${DORIS_HOME}/starrocks-kubernetes-operator-${STARROCKS_OP_REV}/deploy/starrocks.com_starrocksclusters.yaml
+kubectl apply -f ${DORIS_HOME}/starrocks-kubernetes-operator-${STARROCKS_OP_REV}/deploy/operator.yaml
+kubectl delete -f ${DORIS_HOME}/starrocks-kubernetes-operator-${STARROCKS_OP_REV}/deploy/operator.yaml
+kubectl delete -f ${DORIS_HOME}/starrocks-kubernetes-operator-${STARROCKS_OP_REV}/deploy/starrocks.com_starrocksclusters.yaml
+
+cd starrocks-kubernetes-operator-${STARROCKS_OP_REV}/examples/starrocks
+file=starrocks-fe-and-be.yaml
+clusterfile=starrocks-fe-and-be-and-cn-with-autoscaler.yaml
+cp ${file} ${DORIS_HOME}/${clusterfile}
+cp starrocks-fe-and-cn-with-autoscaler.yaml swap
+$SED -i '1,12d' swap
+echo "" >> ${DORIS_HOME}/${clusterfile}
+cat swap >> ${DORIS_HOME}/${clusterfile}
+rm -f swap
+$SED -i 's/2.4.1/2.5.2/g' ${DORIS_HOME}/${clusterfile}
+$SED -i 's/namespace: starrocks/namespace: doris/g' ${DORIS_HOME}/${clusterfile}
+$SED -i 's/starrocks\/alpine-fe/harbor.my.org:1080\/doris\/starrocks-fe/g' ${DORIS_HOME}/${clusterfile}
+$SED -i 's/starrocks\/centos-be/harbor.my.org:1080\/doris\/starrocks-be/g' ${DORIS_HOME}/${clusterfile}
+$SED -i 's/starrocks\/centos-cn/harbor.my.org:1080\/doris\/starrocks-cn/g' ${DORIS_HOME}/${clusterfile}
+$SED -i 's/starrockscluster-sample/starrockscluster/g' ${DORIS_HOME}/${clusterfile}
+$SED -i 's/starrockscluster-sample/starrockscluster/g' ${DORIS_HOME}/${clusterfile}
+$SED -i 's/cpu: 4/cpu: 2/g' ${DORIS_HOME}/${clusterfile}
+#fe 1cpu as 1 fe is pending due to no available CPU res
+#fe replicas is set to 1 as always 1 fe pending even CPU is set to 1
+$SED -i 's/memory: 16Gi/memory: 8Gi/g' ${DORIS_HOME}/${clusterfile}
+$SED -i "/  starRocksFeSpec:/a\    storageVolumes:\n      - name: fe-meta\n        storageClassName: juicefs-sc\n        storageSize: 1Gi\n        mountPath: /opt/starrocks/fe/meta" ${DORIS_HOME}/${clusterfile}
+$SED -i "/  starRocksBeSpec:/a\    storageVolumes:\n      - name: be-data\n        storageClassName: juicefs-sc\n        storageSize: 50Gi\n        mountPath: /opt/starrocks/be/storage" ${DORIS_HOME}/${clusterfile}
+
+cd ${DORIS_HOME}
+
+clusterfile=starrocks-fe-and-be-and-cn-with-autoscaler.yaml
+
+#hive外表tpcds测试
+:<<EOF
+  starRocksBeSpec:
+    storageVolumes:
+      - name: be-data
+        storageClassName: juicefs-sc
+        storageSize: 50Gi
+        mountPath: /opt/starrocks/be/storage
+    image: harbor.my.org:1080/doris/starrocks-juicefs-be:2.5.2
+    replicas: 3->1
+    requests:
+      cpu: 2->1
+      memory: 8Gi->4
+  starRocksCnSpec:
+    image: harbor.my.org:1080/doris/starrocks-juicefs-cn:2.5.2
+    requests:
+      cpu: 2
+      memory: 4Gi->18
+      #when you use autoscalingPolicy, it is recommended that replicas removed from manifests.
+    autoScalingPolicy:
+      maxReplicas: 10->3
+      minReplicas: 1
+EOF
+#内表tpcds测试
+:<<EOF
+  starRocksBeSpec:
+    storageVolumes:
+      - name: be-data
+        storageClassName: juicefs-sc
+        storageSize: 50Gi
+        mountPath: /opt/starrocks/be/storage
+    image: harbor.my.org:1080/doris/starrocks-juicefs-be:2.5.2
+    replicas: 3
+    requests:
+      cpu: 2->1
+      memory: 8Gi->18
+  starRocksCnSpec:
+    image: harbor.my.org:1080/doris/starrocks-juicefs-cn:2.5.2
+    requests:
+      cpu: 2->1
+      memory: 4Gi
+      #when you use autoscalingPolicy, it is recommended that replicas removed from manifests.
+    autoScalingPolicy:
+      maxReplicas: 10->3
+      minReplicas: 1
+EOF
+
+
+kubectl apply -f ${DORIS_HOME}/${clusterfile}
+
+kubectl get all -n doris
+watch kubectl get all -n doris
+
+kubectl delete -f ${DORIS_HOME}/${clusterfile} --force --grace-period=0
+kubectl get pod -n doris |grep -v Running |awk '{print $1}'| xargs kubectl delete pod "$1" -n doris --force --grace-period=0
+kubectl get pvc -n doris | grep starrockscluster | awk '{print $1}' | xargs kubectl delete pvc -n doris
+kubectl get pod -n kube-system | grep juicefs | grep pvc | grep Terminating | awk '{print $1}' | xargs kubectl delete pod -n kube-system --force --grace-period=0
+kubectl get pod -n kube-system | grep juicefs | grep pvc | grep Terminating | awk '{print $1}' | xargs kubectl patch pod $1 -n kube-system -p '{"metadata":{"finalizers":null}}'
+
+cp ${clusterfile} ${clusterfile}.bk
+$SED -i 's/starrocks-/starrocks-juicefs-/g' ${DORIS_HOME}/${clusterfile}
+
+
+kubectl logs -f -n doris `kubectl get pod -n doris | grep controller | awk '{print $1}'`
+
+
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep cn-0 | awk '{print $1}'` -- \
+bash
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep cn-0 | awk '{print $1}'` -- \
+cat /opt/starrocks/cn/log/cn.out
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep cn-0 | awk '{print $1}'` -- \
+cat /opt/starrocks/cn/log/cn.WARNING
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep cn-0 | awk '{print $1}'` -- \
+cat /opt/starrocks/cn/log/cn.INFO
 
 # starrocks end--------------------------------------------
+
+#svc=fe
+svc=starrockscluster-fe-service
+
+kubectl run mysql-client -n doris --rm --tty -i --restart='Never' --image docker.io/library/mysql:5.7 --command -- \
+  mysql --default-character-set=utf8 -h ${svc} -P 9030 -u'root' -e"SHOW PROC '/frontends'"
+
+kubectl run mysql-client -n doris --rm --tty -i --restart='Never' --image docker.io/library/mysql:5.7 --command -- \
+  mysql --default-character-set=utf8 -h ${svc} -P 9030 -u'root' -e"SHOW PROC '/backends'"
+
+#doris
+kubectl run mysql-client -n doris --rm --tty -i --restart='Never' --image docker.io/library/mysql:5.7 --command -- \
+  mysql --default-character-set=utf8 -h ${svc} -P 9030 -u'root' -e"SHOW PROC '/brokers'"
+#starrocks
+kubectl run mysql-client -n doris --rm --tty -i --restart='Never' --image docker.io/library/mysql:5.7 --command -- \
+  mysql --default-character-set=utf8 -h ${svc} -P 9030 -u'root' -e"SHOW PROC '/compute_nodes'"
+
+#app=apache-doris
+app=starrocks
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep fe-0 | awk '{print $1}'` -- \
+bash
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep fe-0 | awk '{print $1}'` -- \
+cat /opt/${app}/fe/log/fe.out
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep fe-0 | awk '{print $1}'` -- \
+cat /opt/${app}/fe/log/fe.log
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep fe-0 | awk '{print $1}'` -- \
+cat /opt/${app}/fe/log/fe.log | grep 'master client, get client from cache failed.host'
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep fe-0 | awk '{print $1}'` -- \
+cat /opt/${app}/fe/log/fe.log | grep 'failed'
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep fe-2 | awk '{print $1}'` -- \
+cat /opt/${app}/fe/log/fe.warn.log
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep fe-0 | awk '{print $1}'` -- \
+ls /opt/${app}/fe/log/
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep fe-0 | awk '{print $1}'` -- \
+cat /opt/${app}/fe/log/fe.gc.log.20230209-020244
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep fe-1 | awk '{print $1}'` -- \
+cat /opt/${app}/fe/conf/fe.conf
+
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep be-0 | awk '{print $1}'` -- \
+bash
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep be-0 | awk '{print $1}'` -- \
+ls /opt/${app}/be/log/be.out
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep be-0 | awk '{print $1}'` -- \
+cat /opt/${app}/be/log/be.out
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep be-0 | awk '{print $1}'` -- \
+cat /opt/${app}/be/log/be.WARNING
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep be-0 | awk '{print $1}'` -- \
+cat /opt/${app}/be/log/be.INFO
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep be-0 | awk '{print $1}'` -- \
+cat /opt/${app}/be/log/be.INFO | grep 'waiting to receive first heartbeat from frontend'
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep dorisbe-0 | awk '{print $1}'` -- \
+cat /opt/${app}/be/log/be.INFO | grep 'waiting'
+:<<EOF
+doris重新安装，没有删除hostpath，会有如下报错，重启也发生类似报错
+0
+W0207 08:26:51.680299  1104 heartbeat_server.cpp:97] invalid cluster id: 1150857714. ignore.
+1
+W0207 08:26:01.544231  1101 heartbeat_server.cpp:97] invalid cluster id: 1150857714. ignore.
+W0207 08:26:02.154709  1099 heartbeat_server.cpp:97] invalid cluster id: 1126033748. ignore.
+2
+W0207 08:27:29.726495  1102 heartbeat_server.cpp:97] invalid cluster id: 829007597. ignore.
+W0207 08:27:31.780303  1105 heartbeat_server.cpp:97] invalid cluster id: 1150857714. ignore.
+EOF
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep be-0 | awk '{print $1}'` -- \
+cat /opt/${app}/be/conf/be.conf

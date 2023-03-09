@@ -27,19 +27,36 @@ STARROCKS_OP_REV=1.3
 JUICEFS_VERSION=1.0.2
 
 
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
-  bash
+:<<EOF
+engine=doris
+svc=fe
+cppod=fe-0
+mypwd=/
+EOF
+engine=starrocks
+svc=starrockscluster-fe-service
+cppod=be-0
+mypwd=/opt/starrocks/
 
+
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep ${cppod} | awk '{print $1}'` --  \
+  mysql --default-character-set=utf8 -h ${svc} -P 9030 -u'root'
+
+
+:<<EOF
 ddlfile=hive_tpcds_orc_10_manual_imported_few-ddl.sql
 db=hive_tpcds_orc_10_manual_imported_few
+svc=fe
+EOF
 ddlfile=tpcds-ddl.sql
 db=test_db
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- rm -f /${ddlfile}
-kubectl cp ${ddlfile} -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'`:/${ddlfile}
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
-  mysql --default-character-set=utf8 -h fe -P 9030 -u'root' -e "source /${ddlfile}"
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
-  mysql --default-character-set=utf8 -h fe -P 9030 -u'root' -e "USE ${db};SHOW TABLES;"
+svc=starrockscluster-fe-service
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep ${cppod} | awk '{print $1}'` -- rm -f ${mypwd}${ddlfile}
+kubectl cp ${ddlfile} -n doris `kubectl get pod -n doris | grep Running | grep ${cppod} | awk '{print $1}'`:${mypwd}${ddlfile}
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep ${cppod} | awk '{print $1}'` -- \
+  mysql --default-character-set=utf8 -h ${svc} -P 9030 -u'root' -e "source ${mypwd}${ddlfile}"
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep ${cppod} | awk '{print $1}'` -- \
+  mysql --default-character-set=utf8 -h ${svc} -P 9030 -u'root' -e "USE ${db};SHOW TABLES;"
 
 cp -r ${PRJ_HOME}/spark/test/spark-tpcds-10 doris-tpcds-10
 $SED -i "s/(cast('1999-02-22' AS DATE) + INTERVAL 30 days)/DATE_ADD(CAST('1999-02-22' AS DATE), INTERVAL 30 DAY)/g" doris-tpcds-10/q98.sql
@@ -62,30 +79,51 @@ $SED -i "s/(CAST('1999-02-01' AS DATE) + INTERVAL 60 days)/DATE_ADD(CAST('1999-0
 $SED -i "s/(CAST('1999-02-01' AS DATE) + INTERVAL 60 DAY)/DATE_ADD(CAST('1999-02-01' AS DATE), INTERVAL 60 DAY)/g" doris-tpcds-10/q95.sql
 $SED -i "s/2000-01-27]/2000-01-27/g" doris-tpcds-10/q32.sql
 
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- rm -r -f /doris-tpcds-10
-kubectl cp doris-tpcds-10 -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'`:/doris-tpcds-10
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep ${cppod} | awk '{print $1}'` -- rm -r -f ${mypwd}doris-tpcds-10
+kubectl cp doris-tpcds-10 -n doris `kubectl get pod -n doris | grep Running | grep ${cppod} | awk '{print $1}'`:${mypwd}doris-tpcds-10
 
+:<<EOF
 engine=doris
-#csvfile=tpcds-${engine}-few-query.csv
-csvfile=tpcds-${engine}-query.csv
+svc=fe
+data=inter
+mypwd=/
+EOF
+engine=starrocks
+svc=starrockscluster-fe-service
+#data=inter
+data=ext
+mypwd=/opt/starrocks/
+#csvfile=tpcds-${engine}-${data}-fewquery.csv
+csvfile=tpcds-${engine}-${data}-query.csv
 
-kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- bash
-  mysql --default-character-set=utf8 -h fe -P 9030 -u'root' -e "SET exec_mem_limit=14G"
-  engine=doris
-  #csvfile=tpcds-${engine}-few-query.csv
-  csvfile=tpcds-${engine}-query.csv
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep ${cppod} | awk '{print $1}'` -- bash
+:<<EOF
+engine=doris
+svc=fe
+data=inter
+mypwd=/
+EOF
+engine=starrocks
+svc=starrockscluster-fe-service
+#data=inter
+data=ext
+mypwd=/opt/starrocks/
+#csvfile=tpcds-${engine}-${data}-fewquery.csv
+csvfile=tpcds-${engine}-${data}-query.csv
+  mysql --default-character-set=utf8 -h ${svc} -P 9030 -u'root' -e "SET exec_mem_limit=14G"
   echo -e "query,time" > ${csvfile}
   #arr=(1 2)
   #for num in ${arr[*]}
   for num in {1..99}
   do
     start=$(date +"%s.%9N")
-    file=/q${num}.sql
-    cp /doris-tpcds-10/q${num}.sql ${file}
+    file=${mypwd}q${num}.sql
+    \cp ${mypwd}doris-tpcds-10/q${num}.sql ${file}
     #sed -i 's/tpcds_bin_partitioned_orc_10/hive_tpcds_orc_10_manual_imported_few/g' ${file}
-    sed -i 's/tpcds_bin_partitioned_orc_10/test_db/g' ${file}
+    #sed -i 's/tpcds_bin_partitioned_orc_10/test_db/g' ${file}
+    sed -i 's/tpcds_bin_partitioned_orc_10/hive.tpcds_bin_partitioned_orc_10/g' ${file}
     #cat ${file}
-    mysql --default-character-set=utf8 -h fe -P 9030 -u'root' -e "source ${file}" > q${num}.log  2>&1
+    mysql --default-character-set=utf8 -h ${svc} -P 9030 -u'root' -e "source ${file}" > q${num}.log  2>&1
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
     echo q${num},${delta}
@@ -98,8 +136,9 @@ kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-
     cat q${num}.log | grep ERROR
   done
 
-kubectl cp -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'`:/${csvfile} ${csvfile}
+kubectl cp -n doris `kubectl get pod -n doris | grep Running | grep ${cppod} | awk '{print $1}'`:${mypwd}${csvfile} ${csvfile}
 
+#doris
 :<<EOF
 1，全局sql配置SET exec_mem_limit=14G
 2，增加BE memory limit到18G
@@ -118,4 +157,8 @@ q92
 ERROR 1105 (HY000) at line 3 in file: '/q92.sql': errCode = 2, detailMessage = Invalid time unit 'days' in timestamp arithmetic expression '(CAST('2000-01-27' AS DATE) + INTERVAL 90 days)'.
 q95
 ERROR 1105 (HY000) at line 3 in file: '/q95.sql': errCode = 2, detailMessage = PreCatch std::bad_alloc, Memory limit exceeded:<consuming tracker:<Query#Id=7b077474bc174b08-9d3e6b2ca1344232>, process memory used 2.69 GB exceed limit 4.47 GB or sys mem available 48.75 GB less than low water mark 563.42 MB, failed alloc size 8.00 GB>, executing msg:<execute:<>>. backend 192.168.3.14 process memory used 2.69 GB, limit 4.47 GB. If query tracker exceed, `set exec_mem_limit=8G` to change limit, details see be.INFO.
+EOF
+
+#starrocks
+:<<EOF
 EOF

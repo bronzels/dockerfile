@@ -48,4 +48,3 @@ RUN echo "root:1234" | chpasswd
 
 RUN ssh-keygen -A
 
-wget -c http://dl.minio.org.cn/client/mc/release/linux-amd64/mc

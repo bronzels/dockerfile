@@ -59,3 +59,32 @@ watch kubectl get all -n redis
 #kubectl port-forward -n redis svc/my-redis-ha 6379:6379 &
 kubectl port-forward -n redis svc/my-redis-master 6379:6379 &
 
+#redis无法启动
+kubectl edit statefulsets.apps my-redis-master -n redis
+  /opt/bitnami/scripts/start-scripts/start-master.sh
+    changed to
+  tail -f /dev/null
+  remove
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - /health/ping_liveness_local.sh 5
+          failureThreshold: 5
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 6
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - /health/ping_readiness_local.sh 5
+          failureThreshold: 5
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 1
+  redis-check-aof --fix /data/appendonly.aof

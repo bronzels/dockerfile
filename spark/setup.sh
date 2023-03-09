@@ -43,6 +43,45 @@ GETOPT_PATH=`brew --prefix gnu-getopt`   # get the gnu-getopt execute path
 export PATH="${GETOPT_PATH}/bin:$PATH"         # set gnu-getopt as default getopt
 sh build.sh --spark 3.3.1 --scala 2.12
 
+
+#starrocks integration
+#git clone https://github.com/StarRocks/spark-starrocks-connector.git
+unzip -x starrocks-connector-for-apache-spark-main.zip
+cd starrocks-connector-for-apache-spark-main
+file=build.sh
+cp ${file} ${file}.bk
+$SED -i 's/export STARROCKS_SPARK_VERSION=3.1.2/export STARROCKS_SPARK_VERSION=3.3.1/g' ${file}
+#依赖starrocks-stream-load-sdk需要先编译flink starrrocks connector
+:<<EOF
+程序包org.codehaus.jackson不存在
+pom添加依赖项
+    <dependency>
+        <groupId>org.codehaus.jackson</groupId>
+        <artifactId>jackson-mapper-asl</artifactId>
+        <version>1.9.13</version>
+    </dependency>
+EOF
+#sh build.sh 3
+    export STARROCKS_SPARK_BASE_VERSION=3
+    export STARROCKS_SPARK_VERSION=3.3.1
+    export STARROCKS_SCALA_VERSION=2.12
+:<<EOF
+[ERROR] /Volumes/data/workspace/dockerfile/spark/starrocks-connector-for-apache-spark-main/src/main/java/com/starrocks/connector/spark/sql/conf/WriteStarRocksConfig.java:[175,36] 不兼容的类型: java.lang.String[]无法转换为java.lang.String
+EOF
+mvn clean package -DskipTests -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
+mvn install:install-file -DgroupId=com.starrocks -DartifactId=starrocks-spark3_2.12 -Dversion=1.0.0 -Dpackaging=jar -Dfile=target/starrocks-spark3_2.12-1.0.0.jar
+git clone git@github.com:StarRocks/demo.git
+unzip -x demo-master.zip
+mvn install:install-file -DgroupId=org.apache.calcite -DartifactId=calcite-avatica -Dversion=1.2.0-incubating -Dpackaging=jar -Dfile=calcite-avatica-1.2.0-incubating.jar
+:<<EOF
+失败，放弃
+1，导入数据提示com.starrocks.connector.spark.sql.StarrocksRelation@46a9c368 does not allow insertion
+2，改成sparksql从doris用temporary view SELECT数据，提示Could not initialize class com.starrocks.shaded.org.apache.arrow.vector.types.pojo.Schema，但是把jar包解开这个类有的，这是个shade plugin重命名的包，可能为了避免包冲突
+3，connector编译时pom的spark版本改到3.1.2，在3.3.1的spark image上跑，还是一样的does not allow insertion错误
+EOF
+
+
+
 #hudi integration
 HUDI_VERSION=0.13.0
 wget -c https://github.com/apache/hudi/archive/refs/tags/release-${HUDI_VERSION}.tar.gz

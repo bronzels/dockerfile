@@ -306,8 +306,7 @@ helm install my -n dolphinsch -f values.yaml \
 helm uninstall my -n dolphinsch
 kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- bash
   hadoop fs -rm -r -f /k8sup/dolphinsch
-kubectl get pod -n dolphinsch |grep Terminating |awk '{print $1}'| xargs kubectl delete pod "$1" -n dolphinsch --force --grace-period=0
-kubectl get pod -n dolphinsch |grep CrashLoopBackOff |awk '{print $1}'| xargs kubectl delete pod "$1" -n dolphinsch --force --grace-period=0
+kubectl get pod -n dolphinsch |grep -v Running |awk '{print $1}'| xargs kubectl delete pod "$1" -n dolphinsch --force --grace-period=0
 watch kubectl get all -n dolphinsch
 kubectl get pvc -n dolphinsch
 kubectl get pv | grep dolphinsch

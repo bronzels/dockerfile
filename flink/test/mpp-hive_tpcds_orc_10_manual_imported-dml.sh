@@ -23,14 +23,10 @@ scale=10
 #db=hive_tpcds_orc_10_manual_imported_few
 db=test_db
 
-#date_dim
-#arr=(store_returns)
-#store customer web_sales catalog_sales store_sales reason
-#arr=(date_dim store_returns store customer web_sales catalog_sales store_sales reason)
 arr=(call_center catalog_page catalog_returns catalog_sales customer customer_address customer_demographics date_dim household_demographics income_band inventory item promotion reason ship_mode store store_returns store_sales time_dim warehouse web_page web_returns web_sales web_site)
 arr=(call_center)
 
-torun=mpp-${engine}-ingestion-${db}
+torun=mpp-${engine}-ingestion-${db}-flink
 echo "DEBUG >>>>>> torun:${torun}"
 csvfile=${torun}.csv
 logfile=${torun}.log
@@ -86,34 +82,14 @@ map_tbl2cols["web_site"]="*"
 echo "${map_tbl2cols[@]}"
 echo "${!map_tbl2cols[@]}"
 
-:<<EOF
-declare -A map_tbl2pt=()
-map_tbl2pt["date_dim"]=""
-map_tbl2pt["store_returns"]="sr_returned_date_sk"
-map_tbl2pt["store"]=""
-map_tbl2pt["customer"]=""
-map_tbl2pt["web_sales"]="ws_sold_date_sk"
-map_tbl2pt["catalog_sales"]="cs_sold_date_sk"
-map_tbl2pt["store_sales"]="ss_sold_date_sk"
-map_tbl2pt["reason"]=""
-echo "${map_tbl2pt[@]}"
-echo "${!map_tbl2pt[@]}"
-EOF
+shfile=flink-sql-delta.sh
+FLINK_JOB_HOME=/opt/flink
 
-shfile=spark-sql-delta.sh
-SPARK_JOB_HOME=/app/hdfs/spark/work-dir
-
-kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- \
+kubectl exec -it -n flink `kubectl get pod -n flink | grep Running | grep spark-test | awk '{print $1}'` -- \
   curl http://be-domain-search.doris.svc.cluster.local:8040
 
-kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- \
+kubectl exec -it -n flink `kubectl get pod -n flink | grep Running | grep spark-test | awk '{print $1}'` -- \
   curl http://starrockscluster-fe-service.doris.svc.cluster.local:8030
-
-kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- rm -f *.delta
-kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- rm -f ${SPARK_JOB_HOME}/${shfile}
-kubectl cp ${shfile} -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'`:${SPARK_JOB_HOME}/${shfile}
-kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- ls -l
-kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- cat ${shfile}
 
 
 for tbl in ${arr[*]}
@@ -178,9 +154,9 @@ EOF
 
   kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
     mysql --default-character-set=utf8 -h fe -P 9030 -u'root' -e "USE ${db};TRUNCATE TABLE ${tbl};"
-  kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- ${SPARK_JOB_HOME}/${shfile} ${sqlfile_path}
+  kubectl exec -it -n flink `kubectl get pod -n flink | grep Running | grep spark-test | awk '{print $1}'` -- ${FLINK_JOB_HOME}/${shfile} ${sqlfile_path}
   # > submit-${tbl}-${logfile}  2>&1
-  kubectl cp -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'`:${SPARK_JOB_HOME}/${name}.delta ./${name}.delta
+  kubectl cp -n flink `kubectl get pod -n flink | grep Running | grep spark-test | awk '{print $1}'`:${FLINK_JOB_HOME}/${name}.delta ./${name}.delta
   cat ${name}.delta >> ${csvfile}
   rm -f ${name}.delta
 
@@ -198,20 +174,20 @@ do
   jobname=`echo ${name}|$SED 's/_/\-/g'`
   echo "DEBUG >>>>>> jobname:${jobname}"
 
-  kubectl logs -n spark-operator `kubectl get pod -n spark-operator | grep ${jobname} | awk '{print $1}'`
+  kubectl logs -n flink `kubectl get pod -n flink | grep ${jobname} | awk '{print $1}'`
   kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep fe-0 | awk '{print $1}'` -- \
     mysql --default-character-set=utf8 -h ${svc} -P 9030 -u'root' -e "USE ${db};SELECT COUNT(1) FROM ${tbl};"
 done
 
-kubectl logs -n spark-operator `kubectl get pod -n spark-operator|grep tmp-mpp-${engine}-ingestion |grep 'Error' |awk '{print $1}'`
+kubectl logs -n flink `kubectl get pod -n flink|grep tmp-mpp-${engine}-ingestion |grep 'Error' |awk '{print $1}'`
 
-kubectl get pod -n spark-operator|grep tmp-mpp-${engine}-ingestion
-kubectl get pod -n spark-operator|grep tmp-mpp-${engine}-ingestion |grep 'Error' |awk '{print $1}'| xargs kubectl delete pod "$1" -n spark-operator --force --grace-period=0
-kubectl get pod -n spark-operator|grep tmp-mpp-${engine}-ingestion |grep -v 'Running' |awk '{print $1}'| xargs kubectl delete pod "$1" -n spark-operator --force --grace-period=0
-kubectl get pod -n spark-operator|grep tmp-mpp-${engine}-ingestion |grep -v 'Running\|ContainerCreating\Pending' |awk '{print $1}'| xargs kubectl delete pod "$1" -n spark-operator --force --grace-period=0
+kubectl get pod -n flink|grep tmp-mpp-${engine}-ingestion
+kubectl get pod -n flink|grep tmp-mpp-${engine}-ingestion |grep 'Error' |awk '{print $1}'| xargs kubectl delete pod "$1" -n flink --force --grace-period=0
+kubectl get pod -n flink|grep tmp-mpp-${engine}-ingestion |grep -v 'Running' |awk '{print $1}'| xargs kubectl delete pod "$1" -n flink --force --grace-period=0
+kubectl get pod -n flink|grep tmp-mpp-${engine}-ingestion |grep -v 'Running\|ContainerCreating\Pending' |awk '{print $1}'| xargs kubectl delete pod "$1" -n flink --force --grace-period=0
 
-kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- tail -f submit-${tbl}-${logfile}
-kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- tail -f driver-${tbl}-${logfile}
+kubectl exec -it -n flink `kubectl get pod -n flink | grep Running | grep spark-test | awk '{print $1}'` -- tail -f submit-${tbl}-${logfile}
+kubectl exec -it -n flink `kubectl get pod -n flink | grep Running | grep spark-test | awk '{print $1}'` -- tail -f driver-${tbl}-${logfile}
 
 kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- \
   hadoop fs -ls ${HDFS_SQL_FILE_HOME}/${torun}

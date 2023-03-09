@@ -17,13 +17,6 @@ spec:
         - name: hive
           image: harbor.my.org:1080/bronzels/hive-ubussh-juicefs:0.1
           command: ["bash", "-c", "cp /app/hdfs/bootstrap/bootstrap.sh /tmp/ && chmod +x /tmp/bootstrap.sh && /tmp/bootstrap.sh"]
-          resources:
-            requests:
-              memory: "8Gi"
-              cpu: "2000m"
-            limits:
-              memory: "20Gi"
-              cpu: "2000m"
           ports:
             - containerPort: 10000
             - containerPort: 10002

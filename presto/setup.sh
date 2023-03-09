@@ -223,6 +223,8 @@ kubectl logs -n presto `kubectl get pod -n presto | grep trino-coordinator | awk
 kubectl get pod -n presto | grep trino-worker | awk '{print $1}' | xargs kubectl logs -n presto
 kubectl logs -n presto my-trino-worker-76fdd9f886-bsqhf
 
+kubectl cp -n presto `kubectl get pod -n presto | grep Running | grep coordinator | awk '{print $1}'`:/usr/lib/trino/plugin/hive/juicefs-hadoop-1.0.2-jdk17.jar ${PRJ_HOME}/juicefs/juicefs-hadoop-1.0.2-jdk17.jar
+
 kubectl exec -it -n presto `kubectl get pod -n presto | grep Running | grep trino-coordinator | awk '{print $1}'` -- \
 bash
 kubectl exec -it -n presto `kubectl get pod -n presto | grep Running | grep trino-coordinator | awk '{print $1}'` -- \
@@ -591,6 +593,8 @@ kubectl get pod -n presto | grep worker | awk '{print $1}' | xargs kubectl logs 
 kubectl logs -n presto my-worker-54d4fb89c6-6fdsd
 kubectl logs -n presto my-worker-54d4fb89c6-mx4xk
 kubectl logs -n presto my-worker-54d4fb89c6-qlss7
+
+kubectl cp -n presto `kubectl get pod -n presto | grep Running | grep coordinator | awk '{print $1}'`:/home/presto/presto-server/plugin/hive-hadoop2/juicefs-hadoop-1.0.2-jdk11.jar ${PRJ_HOME}/juicefs/juicefs-hadoop-1.0.2-jdk11.jar
 
 kubectl exec -it -n presto `kubectl get pod -n presto | grep Running | grep coordinator | awk '{print $1}'` -- \
 presto-server/bin/presto-cli --server my-presto-kube:8080 --catalog hive --schema tpcds_bin_partitioned_orc_10

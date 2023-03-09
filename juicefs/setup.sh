@@ -163,6 +163,7 @@ juicefs群恢复：
   看日志是 CSI 连接 ApiServer 删除 mount pod 的 finalizer 的时候超时了
 EOF
 kubectl get pod -n kube-system | grep juicefs | grep pvc | grep Terminating | awk '{print $1}' | xargs kubectl patch pod $1 -n kube-system -p '{"metadata":{"finalizers":null}}'
+kubectl get pod -n kube-system | grep juicefs | grep pvc | grep Terminating | awk '{print $1}' | xargs kubectl delete pod $1 -n kube-system --force --grace-period=0
 
 wget https://raw.githubusercontent.com/juicedata/juicefs-csi-driver/master/scripts/csi-doctor.sh
 #在集群中任意一台可以执行 kubectl 的节点上，安装诊断脚本
@@ -227,3 +228,48 @@ E0301 05:23:46.197943       7 pod_driver.go:281] remove pod finalizer err:Patch 
 E0301 05:23:46.197952       7 reconciler.go:103] Driver check pod juicefs-mdlapubu-pvc-5c0e0bab-4f77-49cc-a925-3e300267b23d-dvnxlr error: Patch "https://10.96.0.1:443/api/v1/namespaces/kube-system/pods/juicefs-mdlapubu-pvc-5c0e0bab-4f77-49cc-a925-3e300267b23d-dvnxlr?timeout=10s": context canceled
 (base) [root@dtpct ~]#
 EOF
+
+docker run -itd --name centos7-netutil-ccplus7-go-jdk --restart unless-stopped -v /Volumes/data/m2:/root/.m2 -v $PWD/juicefs-1.0.2:/root/workspace/juicefs -v /Volumes/data/gopath:/root/workspace/gopath harbor.my.org:1080/base/python:3.8-centos7-netutil-ccplus7-go-jdk tail -f /dev/null
+docker exec -it centos7-netutil-ccplus7-go-jdk bash
+  java -version
+  cd workspace/juicefs/sdk/java
+  make
+docker cp centos7-netutil-ccplus7-go-jdk:/root/workspace/juicefs/sdk/java/target/juicefs-hadoop-1.0.2.jar ./juicefs-hadoop-1.0.2-jdk11-centos7.jar
+
+docker run -itd --name debian11-ccplus-go-jdk --restart unless-stopped -v /Volumes/data/m2:/root/.m2 -v $PWD/juicefs-1.0.2:/root/juicefs -v /Volumes/data/gopath:/root/gopath harbor.my.org:1080/base/debian11:ccplus-go-jdk tail -f /dev/null
+docker exec -it debian11-ccplus-go-jdk bash
+  java -version
+  cd juicefs/sdk/java
+  make
+docker cp debian11-ccplus-go-jdk:/root/juicefs/sdk/java/target/juicefs-hadoop-1.0.2.jar ./juicefs-hadoop-1.0.2-jdk11-debian11.jar
+
+
+#debian 11 gcc5的安装，缺少libisl15失败
+RUN wget http://mirrors.ustc.edu.cn/debian/pool/main/g/gcc-6/gcc-6-base_6.3.0-18%2Bdeb9u1_amd64.deb
+RUN dpkg -i gcc-6-base_6.3.0-18+deb9u1_amd64.deb
+
+RUN wget http://mirrors.ustc.edu.cn/debian/pool/main/g/gcc-6/libubsan0_6.3.0-18+deb9u1_amd64.deb
+RUN dpkg -i libubsan0_6.3.0-18+deb9u1_amd64.deb
+
+RUN wget http://mirrors.ustc.edu.cn/debian/pool/main/g/gcc-6/libcilkrts5_6.3.0-18%2Bdeb9u1_amd64.deb
+RUN dpkg -i libcilkrts5_6.3.0-18+deb9u1_amd64.deb
+
+RUN mkdir g5_debs
+WORKDIR /root/g5_debs
+RUN wget http://archive.ubuntu.com/ubuntu/pool/universe/g/gcc-5/cpp-5_5.5.0-12ubuntu1_amd64.deb
+RUN wget http://archive.ubuntu.com/ubuntu/pool/universe/g/gcc-5/g++-5_5.5.0-12ubuntu1_amd64.deb
+RUN wget http://archive.ubuntu.com/ubuntu/pool/universe/g/gcc-5/gcc-5_5.5.0-12ubuntu1_amd64.deb
+RUN wget http://archive.ubuntu.com/ubuntu/pool/universe/g/gcc-5/gcc-5-base_5.5.0-12ubuntu1_amd64.deb
+RUN wget http://archive.ubuntu.com/ubuntu/pool/universe/g/gcc-5/libasan2_5.5.0-12ubuntu1_amd64.deb
+RUN wget http://archive.ubuntu.com/ubuntu/pool/universe/g/gcc-5/libgcc-5-dev_5.5.0-12ubuntu1_amd64.deb
+RUN wget http://archive.ubuntu.com/ubuntu/pool/universe/g/gcc-5/libmpx0_5.5.0-12ubuntu1_amd64.deb
+RUN wget http://archive.ubuntu.com/ubuntu/pool/universe/g/gcc-5/libstdc++-5-dev_5.5.0-12ubuntu1_amd64.deb
+RUN dpkg -i *.deb
+
+RUN ls -lha /usr/bin/gcc*
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 30
+RUN gcc --version
+
+RUN ls -lha /usr/bin/g++*
+RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-5 30
+RUN g++ --version

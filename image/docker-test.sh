@@ -71,6 +71,18 @@ nohup docker build ./ --progress=plain -f Dockerfile-centos7-py38-netutil-ccplus
 tail -f build-Dockerfile-centos7-py38-netutil-ccplus7-go.log
 docker push harbor.my.org:1080/base/python:3.8-centos7-netutil-ccplus7-go
 
+nohup docker build ./ --progress=plain -f Dockerfile-centos7-py38-netutil-ccplus7-go-jdk -t harbor.my.org:1080/base/python:3.8-centos7-netutil-ccplus7-go-jdk > build-Dockerfile-centos7-py38-netutil-ccplus7-go-jdk.log 2>&1 &
+tail -f build-Dockerfile-centos7-py38-netutil-ccplus7-go-jdk.log
+docker push harbor.my.org:1080/base/python:3.8-centos7-netutil-ccplus7-go-jdk
+
+nohup docker build ./ --progress=plain -f Dockerfile-debian11-ccplus-go-jdk -t harbor.my.org:1080/base/debian11:ccplus-go-jdk > build-Dockerfile-debian11-ccplus-go-jdk.log 2>&1 &
+tail -f build-Dockerfile-debian11-ccplus-go-jdk.log
+docker push harbor.my.org:1080/base/debian11:ccplus-go-jdk
+
+nohup docker build ./ --progress=plain -f Dockerfile-ubuntu20-netutil-ccplus7-go-jdk -t harbor.my.org:1080/base/ubuntu20:netutil-ccplus7-go-jdk > build-Dockerfile-ubuntu20-netutil-ccplus7-go-jdk.log 2>&1 &
+tail -f build-Dockerfile-ubuntu20-netutil-ccplus7-go-jdk.log
+docker push harbor.my.org:1080/base/ubuntu20:netutil-ccplus7-go-jdk
+
 nohup docker build ./ --progress=plain -f Dockerfile-centos7-py38-netutil-ccplus7-go-mpich -t harbor.my.org:1080/base/python:3.8-centos7-netutil-ccplus7-go-mpich > build-Dockerfile-centos7-py38-netutil-ccplus7-go-mpich.log 2>&1 &
 tail -f build-Dockerfile-centos7-py38-netutil-ccplus7-go-mpich.log
 docker push harbor.my.org:1080/base/python:3.8-centos7-netutil-ccplus7-go-mpich

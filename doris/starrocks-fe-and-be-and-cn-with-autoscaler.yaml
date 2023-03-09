@@ -1,0 +1,59 @@
+apiVersion: starrocks.com/v1alpha1
+kind: StarRocksCluster
+metadata:
+  name: starrockscluster
+  namespace: doris
+spec:
+  starRocksFeSpec:
+    storageVolumes:
+      - name: fe-meta
+        storageClassName: juicefs-sc
+        storageSize: 1Gi
+        mountPath: /opt/starrocks/fe/meta
+    image: harbor.my.org:1080/doris/starrocks-juicefs-fe:2.5.2
+    replicas: 1
+    requests:
+      cpu: 2
+      memory: 8Gi
+  starRocksBeSpec:
+    storageVolumes:
+      - name: be-data
+        storageClassName: juicefs-sc
+        storageSize: 50Gi
+        mountPath: /opt/starrocks/be/storage
+    image: harbor.my.org:1080/doris/starrocks-juicefs-be:2.5.2
+    replicas: 1
+    requests:
+      cpu: 1
+      memory: 4Gi
+  starRocksCnSpec:
+    image: harbor.my.org:1080/doris/starrocks-juicefs-cn:2.5.2
+    requests:
+      cpu: 2
+      memory: 18Gi
+      #when you use autoscalingPolicy, it is recommended that replicas removed from manifests.
+    autoScalingPolicy:
+      maxReplicas: 3
+      minReplicas: 1
+      hpaPolicy:
+        metrics:
+          - type: Resource
+            resource:
+              name: memory
+              target:
+                averageUtilization: 30
+                type: Utilization
+          - type: Resource
+            resource:
+              name: cpu
+              target:
+                averageUtilization: 30
+                type: Utilization
+        behavior:
+          scaleUp:
+            policies:
+              - type: Pods
+                value: 1
+                periodSeconds: 10
+          scaleDown:
+            selectPolicy: Disabled

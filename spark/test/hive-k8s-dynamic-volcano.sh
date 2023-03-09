@@ -48,7 +48,6 @@ ansible all -m shell -a"crictl images|grep spark-juicefs|awk '{print \$3}'|xargs
 
 kubectl logs -n spark-operator spark-sql-job-test-manual-10-q1-7cb9b28676975020-driver
 
-kubectl exec -it spark-test -n spark-operator -- /bin/bash
 
 kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- bash
   echo "use tpcds_bin_partitioned_orc_10" > dbuse.sql
@@ -73,6 +72,9 @@ kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive
   done
   hadoop fs -mkdir /tmp/k8sup
 kubectl cp -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'`:/tmp/spark-tpcds-10 spark-tpcds-10
+
+
+kubectl exec -it spark-test -n spark-operator -- /bin/bash
 
 :<<EOF
 test case

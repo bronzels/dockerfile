@@ -133,3 +133,4 @@ COPY --chown=hdfs:root podgroups /app/hdfs/spark/work-dir/podgroups
 WORKDIR /app/hdfs/spark/work-dir
 
 COPY --chown=hdfs:root doris-spark-connector-master/spark-doris-connector/target/spark-doris-connector-3.3_2.12-1.0.0-SNAPSHOT.jar /app/hdfs/spark/jars/
+#COPY --chown=hdfs:root starrocks-connector-for-apache-spark-main/target/starrocks-spark3_2.12-1.0.0.jar /app/hdfs/spark/jars/
