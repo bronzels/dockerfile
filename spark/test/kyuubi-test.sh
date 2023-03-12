@@ -75,13 +75,13 @@ EOF
 退出beeline时，就能自动删掉exector的pod，driver的pod也变成Completed状态。
 EOF
 
-  #beeline -n hdfs -u 'jdbc:hive2://kyuubisrv-thrift-binary.spark-operator.svc.cluster.local:10009/tpcds_bin_partitioned_orc_10;spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup-high.yaml;spark.driver.memory=2g;spark.driver.cores=1;spark.executor.memory=4g;spark.executor.cores=1；'
-  #beeline -n hdfs -u 'jdbc:hive2://kyuubisrv-thrift-binary.spark-operator.svc.cluster.local:10009/tpcds_bin_partitioned_orc_10;kyuubi.engineEnv.spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup-high.yaml;kyuubi.engineEnv.spark.driver.memory=2g;kyuubi.engineEnv.spark.driver.cores=1;kyuubi.engineEnv.spark.executor.memory=4g;kyuubi.engineEnv.spark.executor.cores=1；'
+  #beeline -n hdfs -u 'jdbc:hive2://kyuubisrv-thrift-binary.spark-operator.svc.cluster.local:10009/tpcds_bin_partitioned_orc_10;spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup-high.yaml;spark.driver.memory=2g;spark.driver.cores=1;spark.executor.memory=4g;spark.executor.cores=1；'
+  #beeline -n hdfs -u 'jdbc:hive2://kyuubisrv-thrift-binary.spark-operator.svc.cluster.local:10009/tpcds_bin_partitioned_orc_10;kyuubi.engineEnv.spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup-high.yaml;kyuubi.engineEnv.spark.driver.memory=2g;kyuubi.engineEnv.spark.driver.cores=1;kyuubi.engineEnv.spark.executor.memory=4g;kyuubi.engineEnv.spark.executor.cores=1；'
   #数据库名到第一个配置项中间是;#，漏了#不行
-  beeline -n hdfs -u 'jdbc:hive2://kyuubisrv-thrift-binary.spark-operator.svc.cluster.local:10009/tpcds_bin_partitioned_orc_10;#spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup-high.yaml;spark.driver.memory=2g;spark.driver.cores=1;spark.executor.memory=4g;spark.executor.cores=1;'
+  beeline -n hdfs -u 'jdbc:hive2://kyuubisrv-thrift-binary.spark-operator.svc.cluster.local:10009/tpcds_bin_partitioned_orc_10;#spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup-high.yaml;spark.driver.memory=2g;spark.driver.cores=1;spark.executor.memory=4g;spark.executor.cores=1;'
   #从server的日志检查检查连接设置正确格式化成了spark-submit命令
 kubectl logs -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep kyuubisrv | awk '{print $1}'`
-/app/hdfs/spark/bin/spark-submit \
+spark-submit \
 	--class org.apache.kyuubi.engine.spark.SparkSQLEngine \
 	--conf spark.hive.server2.thrift.resultset.default.fetch.size=1000 \
 	--conf spark.kyuubi.client.ipAddress=100.110.242.100 \
@@ -108,7 +108,7 @@ kubectl logs -n spark-operator `kubectl get pod -n spark-operator | grep Running
 	--conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
 	--conf spark.kubernetes.scheduler.name=volcano \
 
-	--conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup-high.yaml \
+	--conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup-high.yaml \
 
 	--conf spark.submit.deployMode=cluster \
 	--conf spark.kubernetes.driverEnv.SPARK_USER_NAME=hdfs \
@@ -138,7 +138,7 @@ kubectl get pod -n spark-operator `kubectl get pod -n spark-operator | grep Runn
 
 
 cat << EOF > setting.sql
-SET spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup-high.yaml;
+SET spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup-high.yaml;
 SET spark.driver.memory=2g;
 SET spark.driver.cores=1;
 SET spark.executor.memory=4g;
@@ -148,7 +148,7 @@ echo "SELECT * FROM store_sales LIMIT 5" > query.sql
 beeline -n hdfs -u 'jdbc:hive2://kyuubisrv-thrift-binary.spark-operator.svc.cluster.local:10009/tpcds_bin_partitioned_orc_10' -i setting.sql -f query.sql
   #从server的日志检查检查连接设置格式化成了spark-submit命令，没有包括-i的设置内容
 kubectl logs -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep kyuubisrv | awk '{print $1}'`
-/app/hdfs/spark/bin/spark-submit \
+/opt/spark/bin/spark-submit \
 	--class org.apache.kyuubi.engine.spark.SparkSQLEngine \
 	--conf spark.hive.server2.thrift.resultset.default.fetch.size=1000 \
 	--conf spark.kyuubi.client.ipAddress=100.110.242.100 \
@@ -168,7 +168,7 @@ kubectl logs -n spark-operator `kubectl get pod -n spark-operator | grep Running
 	--conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
 	--conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
 	--conf spark.kubernetes.scheduler.name=volcano \
-	--conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+	--conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
 	--conf spark.submit.deployMode=cluster \
 	--conf spark.kubernetes.driverEnv.SPARK_USER_NAME=hdfs \
 	--conf spark.executorEnv.SPARK_USER_NAME=hdfs \
@@ -191,7 +191,7 @@ kubectl get pod -n spark-operator `kubectl get pod -n spark-operator | grep Runn
 
 USER=hdfs
 cat << EOF > setting.sql
-SET ___${USER}___.spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup-high.yaml;
+SET ___${USER}___.spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup-high.yaml;
 SET ___${USER}___.spark.driver.memory=2g;
 SET ___${USER}___.spark.driver.cores=1;
 SET ___${USER}___.spark.executor.memory=4g;

@@ -100,7 +100,7 @@ EOF
       --conf spark.kubernetes.executor.limit.cores=2 \
       -i dbuse.sql \
       -f spark-queries-tpcds/q${num}.sql
-  #   -f /app/hdfs/spark/work-dir/test.sql
+  #   -f /opt/spark/work-dir/test.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
     echo q${num},${delta}
@@ -140,7 +140,7 @@ EOF
       --conf spark.dynamicAllocation.minExecutors=1 \
       -i dbuse.sql \
       -f spark-queries-tpcds/q${num}.sql
-  #   -f /app/hdfs/spark/work-dir/test.sql
+  #   -f /opt/spark/work-dir/test.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
     echo q${num},${delta}
@@ -180,7 +180,7 @@ EOF
       --conf spark.dynamicAllocation.minExecutors=1 \
       -i dbuse.sql \
       -f spark-queries-tpcds/q${num}.sql
-  #   -f /app/hdfs/spark/work-dir/test.sql
+  #   -f /opt/spark/work-dir/test.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
     echo q${num},${delta}
@@ -313,7 +313,7 @@ ansible all -m shell -a"rm -rf /sparklocal;mkdir /sparklocal"
       --conf spark.local.dir='/tmp/spark' \
       -i dbuse.sql \
       -f spark-queries-tpcds/q${num}.sql
-  #   -f /app/hdfs/spark/work-dir/test.sql
+  #   -f /opt/spark/work-dir/test.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
     echo q${num},${delta}
@@ -360,7 +360,7 @@ kubectl apply -f rss-nfs-pvc.yaml -n spark-operator
       --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.mount.readOnly=false \
       -i dbuse.sql \
       -f spark-queries-tpcds/q${num}.sql
-  #   -f /app/hdfs/spark/work-dir/test.sql
+  #   -f /opt/spark/work-dir/test.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
     echo q${num},${delta}
@@ -414,7 +414,7 @@ EOF
       --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.mount.readOnly=false \
       -i dbuse.sql \
       -f spark-queries-tpcds/q${num}.sql
-  #   -f /app/hdfs/spark/work-dir/test.sql
+  #   -f /opt/spark/work-dir/test.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
     echo q${num},${delta}
@@ -550,7 +550,7 @@ EOF
       --conf spark.kubernetes.local.dirs.tmpfs=true \
       -i dbuse.sql \
       -f spark-queries-tpcds/q${num}.sql
-  #   -f /app/hdfs/spark/work-dir/test.sql
+  #   -f /opt/spark/work-dir/test.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
     echo q${num},${delta}
@@ -618,7 +618,7 @@ EOF
       --conf spark.dynamicAllocation.minExecutors=1 \
       -i dbuse.sql \
       -f spark-queries-tpcds/q${num}.sql
-  #   -f /app/hdfs/spark/work-dir/test.sql
+  #   -f /opt/spark/work-dir/test.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
     echo q${num},${delta}
@@ -659,7 +659,7 @@ EOF
       --conf spark.dynamicAllocation.minExecutors=1 \
       -i dbuse.sql \
       -f spark-queries-tpcds/q${num}.sql
-  #   -f /app/hdfs/spark/work-dir/test.sql
+  #   -f /opt/spark/work-dir/test.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
     echo q${num},${delta}
@@ -701,10 +701,10 @@ kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive
       --conf spark.dynamicAllocation.minExecutors=1 \
       --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
       --conf spark.kubernetes.scheduler.name=volcano \
-      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/volcano-default-podgroup.yaml \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/volcano-default-podgroup.yaml \
       --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
       --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
-      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      $SPARK_HOME/work-dir/my-spark-sql-cluster-3.jar  \
       -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
@@ -750,10 +750,10 @@ EOF
       --conf spark.dynamicAllocation.executorIdleTimeout=60s \
       --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
       --conf spark.kubernetes.scheduler.name=volcano \
-      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-default-podgroup.yaml \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-default-podgroup.yaml \
       --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
       --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
-      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      $SPARK_HOME/work-dir/my-spark-sql-cluster-3.jar  \
       -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
@@ -795,7 +795,7 @@ EOF
       --conf spark.kubernetes.scheduler.volcano.podgroup.queue=min \
       --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
       --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
-      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      $SPARK_HOME/work-dir/my-spark-sql-cluster-3.jar  \
       -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
@@ -842,10 +842,10 @@ EOF
       --conf spark.dynamicAllocation.executorIdleTimeout=60s \
       --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
       --conf spark.kubernetes.scheduler.name=volcano \
-      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-${queue}-podgroup.yaml \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-${queue}-podgroup.yaml \
       --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
       --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
-      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      $SPARK_HOME/work-dir/my-spark-sql-cluster-3.jar  \
       -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
@@ -918,10 +918,10 @@ EOF
     --conf spark.dynamicAllocation.executorIdleTimeout=60s \
     --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
     --conf spark.kubernetes.scheduler.name=volcano \
-    --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-${queue}-podgroup-${priority}.yaml \
+    --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-${queue}-podgroup-${priority}.yaml \
     --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
     --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
-    $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+    $SPARK_HOME/work-dir/my-spark-sql-cluster-3.jar  \
     -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
   end=$(date +"%s.%9N")
   delta=`echo "scale=9;$end - $start" | bc`
@@ -978,10 +978,10 @@ EOF
       --conf spark.dynamicAllocation.executorIdleTimeout=60s \
       --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
       --conf spark.kubernetes.scheduler.name=volcano \
-      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
       --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
       --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
-      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      $SPARK_HOME/work-dir/my-spark-sql-cluster-3.jar  \
       -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
@@ -1034,10 +1034,10 @@ EOF
       --conf spark.dynamicAllocation.executorAllocationRatio=0.01 \
       --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
       --conf spark.kubernetes.scheduler.name=volcano \
-      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
       --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
       --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
-      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      $SPARK_HOME/work-dir/my-spark-sql-cluster-3.jar  \
       -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
@@ -1091,10 +1091,10 @@ EOF
       --conf spark.dynamicAllocation.executorIdleTimeout=60s \
       --conf spark.kubernetes.file.upload.path=jfs://miniofs/tmp/k8sup \
       --conf spark.kubernetes.scheduler.name=volcano \
-      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
       --conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
       --conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
-      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      $SPARK_HOME/work-dir/my-spark-sql-cluster-3.jar  \
       -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
@@ -1128,8 +1128,8 @@ EOF
       --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
       --name spark-sql-job-test-manual-10-q${num} \
       --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1 \
-      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
-      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+      $SPARK_HOME/work-dir/my-spark-sql-cluster-3.jar  \
       -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
@@ -1162,8 +1162,8 @@ EOF
       --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
       --name spark-sql-job-test-manual-10-q${num} \
       --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1 \
-      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
-      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+      $SPARK_HOME/work-dir/my-spark-sql-cluster-3.jar  \
       -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
@@ -1559,9 +1559,9 @@ EOF
       --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
       --name spark-sql-job-test-manual-10-q${num} \
       --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1 \
-      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
       --conf spark.executor.memory=2g \
-      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      $SPARK_HOME/work-dir/my-spark-sql-cluster-3.jar  \
       -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
@@ -1597,9 +1597,9 @@ EOF
       --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
       --name spark-sql-job-test-manual-10-q${num} \
       --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:3.3.1 \
-      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
       --conf spark.executor.memory=4g \
-      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      $SPARK_HOME/work-dir/my-spark-sql-cluster-3.jar  \
       -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
@@ -1693,9 +1693,9 @@ EOF
       --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
       --name spark-sql-job-test-manual-10-q${num} \
       --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:3.3.1 \
-      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
       --conf spark.executor.memory=4g \
-      $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+      $SPARK_HOME/work-dir/my-spark-sql-cluster-3.jar  \
       -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
     end=$(date +"%s.%9N")
     delta=`echo "scale=9;$end - $start" | bc`
@@ -1739,12 +1739,12 @@ EOF
     #spark-submit \
     #  --deploy-mode cluster \
     #  --class org.apache.spark.sql.hive.my.MySparkSQLCLIDriver \
-    #  $SPARK_HOME/jars/my-spark-sql-cluster-3.jar \
+    #  $SPARK_HOME/work-dir/my-spark-sql-cluster-3.jar  \
     spark-sql \
       --deploy-mode client \
       --name spark-sql-job-test-manual-10-q${num} \
       --conf spark.kubernetes.container.image=harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:3.3.1 \
-      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+      --conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
       --conf spark.executor.memory=4g \
       -f jfs://miniofs/tmp/spark-tpcds-10/q${num}.sql
     end=$(date +"%s.%9N")
@@ -1757,6 +1757,26 @@ EOF
 volcano需要用podgroup处理driver的资源，但是client模式driver和发起命令的已经存在的pod是同一个，无法处理，所以用volcano就必须用cluster模式
 23/01/30 10:12:51 WARN ExecutorPodsSnapshotsStoreImpl: Exception when notifying snapshot subscriber.
 io.fabric8.kubernetes.client.KubernetesClientException: Failure executing: POST at: https://kubernetes.default.svc.cluster.local/api/v1/namespaces/spark-operator/pods. Message: admission webhook "validatepod.volcano.sh" denied the request: failed to get PodGroup for pod <spark-operator/spark-sql-job-test-manual-10-q1-89a4df860229efaa-exec-3>: podgroups.scheduling.volcano.sh "spark-0f19d22bb4564761a869067c3c54eb51-podgroup" not found. Received status: Status(apiVersion=v1, code=400, details=null, kind=Status, message=admission webhook "validatepod.volcano.sh" denied the request: failed to get PodGroup for pod <spark-operator/spark-sql-job-test-manual-10-q1-89a4df860229efaa-exec-3>: podgroups.scheduling.volcano.sh "spark-0f19d22bb4564761a869067c3c54eb51-podgroup" not found, metadata=ListMeta(_continue=null, remainingItemCount=null, resourceVersion=null, selfLink=null, additionalProperties={}), reason=null, status=Failure, additionalProperties={}).
+EOF
+
+
+kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- bash
+  echo "USE default;SHOW TABLES" > show_databases.sql
+kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- hadoop fs -rm -f /tmp/show_databases.sql
+kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- hadoop fs -put show_databases.sql /tmp/
+
+kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- echo "USE tpcds_bin_partitioned_orc_10;SELECT COUNT(1) FROM store_sales" > select_count_store_sales.sql
+kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- hadoop fs -put select_count_store_sales.sql /tmp/
+kubectl apply -f spark-application-sqltest.yaml -n spark-operator
+kubectl delete -f spark-application-sqltest.yaml -n spark-operator
+kubectl logs -n spark-operator spark-application-sqltest-driver
+:<<EOF
+23/03/11 10:49:58 ERROR MySparkSQLCLIDriver: error when exec MySparkSQLCLIDriver. (No FileSystem for scheme "jfs")
+23/03/11 10:49:58 WARN ExecutorPodsWatchSnapshotSource: Kubernetes client has been closed.
+Exception in thread "main" java.lang.RuntimeException: MySparkSQLCLIDriver exit with code(-1)
+	at org.apache.spark.sql.hive.my.MySparkSQLCLIDriver$.main(MySparkSQLCLIDriver.scala:204)
+	at org.apache.spark.sql.hive.my.MySparkSQLCLIDriver.main(MySparkSQLCLIDriver.scala)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
 EOF
 
 

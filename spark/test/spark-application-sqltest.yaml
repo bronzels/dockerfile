@@ -1,0 +1,21 @@
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: SparkApplication
+metadata:
+  name: spark-application-sqltest
+spec:
+  type: Scala
+  mode: cluster
+  image: "harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:3.3.1"
+  sparkVersion: 3.3.1
+  mainClass: org.apache.spark.sql.hive.my.MySparkSQLCLIDriver
+  mainApplicationFile: "local:///opt/spark/work-dir/my-spark-sql-cluster-3.jar"
+  arguments:
+    - "-f"
+    - "jfs://miniofs/tmp/show_databases.sql"
+  sparkConfigMap: spark-config-sql-runner
+  driver:
+    labels:
+      version: 3.3.1
+  executor:
+    labels:
+      version: 3.3.1

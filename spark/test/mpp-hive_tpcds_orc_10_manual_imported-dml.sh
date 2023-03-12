@@ -111,7 +111,7 @@ kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Run
 
 kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- rm -f *.delta
 kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- rm -f ${SPARK_JOB_HOME}/${shfile}
-kubectl cp ${shfile} -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'`:${SPARK_JOB_HOME}/${shfile}
+kubectl cp ../${shfile} -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'`:${SPARK_JOB_HOME}/${shfile}
 kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- ls -l
 kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- cat ${shfile}
 

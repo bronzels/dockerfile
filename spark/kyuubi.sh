@@ -51,7 +51,7 @@ $SED -i "/USER \${kyuubi_uid}/i\COPY --chown=hdfs:root spark-defaults.conf \${SP
 $SED -i 's/spark-binary/spark/g' ${file}
 $SED -i '/COPY LICENSE NOTICE RELEASE/i\RUN chown -R kyuubi:root ${SPARK_HOME}' ${file}
 
-kubectl cp -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'`:/app/hdfs/spark park
+kubectl cp -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'`:/opt/spark park
 chmod a+x spark/bin/*
 chmod a+x spark/sbin/*
 file=spark/conf/core-site.xml
@@ -74,7 +74,7 @@ cat << EOF >> ${file}
 </configuration>
 EOF
 
-DOCKER_BUILDKIT=1 docker build ./ -f docker/Dockerfile --progress=plain --build-arg spark_provided="spark_provided" --build-arg spark_home_in_docker="/app/hdfs/spark" --build-arg BASE_IMAGE="${BASE_IMAGE}" -t harbor.my.org:1080/sqlengine/kyuubi-juicefs-volcano-rss:${KYUUBI_VERSION}
+DOCKER_BUILDKIT=1 docker build ./ -f docker/Dockerfile --progress=plain --build-arg spark_provided="spark_provided" --build-arg spark_home_in_docker="/opt/spark" --build-arg BASE_IMAGE="${BASE_IMAGE}" -t harbor.my.org:1080/sqlengine/kyuubi-juicefs-volcano-rss:${KYUUBI_VERSION}
 #built-in
 #DOCKER_BUILDKIT=1 docker build ./ -f docker/Dockerfile --progress=plain -t harbor.my.org:1080/sqlengine/kyuubi-juicefs-volcano-rss:${KYUUBI_VERSION}
 docker push harbor.my.org:1080/sqlengine/kyuubi-juicefs-volcano-rss:${KYUUBI_VERSION}
@@ -240,7 +240,7 @@ io.fabric8.kubernetes.client.KubernetesClientException: Failure executing: POST 
 
 日志里有kyuubi组装的spark-submit语句，调试时优先看这个是否配置在kyuubi-defaults.conf的配置是否会转换出现在这里，提交时间被用来判断任务超时，调试时可以删掉
 	--conf spark.kyuubi.engine.submit.time=1678355305394 \
-/app/hdfs/spark/bin/spark-submit \
+/opt/spark/bin/spark-submit \
 	--class org.apache.kyuubi.engine.spark.SparkSQLEngine \
 	--conf spark.hive.server2.thrift.resultset.default.fetch.size=1000 \
 	--conf spark.kyuubi.client.ipAddress=100.110.242.107 \
@@ -259,7 +259,7 @@ io.fabric8.kubernetes.client.KubernetesClientException: Failure executing: POST 
 	--conf spark.kubernetes.driver.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
 	--conf spark.kubernetes.executor.pod.featureSteps=org.apache.spark.deploy.k8s.features.VolcanoFeatureStep \
 	--conf spark.kubernetes.scheduler.name=volcano \
-	--conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/app/hdfs/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
+	--conf spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml \
 	--conf spark.submit.deployMode=cluster \
 	--conf spark.kubernetes.driverEnv.SPARK_USER_NAME=hdfs \
 	--conf spark.executorEnv.SPARK_USER_NAME=hdfs \

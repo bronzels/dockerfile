@@ -83,15 +83,22 @@ EOF
 
 
 #hudi integration
-HUDI_VERSION=0.13.0
+#HUDI_VERSION=0.13.0
+HUDI_VERSION=0.12.2
 wget -c https://github.com/apache/hudi/archive/refs/tags/release-${HUDI_VERSION}.tar.gz
 tar xzvf hudi-release-${HUDI_VERSION}.tar.gz
 cd hudi-release-${HUDI_VERSION}
+#flink, jdk11
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-11.0.17.jdk/Contents/Home
+JDK=11
+#spark, jdk8
+JDK=8
 mvn clean package -DskipTests -Dspark3.3 -Dflink1.15 -Dscala-2.12 -Dhadoop.version=3.2.1 -Pflink-bundle-shade-hive3
   mvn install:install-file -DgroupId=io.confluent -DartifactId=kafka-avro-serializer -Dversion=5.3.4 -Dpackaging=jar -Dfile=kafka-avro-serializer-5.3.4.jar
   mvn install:install-file -DgroupId=io.confluent -DartifactId=common-config -Dversion=5.3.4 -Dpackaging=jar -Dfile=common-config-5.3.4.jar
   mvn install:install-file -DgroupId=io.confluent -DartifactId=common-utils -Dversion=5.3.4 -Dpackaging=jar -Dfile=common-utils-5.3.4.jar
   mvn install:install-file -DgroupId=io.confluent -DartifactId=kafka-schema-registry-client -Dversion=5.3.4 -Dpackaging=jar -Dfile=kafka-schema-registry-client-5.3.4.jar
+mv packaging packaging.${JDK}
 #0.12.2以下版本
 #修改hadoop3兼容问题
 file=hudi-common/src/main/java/org/apache/hudi/common/table/log/block/HoodieParquetDataBlock.java
@@ -99,8 +106,22 @@ $SED -i 's@try (FSDataOutputStream outputStream = new FSDataOutputStream(baos))@
 
 cp ${PRJ_HOME}/juicefs/core-site.xml ./
 
+kubectl cp -n spark-operator spark-test:/app/hdfs/entrypoint.sh entrypoint.sh
+chmod a+x entrypoint.sh
+file=entrypoint.sh
+cp ${file} ${file}.bk
+$SED -i '/case "$1" in/i\SPARK_CLASSPATH="/opt/spark/conf::/opt/spark/jars/*:/opt/spark/imgconf";' ${file}
+cp ${PRJ_HOME}/juicefs/juicefs-hadoop-1.0.2.jar ./
+
 DOCKER_BUILDKIT=1 docker build ./ --progress=plain --build-arg java_image_tag=8-jre --build-arg SPARK_VERSION="${SPARK_VERSION}" --build-arg HADOOP_VERSION="${HADOOP_VERSION}" --build-arg HIVEREV="${HIVEREV}" --build-arg RSS_VERSION="${RSS_VERSION}" -t harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:${SPARK_VERSION}
 docker push harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:${SPARK_VERSION}
+
+
+#SPARK_CLASSPATH="/opt/spark/jars/*:/opt/spark/conf";
+unset SPARK_CLASSPATH
+cat /opt/spark/conf/spark.properties
+ls -l /opt/spark/conf
+cat /opt/spark/conf/cores-site.xml
 
 ansible all -m shell -a"crictl images|grep spark-juicefs-volcano-rss|awk '{print \$3}'|xargs crictl rmi"
 
@@ -114,6 +135,8 @@ docker push harbor.my.org:1080/bronzels/spark-juicefs-tpc:${SPARK_VERSION}
 EOF
 DOCKER_BUILDKIT=1 docker build ./ -f Dockerfile.tpc --progress=plain -t harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:${SPARK_VERSION}
 docker push harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss-tpc:${SPARK_VERSION}
+
+wget -c https://github.com/GoogleCloudPlatform/spark-on-k8s-operator/releases/download/spark-operator-chart-1.1.26/spark-operator-1.1.26.tgz
 
 helm repo add spark-operator https://googlecloudplatform.github.io/spark-on-k8s-operator
 
@@ -145,6 +168,18 @@ kubectl apply -f app-pi.yaml -n spark-operator
 kubectl delete -f app-pi.yaml -n spark-operator
 kubectl delete -f app-pi-nfs-pvc.yaml -n spark-operator
 EOF
+
+kubectl create cm spark-config-sql-runner -n spark-operator --from-file=conf
+  sparkConf:
+    "spark.kubernetes.scheduler.volcano.podGroupTemplateFile": "/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup.yaml"
+    "spark.executor.memory": "4g"
+
+COPY --from=hadoop --chown=hdfs:root /app/hdfs/hadoop /opt/hadoop
+RUN rm -rf /opt/hadoop/share/doc
+ENV HADOOP_HOME=/opt/hadoop \
+    HADOOP_CONF_DIR=/opt/hadoop/etc/hadoop
+ENV PATH=${PATH}:${HADOOP_HOME}/bin
+
 
 kubectl apply -f clusterrole-endpoints-reader.yaml
 kubectl create clusterrolebinding endpoints-reader-default \

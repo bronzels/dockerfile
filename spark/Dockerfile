@@ -39,9 +39,9 @@ RUN set -ex && \
     chgrp root /etc/passwd && chmod ug+rw /etc/passwd && \
     rm -rf /var/cache/apt/* && rm -rf /var/lib/apt/lists/*
 
-RUN useradd -u 10001 -d /app/hdfs hdfs
-RUN mkdir -p /app/hdfs
-RUN chown hdfs:hdfs /app/hdfs
+RUN useradd -u 10001 -d /opt/spark hdfs
+RUN mkdir -p /opt/spark
+RUN chown hdfs:hdfs /opt/spark
 RUN usermod -g root hdfs
 
 RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
@@ -51,86 +51,90 @@ USER hdfs
 FROM base as spark
 ARG SPARK_VERSION
 ### Download Spark Distribution ###
-WORKDIR /app/hdfs
+WORKDIR /opt/spark
 
-#COPY spark-${SPARK_VERSION}-bin-hadoop3.tgz /app/hdfs/
+#COPY spark-${SPARK_VERSION}-bin-hadoop3.tgz /opt/spark/
 #RUN tar xzvf spark-${SPARK_VERSION}-bin-hadoop3.tgz
-COPY --chown=hdfs:root spark-${SPARK_VERSION}-bin-volcano-rss.tgz /app/hdfs/
+COPY --chown=hdfs:root spark-${SPARK_VERSION}-bin-volcano-rss.tgz /opt/spark/
 RUN tar xzvf spark-${SPARK_VERSION}-bin-volcano-rss.tgz
 
 FROM spark as build
 ### Create target directories ###
-RUN mkdir -p /app/hdfs/spark/jars
+RUN mkdir -p /opt/spark/jars
 
 FROM harbor.my.org:1080/bronzels/hive-ubussh-juicefs:0.1 as hadoop
 
 ### Set Spark dir ARG for use Docker build context on root project dir ###
 FROM base as final
+ENV SPARK_HOME /opt/spark
+
+RUN mkdir ${SPARK_HOME}/logs
+RUN mkdir ${SPARK_HOME}/work-dir
+
+USER root
 ARG SPARK_VERSION
 ARG HADOOP_VERSION
 ARG HIVEREV
 ARG RSS_VERSION
 
-RUN mkdir /app/hdfs/spark
-
-#ENV _spark_dir=/app/hdfs/spark-${SPARK_VERSION}-bin-hadoop3
-ENV _spark_dir=/app/hdfs/spark-${SPARK_VERSION}-bin-volcano-rss
+#ENV _spark_dir=/opt/spark-${SPARK_VERSION}-bin-hadoop3
+ENV _spark_dir=/opt/spark/spark-${SPARK_VERSION}-bin-volcano-rss
 ### Copy files from the build image ###
-COPY --from=build --chown=hdfs:root ${_spark_dir}/jars /app/hdfs/spark/jars
-COPY --from=build --chown=hdfs:root /app/hdfs/spark/jars /app/hdfs/spark/jars
-COPY --from=build --chown=hdfs:root ${_spark_dir}/bin /app/hdfs/spark/bin
-COPY --from=build --chown=hdfs:root ${_spark_dir}/sbin /app/hdfs/spark/sbin
-COPY --from=build --chown=hdfs:root ${_spark_dir}/kubernetes/dockerfiles/spark/entrypoint.sh /app/hdfs/
-COPY --from=build --chown=hdfs:root ${_spark_dir}/kubernetes/dockerfiles/spark/decom.sh /app/hdfs/
-COPY --from=build --chown=hdfs:root ${_spark_dir}/examples /app/hdfs/spark/examples
-COPY --from=build --chown=hdfs:root ${_spark_dir}/kubernetes/tests /app/hdfs/spark/tests
-COPY --from=build --chown=hdfs:root ${_spark_dir}/data /app/hdfs/spark/data
+COPY --from=build --chown=hdfs:root ${_spark_dir}/jars /opt/spark/jars
+COPY --from=build --chown=hdfs:root /opt/spark/jars /opt/spark/jars
+COPY --from=build --chown=hdfs:root ${_spark_dir}/bin /opt/spark/bin
+COPY --from=build --chown=hdfs:root ${_spark_dir}/sbin /opt/spark/sbin
+COPY --from=build --chown=hdfs:root ${_spark_dir}/kubernetes/dockerfiles/spark/decom.sh /opt/spark/
+COPY --from=build --chown=hdfs:root ${_spark_dir}/examples /opt/spark/examples
+COPY --from=build --chown=hdfs:root ${_spark_dir}/kubernetes/tests /opt/spark/tests
+COPY --from=build --chown=hdfs:root ${_spark_dir}/data /opt/spark/data
 
-ENV SPARK_HOME /app/hdfs/spark
+WORKDIR /opt/spark/work-dir
+RUN chmod g+w /opt/spark/work-dir
+RUN chmod a+x /opt/spark/decom.sh
 
-RUN mkdir /app/hdfs/spark/work-dir
-WORKDIR /app/hdfs/spark/work-dir
-RUN chmod g+w /app/hdfs/spark/work-dir
-RUN chmod a+x /app/hdfs/decom.sh
-
-ENTRYPOINT [ "/app/hdfs/entrypoint.sh" ]
+ENTRYPOINT [ "/opt/spark/entrypoint.sh" ]
 
 # Specify the User that the actual main process will run as
 # USER ${spark_uid}
 
 # Add native libs
 
-RUN mkdir /app/hdfs/spark/conf
+#RUN mkdir /opt/spark/imgconf
+#ENV SPARK_CONF_DIR=/opt/spark/imgconf
 
-COPY --from=hadoop --chown=hdfs:root /app/hdfs/hadoop/share/hadoop/common/lib/juicefs-hadoop-1.0.2.jar /app/hdfs/spark/jars
-#COPY --from=hadoop --chown=hdfs:root /app/hdfs/hadoop/etc/hadoop/core-site.xml /app/hdfs/spark/conf
-COPY --chown=hdfs:root core-site.xml /app/hdfs/spark/conf
+COPY --chown=hdfs:root juicefs-hadoop-1.0.2.jar /opt/spark/jars/
+COPY --chown=hdfs:root core-site.xml /opt/spark/conf/
+COPY --chown=hdfs:root hdfs-site.xml /opt/spark/conf/
 
-COPY --from=hadoop /usr/local/bin/mc /usr/local/bin/mc
-COPY --from=hadoop /usr/local/bin/miniogw /usr/local/bin/miniogw
-COPY --from=hadoop /usr/local/bin/juicefs /usr/local/bin/juicefs
+COPY --from=hadoop /usr/local/bin/mc /usr/local/bin/
+COPY --from=hadoop /usr/local/bin/miniogw /usr/local/bin/
+COPY --from=hadoop /usr/local/bin/juicefs /usr/local/bin/
 
-COPY --chown=hdfs:root hive-site.xml /app/hdfs/spark/conf/
-#RUN ln -s  /app/hdfs/hive/lib/mysql-connector-java.jar  /app/hdfs/spark/jars/mysql-connector-java.jar
+COPY --chown=hdfs:root hive-site.xml /opt/spark/imgconf/
+COPY --chown=hdfs:root hive-site.xml /opt/spark/conf/
+#RUN ln -s  /opt/spark/hive/lib/mysql-connector-java.jar  /opt/spark/jars/mysql-connector-java.jar
 
-COPY --chown=hdfs:root spark-sql-cluster-mode-3/target/my-spark-sql-cluster-3.jar /app/hdfs/spark/jars/
+COPY --chown=hdfs:root spark-sql-cluster-mode-3/target/my-spark-sql-cluster-3.jar /opt/spark/work-dir/
 
-COPY --chown=hdfs:root celeborn-client-spark-3-shaded_2.12-${RSS_VERSION}.jar /app/hdfs/spark/jars/
+COPY --chown=hdfs:root celeborn-client-spark-3-shaded_2.12-${RSS_VERSION}.jar /opt/spark/jars/
 
-COPY --chown=hdfs:root spark-defaults.conf /app/hdfs/spark/conf/spark-defaults.conf
-#COPY --chown=hdfs:root spark-defaults-rss.conf /app/hdfs/spark/conf/spark-defaults.conf
+COPY --chown=hdfs:root spark-defaults.conf /opt/spark/imgconf/
+COPY --chown=hdfs:root spark-defaults.conf /opt/spark/conf/
+#COPY --chown=hdfs:root spark-defaults-rss.conf /opt/spark/imgconf/spark-defaults.conf
 
 #history server
 COPY envsubst /usr/local/bin/
-RUN mkdir ${SPARK_HOME}/logs
-COPY --chown=hdfs:root hdfs-site.xml /app/hdfs/spark/conf/
 
 ENV PATH=.:${PATH}:${SPARK_HOME}/bin
 ENV TIME_ZONE Asia/Shanghai
-COPY --chown=hdfs:root spark-sql-job.sh /app/hdfs/spark/work-dir/
-COPY --chown=hdfs:root podgroups /app/hdfs/spark/work-dir/podgroups
+COPY --chown=hdfs:root spark-sql-delta.sh /opt/spark/work-dir/
+COPY --chown=hdfs:root podgroups /opt/spark/work-dir/podgroups
 
-WORKDIR /app/hdfs/spark/work-dir
+WORKDIR /opt/spark/work-dir
 
-COPY --chown=hdfs:root doris-spark-connector-master/spark-doris-connector/target/spark-doris-connector-3.3_2.12-1.0.0-SNAPSHOT.jar /app/hdfs/spark/jars/
-#COPY --chown=hdfs:root starrocks-connector-for-apache-spark-main/target/starrocks-spark3_2.12-1.0.0.jar /app/hdfs/spark/jars/
+COPY --chown=hdfs:root doris-spark-connector-master/spark-doris-connector/target/spark-doris-connector-3.3_2.12-1.0.0-SNAPSHOT.jar /opt/spark/jars/
+#COPY --chown=hdfs:root starrocks-connector-for-apache-spark-main/target/starrocks-spark3_2.12-1.0.0.jar /opt/spark/jars/
+
+COPY --chown=hdfs:root entrypoint.sh /opt/spark/entrypoint.sh
+USER hdfs
