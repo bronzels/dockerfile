@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: flink-dlink
+  name: dlink
+spec:
+  selector:
+    matchLabels:
+      app: flink-dlink
+  template:
+    metadata:
+      labels:
+        app: flink-dlink
+    spec:
+      containers:
+        - image: anjia0532/dlink:v0.6.6-1
+          name: dlink
+          volumeMounts:
+            - mountPath: opt/dlink/config/application.yml
+              name: admin-config
+              subPath: application.yml
+      volumes:
+        - configMap:
+            name: dlink-config
+          name: admin-config

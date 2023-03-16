@@ -1,0 +1,24 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: -n
+  name: endpoints-reader-spark
+rules:
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get", "watch", "list"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["create", "delete", "update", "get", "watch", "list"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create", "delete", "update", "get", "watch", "list"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["create", "delete", "update", "get", "watch", "list"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["create", "delete", "update", "get", "watch", "list"]
+  - apiGroups: ["scheduling.volcano.sh"]
+    resources: ["podgroups"]
+    verbs: ["create", "delete", "update", "get", "watch", "list"]

@@ -145,6 +145,7 @@ helm install my spark-operator/spark-operator \
   --namespace spark-operator --create-namespace \
   --set image.repository=registry.cn-hangzhou.aliyuncs.com/bronzels/gcr.io-spark-operator-spark-operator-v1beta2-1.3.0-3.1.1 \
   --set image.tag=1.0
+helm uninstall my -n spark-operator
 
 #gcr.io/spark-operator/spark-operator:v1beta2-1.3.3-3.1.1
 #registry.cn-hangzhou.aliyuncs.com/bronzels/gcr.io-spark-operator-spark-operator-v1beta2-1.3.3-3.1.1:
@@ -181,11 +182,11 @@ ENV HADOOP_HOME=/opt/hadoop \
 ENV PATH=${PATH}:${HADOOP_HOME}/bin
 
 
-kubectl apply -f clusterrole-endpoints-reader.yaml
-kubectl create clusterrolebinding endpoints-reader-default \
-  --clusterrole=endpoints-reader  \
+kubectl apply -f clusterrole-endpoints-reader-spark.yaml
+kubectl create clusterrolebinding endpoints-reader-default-spark \
+  --clusterrole=endpoints-reader-spark  \
   --serviceaccount=spark-operator:default
 :<<EOF
-kubectl delete clusterrolebinding endpoints-reader-default
-kubectl delete -f clusterrole-endpoints-reader.yaml
+kubectl delete clusterrolebinding endpoints-reader-default-spark
+kubectl delete -f clusterrole-endpoints-reader-spark.yaml
 EOF

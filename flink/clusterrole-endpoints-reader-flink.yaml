@@ -2,7 +2,7 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   namespace: -n
-  name: endpoints-reader
+  name: endpoints-reader-flink
 rules:
   - apiGroups: [""]
     resources: ["endpoints"]
@@ -22,3 +22,9 @@ rules:
   - apiGroups: ["scheduling.volcano.sh"]
     resources: ["podgroups"]
     verbs: ["create", "delete", "update", "get", "watch", "list"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["create", "delete", "update", "get", "watch", "list"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "watch", "list"]

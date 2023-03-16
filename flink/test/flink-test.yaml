@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: flink-test
+  labels:
+    app: flink
+spec:
+  containers:
+    - name: flink-test
+      #image: "harbor.my.org:1080/flink/flink-juicefs:1.15.3"
+      #image: "harbor.my.org:1080/flink/flink-juicefs:1.14.6"
+      #image: "harbor.my.org:1080/flink/flink-juicefs:1.16.1"
+      image: "harbor.my.org:1080/flink/flink-juicefs:1.14.0"
+      command: ["tail"]
+      args: ["-f", "/dev/null"]
