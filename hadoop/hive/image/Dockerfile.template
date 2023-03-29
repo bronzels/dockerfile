@@ -25,3 +25,9 @@ RUN ./tpch-build.sh
 WORKDIR $HIVE_HOME
 
 #RUN sed -i '/export HADOOP_CLIENT_OPTS/a\  export HIVE_METASTORE_HADOOP_OPTS="-Xms2048m -Xmx4096m"\' /app/hdfs/hive/bin/ext/metastore.sh
+
+#TARGET_BUILT=hadoop2hive2
+ARG TARGET_BUILT=?
+ARG HUDI_VERSION=?
+COPY --chown=hdfs:root hudi/${TARGET_BUILT}/hudi-hive-sync-bundle-${HUDI_VERSION}.jar /app/hdfs/hive/lib
+COPY --chown=hdfs:root hudi/${TARGET_BUILT}/hudi-hadoop-mr-bundle-${HUDI_VERSION}.jar /app/hdfs/hive/lib

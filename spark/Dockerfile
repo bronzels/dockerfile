@@ -49,10 +49,11 @@ RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 USER hdfs
 
 FROM base as spark
-ARG SPARK_VERSION
+
 ### Download Spark Distribution ###
 WORKDIR /opt/spark
 
+ARG SPARK_VERSION=?
 #COPY spark-${SPARK_VERSION}-bin-hadoop3.tgz /opt/spark/
 #RUN tar xzvf spark-${SPARK_VERSION}-bin-hadoop3.tgz
 COPY --chown=hdfs:root spark-${SPARK_VERSION}-bin-volcano-rss.tgz /opt/spark/
@@ -72,11 +73,8 @@ RUN mkdir ${SPARK_HOME}/logs
 RUN mkdir ${SPARK_HOME}/work-dir
 
 USER root
-ARG SPARK_VERSION
-ARG HADOOP_VERSION
-ARG HIVEREV
-ARG RSS_VERSION
 
+ARG SPARK_VERSION=?
 #ENV _spark_dir=/opt/spark-${SPARK_VERSION}-bin-hadoop3
 ENV _spark_dir=/opt/spark/spark-${SPARK_VERSION}-bin-volcano-rss
 ### Copy files from the build image ###
@@ -103,7 +101,8 @@ ENTRYPOINT [ "/opt/spark/entrypoint.sh" ]
 #RUN mkdir /opt/spark/imgconf
 #ENV SPARK_CONF_DIR=/opt/spark/imgconf
 
-COPY --chown=hdfs:root juicefs-hadoop-1.0.2.jar /opt/spark/jars/
+ARG JUICEFS_VERSION=?
+COPY --chown=hdfs:root juicefs-hadoop-${JUICEFS_VERSION}.jar /opt/spark/jars/
 COPY --chown=hdfs:root core-site.xml /opt/spark/conf/
 COPY --chown=hdfs:root hdfs-site.xml /opt/spark/conf/
 
@@ -117,7 +116,10 @@ COPY --chown=hdfs:root hive-site.xml /opt/spark/conf/
 
 COPY --chown=hdfs:root spark-sql-cluster-mode-3/target/my-spark-sql-cluster-3.jar /opt/spark/work-dir/
 
-COPY --chown=hdfs:root celeborn-client-spark-3-shaded_2.12-${RSS_VERSION}.jar /opt/spark/jars/
+ARG SCALA_VERSION=?
+ARG SPARK_SHORTEST_VERSION=?
+ARG RSS_VERSION=?
+COPY --chown=hdfs:root celeborn-client-spark-${SPARK_SHORTEST_VERSION}-shaded_${SCALA_VERSION}-${RSS_VERSION}.jar /opt/spark/jars/
 
 COPY --chown=hdfs:root spark-defaults.conf /opt/spark/imgconf/
 COPY --chown=hdfs:root spark-defaults.conf /opt/spark/conf/
@@ -133,8 +135,13 @@ COPY --chown=hdfs:root podgroups /opt/spark/work-dir/podgroups
 
 WORKDIR /opt/spark/work-dir
 
-COPY --chown=hdfs:root doris-spark-connector-master/spark-doris-connector/target/spark-doris-connector-3.3_2.12-1.0.0-SNAPSHOT.jar /opt/spark/jars/
-#COPY --chown=hdfs:root starrocks-connector-for-apache-spark-main/target/starrocks-spark3_2.12-1.0.0.jar /opt/spark/jars/
+ARG SPARK_SHORT_VERSION=?
+COPY --chown=hdfs:root doris-spark-connector-master/spark-doris-connector/target/spark-doris-connector-${SPARK_SHORT_VERSION}_${SCALA_VERSION}-1.0.0-SNAPSHOT.jar /opt/spark/jars/
+#COPY --chown=hdfs:root starrocks-connector-for-apache-spark-main/target/starrocks-spark${SPARK_SHORTEST_VERSION}_${SCALA_VERSION}-1.0.0.jar /opt/spark/jars/
 
 COPY --chown=hdfs:root entrypoint.sh /opt/spark/entrypoint.sh
 USER hdfs
+
+ARG TARGET_BUILT=?
+ARG HUDI_VERSION=?
+COPY hudibk/${TARGET_BUILT}/hudi-spark${SPARK_SHORT_VERSION}-bundle_${SCALA_VERSION}-${HUDI_VERSION}.jar /opt/spark/jars/

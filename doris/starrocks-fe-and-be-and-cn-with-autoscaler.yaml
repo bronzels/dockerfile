@@ -11,6 +11,7 @@ spec:
         storageSize: 1Gi
         mountPath: /opt/starrocks/fe/meta
     image: harbor.my.org:1080/doris/starrocks-juicefs-fe:2.5.2
+    #image: harbor.my.org:1080/doris/starrocks-juicefs-fe:3.0.0-avro
     replicas: 1
     requests:
       cpu: 2
@@ -22,12 +23,14 @@ spec:
         storageSize: 50Gi
         mountPath: /opt/starrocks/be/storage
     image: harbor.my.org:1080/doris/starrocks-juicefs-be:2.5.2
+    #image: harbor.my.org:1080/doris/starrocks-juicefs-be:3.0.0-avro
     replicas: 1
     requests:
       cpu: 1
       memory: 4Gi
   starRocksCnSpec:
     image: harbor.my.org:1080/doris/starrocks-juicefs-cn:2.5.2
+    #image: harbor.my.org:1080/doris/starrocks-juicefs-cn:3.0.0-avro
     requests:
       cpu: 2
       memory: 18Gi

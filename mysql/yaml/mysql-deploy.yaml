@@ -1,0 +1,60 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deploy
+spec:
+  selector:
+    matchLabels:
+      app: mysql-deploy
+  template:
+    metadata:
+      labels:
+        app: mysql-deploy
+    spec:
+      containers:
+      - name: mysql-deploy
+        #image: mysql:8.0.28
+        image: mysql:5.7.28
+        #image: harbor.my.org:1080/oltp/mysql:8.0.28
+        #image: harbor.my.org:1080/oltp/mysql:5.7.28
+        #command: ["bash", "-c", "tail -f /dev/null"]
+        args:
+        - --character-set-server=utf8mb4
+        - --collation-server=utf8mb4_unicode_ci
+        - --ignore-db-dir=lost+found
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          #value: "123456"
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: database-dba-password
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+        - name: mysql-config
+          mountPath: /etc/mysql/conf.d/my.cnf
+          subPath: my.cnf
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-pvc
+      - name: mysql-config
+        configMap:
+          name: mysql-config      
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-svc
+spec:
+  type: NodePort
+  ports:
+  - port: 3306
+    targetPort: 3306
+    nodePort: 31111
+  selector:
+    app: mysql-deploy

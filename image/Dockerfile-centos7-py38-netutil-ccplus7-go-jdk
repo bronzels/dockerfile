@@ -57,3 +57,17 @@ RUN update-alternatives --auto jstat
 
 COPY apache-maven-3.8.6 /root/apache-maven
 ENV PATH $PATH:/root/apache-maven/bin
+
+#starrocks构建依赖
+RUN yum install -y ccache bzip2 wget git libstdc++-static byacc flex automake libtool binutils-devel bison ncurses-devel make mlocate unzip patch which vim-common redhat-lsb-core zip libcurl-devel updatedb
+#starrocks要求3.14以上版本cmake
+RUN wget -c https://cmake.org/files/v3.22/cmake-3.22.1.tar.gz
+RUN tar -zxvf cmake-3.22.1.tar.gz
+WORKDIR /root/workspace/cmake-3.22.1
+RUN yum install -y sudo
+RUN ./bootstrap && make -j4 && sudo make install
+RUN rm -rf cmake*
+RUN yum install devtoolset-10 -y
+RUN scl enable devtoolset-10 bash
+RUN source scl_source enable devtoolset-10
+RUN yum install -y epel-release

@@ -1,0 +1,17 @@
+version: "3.7"
+services:
+  mysql:
+    image: mysql:5.7.28
+    container_name: mysql-binlog2
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      # root用户密码
+      MYSQL_ROOT_PASSWORD: 123456
+      TZ: Asia/Shanghai
+    ports:
+      - 3306:3306
+    volumes:
+      - /Volumes/data/dockervol/mysqlmaster/data:/var/lib/mysql
+      - /Volumes/data/dockervol/mysqlmaster/log:/var/log/mysql
+      - /Volumes/data/dockervol/mysqlmaster/conf:/etc/mysql

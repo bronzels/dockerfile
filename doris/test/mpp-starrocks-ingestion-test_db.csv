@@ -1,0 +1,4 @@
+query,time
+tmp-mpp-starrocks-ingestion-test_db-call_center-sql,11.140988628
+tmp-mpp-starrocks-ingestion-test_db-catalog_page-sql,10.540819603
+tmp-mpp-starrocks-ingestion-test_db-catalog_returns-sql,11.394587921

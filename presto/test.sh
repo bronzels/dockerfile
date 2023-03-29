@@ -111,6 +111,44 @@ LINE 23:   c_last_review_date,
            ^
 
 
+presto@my-presto-kube-coordinator-8b7f77f77-flg6h:~$ presto-server/bin/presto-cli --server my-presto-kube:8080 --catalog hive --schema hudi_mydb
+presto:hudi_mydb> SHOW TABLES;
+         Table         
+-----------------------
+ products_hudi_sink    
+ products_hudi_sink_ro 
+ products_hudi_sink_rt 
+(3 rows)
+
+Query 20230323_043139_00002_wztng, FINISHED, 4 nodes
+Splits: 53 total, 53 done (100.00%)
+168ms [3 rows, 117B] [17 rows/s, 698B/s]
+
+presto:hudi_mydb> SELECT * FROM products_hudi_sink;
+ _hoodie_commit_time | _hoodie_partition_path | _hoodie_operation | _hoodie_record_key | _hoodie_commit_seqno | _hoodie_file_name | id | name | description | dt 
+---------------------+------------------------+-------------------+--------------------+----------------------+-------------------+----+------+-------------+----
+(0 rows)
+
+Query 20230323_043148_00003_wztng, FINISHED, 1 node
+Splits: 1 total, 1 done (100.00%)
+170ms [0 rows, 0B] [0 rows/s, 0B/s]
+
+presto:hudi_mydb> SELECT * FROM products_hudi_sink_rt;
+ _hoodie_commit_time | _hoodie_commit_seqno  | _hoodie_record_key | _hoodie_partition_path |          _hoodie_file_name           | _hoodie_operation | id  |        name        |                       descri>
+---------------------+-----------------------+--------------------+------------------------+--------------------------------------+-------------------+-----+--------------------+----------------------------->
+ 20230322212259089   | 20230322212259089_0_7 | id:107             | dt=20221214            | be2df080-500b-4842-b7b0-753d72396e7c | I                 | 107 | rocks              | box of assorted rocks       >
+ 20230322212259089   | 20230322212259089_0_9 | id:109             | dt=20221214            | be2df080-500b-4842-b7b0-753d72396e7c | I                 | 109 | spare tire         | 24 inch spare tire          >
+ 20230322212259089   | 20230322212259089_0_8 | id:108             | dt=20221214            | be2df080-500b-4842-b7b0-753d72396e7c | I                 | 108 | jacket             | water resistent black wind b>
+ 20230322212259089   | 20230322212259089_0_6 | id:106             | dt=20211214            | 632f5b20-489f-449f-bda7-ca9744b4e26a | I                 | 106 | hammer             | 16oz carpenter's hammer     >
+ 20230322212259089   | 20230322212259089_0_5 | id:105             | dt=20211214            | 632f5b20-489f-449f-bda7-ca9744b4e26a | I                 | 105 | hammer             | 14oz carpenter's hammer     >
+ 20230322212259089   | 20230322212259089_0_4 | id:104             | dt=20211214            | 632f5b20-489f-449f-bda7-ca9744b4e26a | I                 | 104 | hammer             | 12oz carpenter's hammer     >
+ 20230322212259089   | 20230322212259089_0_1 | id:101             | dt=20201214            | 2081fb4d-9035-4ece-a09a-c2bfa1595af8 | I                 | 101 | scooter            | Small 2-wheel scooter       >
+ 20230322212259089   | 20230322212259089_0_3 | id:103             | dt=20201214            | 2081fb4d-9035-4ece-a09a-c2bfa1595af8 | I                 | 103 | 12-pack drill bits | 12-pack of drill bits with s>
+ 20230322212259089   | 20230322212259089_0_2 | id:102             | dt=20201214            | 2081fb4d-9035-4ece-a09a-c2bfa1595af8 | I                 | 102 | car battery        | 12V car battery             >
+(9 rows)
+
+
+
 engine=presto
 
 

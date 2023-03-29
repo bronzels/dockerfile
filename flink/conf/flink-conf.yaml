@@ -1,0 +1,11 @@
+taskmanager.numberOfTaskSlots: 2
+classloader.check-leaked-classloader: false
+env.java.opts.jobmanager: -Duser.timezone=GMT+08
+env.java.opts.taskmanager: -Duser.timezone=GMT+08
+kubernetes.rest-service.exposed.type: NodePort
+kubernetes.high-availability: org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory
+high-availability.storageDir: jfs://miniofs/flink/recovery
+kubernetes.rest-service.exposed.type: NodePort
+state.backend: rocksdb
+state.checkpoints.dir: jfs://miniofs/flink/checkpoints
+state.backend.incremental: true

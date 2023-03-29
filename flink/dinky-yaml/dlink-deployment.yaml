@@ -2,25 +2,61 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: flink-dlink
-  name: dlink
+    app: dlink-flink
+  name: dlink-flink
 spec:
   selector:
     matchLabels:
-      app: flink-dlink
+      app: dlink-flink
   template:
     metadata:
       labels:
-        app: flink-dlink
+        app: dlink-flink
     spec:
-      containers:
-        - image: anjia0532/dlink:v0.6.6-1
-          name: dlink
+      initContainers:
+        - name: init-database
+          image:  harbor.my.org:1080/bronzels/database-tools:1.0
+          env:
+            - name: DRIVER_NAME
+              value: "com.mysql.jdbc.Driver"
+            - name: URL
+              value: "jdbc:mysql://mysql-svc.mysql:3306/mysql?useUnicode=true&characterEncoding=utf8&useSSL=false"
+            - name: USERNAME
+              value: "root"
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dlink-secret
+                  key: database-dba-password
+            - name: DINKY_IDENTIFIED
+              valueFrom:
+                secretKeyRef:
+                  name: dlink-secret
+                  key: database-user-password
           volumeMounts:
-            - mountPath: opt/dlink/config/application.yml
+            - name: init-database-volume
+              mountPath: /root/db_tools/script
+      containers:
+        - image: harbor.my.org:1080/flink/dinky-flink:0.7.2_1.15.4
+          name: dlink-flink
+          env:
+          - name: MYSQL_ADDR
+            value: mysql-svc.mysql
+          - name: MYSQL_USERNAME
+            value: dlink
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: dlink-secret
+                key: database-user-password
+          volumeMounts:
+            - mountPath: /opt/dinky/config/application.yml.customize
               name: admin-config
-              subPath: application.yml
+              subPath: application.yml.customize
       volumes:
         - configMap:
             name: dlink-config
           name: admin-config
+        - configMap:
+            name: init-database-dinky
+          name: init-database-volume

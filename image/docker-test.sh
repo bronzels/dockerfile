@@ -79,6 +79,10 @@ nohup docker build ./ --progress=plain -f Dockerfile-debian11-ccplus-go-jdk -t h
 tail -f build-Dockerfile-debian11-ccplus-go-jdk.log
 docker push harbor.my.org:1080/base/debian11:ccplus-go-jdk
 
+nohup docker build ./ --progress=plain -f Dockerfile-ubuntu22-netutil-ccplus7-go-jdk -t harbor.my.org:1080/base/ubuntu22:netutil-ccplus7-go-jdk > build-Dockerfile-ubuntu22-netutil-ccplus7-go-jdk.log 2>&1 &
+tail -f build-Dockerfile-ubuntu22-netutil-ccplus7-go-jdk.log
+docker push harbor.my.org:1080/base/ubuntu22:netutil-ccplus7-go-jdk
+
 nohup docker build ./ --progress=plain -f Dockerfile-ubuntu20-netutil-ccplus7-go-jdk -t harbor.my.org:1080/base/ubuntu20:netutil-ccplus7-go-jdk > build-Dockerfile-ubuntu20-netutil-ccplus7-go-jdk.log 2>&1 &
 tail -f build-Dockerfile-ubuntu20-netutil-ccplus7-go-jdk.log
 docker push harbor.my.org:1080/base/ubuntu20:netutil-ccplus7-go-jdk

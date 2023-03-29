@@ -19,6 +19,14 @@ HADOOP_VERSION=3.2.1
 HIVEREV=3.1.2
 RSS_VERSION=0.2.0-incubating
 
+HUDI_VERSION=0.12.2
+SCALA_VERSION=2.12
+SPARK_SHORT_VERSION=3.3
+SPARK_SHORTEST_VERSION=3
+RSS_VERSION=0.2.0-incubating
+JUICEFS_VERSION=1.0.3
+
+
 :<<EOF
 wget -c https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop3.tgz
 docker build ./ -f Dockerfile.all --progress=plain --build-arg SPARK_VERSION="${SPARK_VERSION}" --build-arg HADOOP_VERSION="${HADOOP_VERSION}" --build-arg HIVEREV="${HIVEREV}" -t harbor.my.org:1080/bronzels/spark-hadoop-${HADOOP_VERSION}-juicefs:${SPARK_VERSION}
@@ -82,38 +90,33 @@ EOF
 
 
 
-#hudi integration
-#HUDI_VERSION=0.13.0
-HUDI_VERSION=0.12.2
-wget -c https://github.com/apache/hudi/archive/refs/tags/release-${HUDI_VERSION}.tar.gz
-tar xzvf hudi-release-${HUDI_VERSION}.tar.gz
-cd hudi-release-${HUDI_VERSION}
-#flink, jdk11
-export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-11.0.17.jdk/Contents/Home
-JDK=11
-#spark, jdk8
-JDK=8
-mvn clean package -DskipTests -Dspark3.3 -Dflink1.15 -Dscala-2.12 -Dhadoop.version=3.2.1 -Pflink-bundle-shade-hive3
-  mvn install:install-file -DgroupId=io.confluent -DartifactId=kafka-avro-serializer -Dversion=5.3.4 -Dpackaging=jar -Dfile=kafka-avro-serializer-5.3.4.jar
-  mvn install:install-file -DgroupId=io.confluent -DartifactId=common-config -Dversion=5.3.4 -Dpackaging=jar -Dfile=common-config-5.3.4.jar
-  mvn install:install-file -DgroupId=io.confluent -DartifactId=common-utils -Dversion=5.3.4 -Dpackaging=jar -Dfile=common-utils-5.3.4.jar
-  mvn install:install-file -DgroupId=io.confluent -DartifactId=kafka-schema-registry-client -Dversion=5.3.4 -Dpackaging=jar -Dfile=kafka-schema-registry-client-5.3.4.jar
-mv packaging packaging.${JDK}
-#0.12.2以下版本
-#修改hadoop3兼容问题
-file=hudi-common/src/main/java/org/apache/hudi/common/table/log/block/HoodieParquetDataBlock.java
-$SED -i 's@try (FSDataOutputStream outputStream = new FSDataOutputStream(baos))@try (FSDataOutputStream outputStream = new FSDataOutputStream(baos, null))@g' ${file}
 
 cp ${PRJ_HOME}/juicefs/core-site.xml ./
 
-kubectl cp -n spark-operator spark-test:/app/hdfs/entrypoint.sh entrypoint.sh
+kubectl cp -n spark-operator spark-client:/app/hdfs/entrypoint.sh entrypoint.sh
 chmod a+x entrypoint.sh
 file=entrypoint.sh
 cp ${file} ${file}.bk
 $SED -i '/case "$1" in/i\SPARK_CLASSPATH="/opt/spark/conf::/opt/spark/jars/*:/opt/spark/imgconf";' ${file}
-cp ${PRJ_HOME}/juicefs/juicefs-hadoop-1.0.2.jar ./
+cp ${PRJ_HOME}/juicefs/juicefs-hadoop-${JUICEFS_VERSION}.jar ./
 
-DOCKER_BUILDKIT=1 docker build ./ --progress=plain --build-arg java_image_tag=8-jre --build-arg SPARK_VERSION="${SPARK_VERSION}" --build-arg HADOOP_VERSION="${HADOOP_VERSION}" --build-arg HIVEREV="${HIVEREV}" --build-arg RSS_VERSION="${RSS_VERSION}" -t harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:${SPARK_VERSION}
+TARGET_BUILT=hadoop3hive3
+#TARGET_BUILT=hadoop2hive2
+
+# --build-arg HADOOP_VERSION="${HADOOP_VERSION}"\
+# --build-arg HIVEREV="${HIVEREV}"\
+DOCKER_BUILDKIT=1 docker build ./ --progress=plain\
+ --build-arg java_image_tag=8-jre\
+ --build-arg SPARK_VERSION="${SPARK_VERSION}"\
+ --build-arg RSS_VERSION="${RSS_VERSION}"\
+ --build-arg TARGET_BUILT=${TARGET_BUILT}\
+ --build-arg HUDI_VERSION=${HUDI_VERSION}\
+ --build-arg SCALA_VERSION=${SCALA_VERSION}\
+ --build-arg SPARK_SHORT_VERSION=${SPARK_SHORT_VERSION}\
+ --build-arg SPARK_SHORT_VERSION=${SPARK_SHORT_VERSION}\
+ --build-arg SPARK_SHORTEST_VERSION=${SPARK_SHORTEST_VERSION}\
+ --build-arg JUICEFS_VERSION=${JUICEFS_VERSION}\
+ -t harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:${SPARK_VERSION}
 docker push harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:${SPARK_VERSION}
 
 
@@ -190,3 +193,9 @@ kubectl create clusterrolebinding endpoints-reader-default-spark \
 kubectl delete clusterrolebinding endpoints-reader-default-spark
 kubectl delete -f clusterrole-endpoints-reader-spark.yaml
 EOF
+
+kubectl apply -f spark-client.yaml -n spark-operator
+kubectl delete -f spark-client.yaml -n spark-operator
+kubectl delete pod spark-client -n spark-operator --force --grace-period=0
+
+kubectl exec -it spark-client -n spark-operator -- /bin/bash

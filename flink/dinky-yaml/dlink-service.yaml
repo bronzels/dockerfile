@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: flink-dlink
+  name: dlink
 spec:
   ipFamilies:
     - IPv4
@@ -12,5 +12,5 @@ spec:
       protocol: TCP
       targetPort: 8888
   selector:
-    app: dlink
+    app: dlink-flink
   type: ClusterIP

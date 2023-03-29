@@ -10,7 +10,9 @@ else
     SED=sed
 fi
 
-HADOOPREV=3.2.1
+#HADOOPREV=3.2.1
+#HADOOPREV=3.3.4
+HADOOPREV=3.1.1
 HDPHOME=${MYHOME}/workspace/dockerfile/hadoop/helm-hadoop-3
 
 wget -c http://archive.apache.org/dist/hadoop/common/hadoop-${HADOOPREV}/hadoop-${HADOOPREV}-src.tar.gz
@@ -51,7 +53,7 @@ file=Makefile
 cp ../../helm-hadoop-3.bk/image/${file} ${file}
 $SED -i "s@HADOOP_30_VERSION = 3.2.1@HADOOP_30_VERSION = ${HADOOPREV}@g" ${file}
 
-cp ../../hadoop-3.2.1* ./
+cp ../../hadoop-${HADOOPREV}* ./
 
 make
 #helm install错误kubernetes Error: create: failed to create: Request entity too large: limit is 3145728

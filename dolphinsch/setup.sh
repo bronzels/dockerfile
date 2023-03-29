@@ -308,7 +308,7 @@ kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive
   hadoop fs -rm -r -f /k8sup/dolphinsch
 kubectl get pod -n dolphinsch |grep -v Running |awk '{print $1}'| xargs kubectl delete pod "$1" -n dolphinsch --force --grace-period=0
 watch kubectl get all -n dolphinsch
-kubectl get pvc -n dolphinsch
+kubectl get pvc -n dolphinsch | awk '{print $1}' | xargs kubectl delete pvc -n dolphinsch
 kubectl get pv | grep dolphinsch
 kubectl port-forward -n dolphinsch svc/my-api 12345:12345 &
 

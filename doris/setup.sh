@@ -22,10 +22,12 @@ DORIS_HOME=${PRJ_HOME}/doris
 DORIS_REV=1.2.2
 
 STARROCKS_REV=2.5.2
+#STARROCKS_REV=3.0.0-avro
 STARROCKS_OP_REV=1.3
 #STARROCKS_OP_REV=master
 
-JUICEFS_VERSION=1.0.2
+#JUICEFS_VERSION=1.0.2
+JUICEFS_VERSION=1.0.3
 
 cd ${DORIS_HOME}
 
@@ -560,63 +562,88 @@ mv starrocks-2.5.2.tar.gz ../tmp/
 cd ${DORIS_HOME}/starrocks-src/starrocks-${STARROCKS_REV}
 
 mv ${DORIS_HOME}/StarRocks-${STARROCKS_REV} ${DORIS_HOME}/starrocks-src/starrocks-${STARROCKS_REV}/output
+sudo scp dtpct:/data0/starrocks-3.0.0-avro/output.tgz ./
+tar xzvf output.tgz
+rm -rf output.tgz
 
-arr=(Dockerfile_fe_alpine Dockerfile_be_centos Dockerfile_cn_centos)
+cp ${PRJ_HOME}/juicefs/juicefs-hadoop-${JUICEFS_VERSION}-jdk11-ubuntu22.jar ./
+cp ${PRJ_HOME}/juicefs/juicefs-hadoop-${JUICEFS_VERSION}-jdk11-centos7.jar ./
+cp ${PRJ_HOME}/juicefs/core-site.xml ./
+cp ${PRJ_HOME}/spark/hdfs-site.xml ./
+cp ${PRJ_HOME}/spark/hive-site.xml ./
+cp ${PRJ_HOME}/image/Centos-7.repo ./
+cp ${PRJ_HOME}/image/epel-7.repo ./
+arr=(Dockerfile-fe-ubuntu Dockerfile_be_centos Dockerfile_cn_centos)
 for dfile in ${arr[*]}
 do
   echo "DEBUG >>>>>> dfile:${dfile}"
-  OLD_IFS="$IFS"
-  IFS="_"
-  arr=($dfile)
-  IFS="$OLD_IFS"
-  prj=${arr[1]}
+  if [[ "${dfile}" == "Dockerfile-fe-ubuntu" ]]; then
+    OLD_IFS="$IFS"
+    IFS="-"
+    arr=($dfile)
+    IFS="$OLD_IFS"
+    prj=${arr[1]}
+  else
+    OLD_IFS="$IFS"
+    IFS="_"
+    arr=($dfile)
+    IFS="$OLD_IFS"
+    prj=${arr[1]}
+  fi
   echo "DEBUG >>>>>> prj:${prj}"
 
-  if [[ "${prj}" == "be" ]]; then
+  file=docker/dockerfiles/${dfile}  
+  cp  ${file} ${file}.bk
+  if [[ "${prj}" == "cn" ]]; then
+    $SED -i 's/java-11-openjdk/java-11-openjdk bc/g' ${file}
+  fi
   if [[ "${prj}" == "fe" ]]; then
-    cp docker/dockerfiles/${dfile} docker/dockerfiles/${dfile}.bk
-    #$SED -i 's/RUN yum install -y tzdata openssl curl vim ca-certificates fontconfig gzip tar mysql java-11-openjdk/RUN yum install -y tzdata openssl curl vim ca-certificates fontconfig gzip tar mysql java-11-openjdk bc/g' docker/dockerfiles/${dfile}
-    $SED -i 's/apk add --update openjdk11 tzdata curl unzip bash mysql-client procps vim  eudev-dev /apk add --update openjdk11 tzdata curl unzip bash mysql-client procps vim  eudev-dev bc /g' docker/dockerfiles/${dfile}
+    $SED -i '/RUN git clone /,+2d' ${file}
+    $SED -i "s@COPY --from=builder /opt/starrocks/fe@COPY output/fe@g" ${file}
+    $SED -i 'COPY output/a\COPY docker\/dockerfiles\/fe\/fe_entrypoint.sh docker\/dockerfiles\/fe\/fe_prestop.sh \/opt\/starrocks\/' ${file}
+    $SED -i '/RUN apt-get update -y/i\RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list' ${file}
+cat << \EOF >> ${file}
+ARG JUICEFS_VERSION=?
+COPY juicefs-hadoop-${JUICEFS_VERSION}-jdk11-ubuntu22.jar /opt/starrocks/${prj}/lib/
+EOF
+  else
+    $SED -i '/RUN yum install -y/i\RUN rm -f \/etc\/yum.repos.d\/CentOS-Base.repo\nCOPY Centos-7.repo \/etc\/yum.repos.d\/Centos-7.repo\nCOPY epel-7.repo \/etc\/yum.repos.d\/epel-7.repo\nRUN yum clean all && yum makecache && yum -y update' ${file}
+cat << \EOF >> ${file}
+ARG JUICEFS_VERSION=?
+COPY juicefs-hadoop-${JUICEFS_VERSION}-jdk11-centos7.jar /opt/starrocks/${prj}/lib/
+EOF
   fi
-  DOCKER_BUILDKIT=1 docker build ./ -f docker/dockerfiles/${dfile} --progress=plain -t harbor.my.org:1080/doris/starrocks-${prj}:${STARROCKS_REV}
-  docker push harbor.my.org:1080/doris/starrocks-${prj}:${STARROCKS_REV}
-done
-
-arr=(Dockerfile_fe_alpine Dockerfile_be_centos Dockerfile_cn_centos)
-for dfile in ${arr[*]}
-do
-  echo "DEBUG >>>>>> dfile:${dfile}"
-  OLD_IFS="$IFS"
-  IFS="_"
-  arr=($dfile)
-  IFS="$OLD_IFS"
-  prj=${arr[1]}
-  echo "DEBUG >>>>>> prj:${prj}"
-
-  #if [[ "${prj}" != "be" ]]; then
-  if [[ "${prj}" != "fe" ]]; then
-    cp docker/dockerfiles/${dfile} docker/dockerfiles/${dfile}.bk
-  fi
-cat << EOF >> docker/dockerfiles/${dfile}
-COPY juicefs-hadoop-1.0.2-jdk11.jar /opt/starrocks/${prj}/lib/
+cat << EOF >> ${file}
 COPY core-site.xml /opt/starrocks/${prj}/conf/
 COPY hdfs-site.xml /opt/starrocks/${prj}/conf/
 COPY hive-site.xml /opt/starrocks/${prj}/conf/
 EOF
 done
 
-arr=(Dockerfile_fe_alpine Dockerfile_be_centos Dockerfile_cn_centos)
+arr=(Dockerfile-fe-ubuntu Dockerfile_be_centos Dockerfile_cn_centos)
+arr=(Dockerfile_be_centos Dockerfile_cn_centos)
+arr=(Dockerfile-fe-ubuntu)
 for dfile in ${arr[*]}
 do
   echo "DEBUG >>>>>> dfile:${dfile}"
-  OLD_IFS="$IFS"
-  IFS="_"
-  arr=($dfile)
-  IFS="$OLD_IFS"
-  prj=${arr[1]}
+  if [[ "${dfile}" == "Dockerfile-fe-ubuntu" ]]; then
+    OLD_IFS="$IFS"
+    IFS="-"
+    arr=($dfile)
+    IFS="$OLD_IFS"
+    prj=${arr[1]}
+  else
+    OLD_IFS="$IFS"
+    IFS="_"
+    arr=($dfile)
+    IFS="$OLD_IFS"
+    prj=${arr[1]}
+  fi
   echo "DEBUG >>>>>> prj:${prj}"
 
-  DOCKER_BUILDKIT=1 docker build ./ -f docker/dockerfiles/${dfile} --progress=plain -t harbor.my.org:1080/doris/starrocks-juicefs-${prj}:${STARROCKS_REV}
+  DOCKER_BUILDKIT=1 docker build ./ -f docker/dockerfiles/${dfile}\
+   --build-arg JUICEFS_VERSION="${JUICEFS_VERSION}"\
+   --progress=plain -t harbor.my.org:1080/doris/starrocks-juicefs-${prj}:${STARROCKS_REV}
   docker push harbor.my.org:1080/doris/starrocks-juicefs-${prj}:${STARROCKS_REV}
 done
 
@@ -656,6 +683,7 @@ EOF
 
 kubectl apply -f ${DORIS_HOME}/starrocks-kubernetes-operator-${STARROCKS_OP_REV}/deploy/starrocks.com_starrocksclusters.yaml
 kubectl apply -f ${DORIS_HOME}/starrocks-kubernetes-operator-${STARROCKS_OP_REV}/deploy/operator.yaml
+
 kubectl delete -f ${DORIS_HOME}/starrocks-kubernetes-operator-${STARROCKS_OP_REV}/deploy/operator.yaml
 kubectl delete -f ${DORIS_HOME}/starrocks-kubernetes-operator-${STARROCKS_OP_REV}/deploy/starrocks.com_starrocksclusters.yaml
 
@@ -669,6 +697,7 @@ echo "" >> ${DORIS_HOME}/${clusterfile}
 cat swap >> ${DORIS_HOME}/${clusterfile}
 rm -f swap
 $SED -i 's/2.4.1/2.5.2/g' ${DORIS_HOME}/${clusterfile}
+$SED -i 's/2.5.2/3.0.0-avro/g' ${DORIS_HOME}/${clusterfile}
 $SED -i 's/namespace: starrocks/namespace: doris/g' ${DORIS_HOME}/${clusterfile}
 $SED -i 's/starrocks\/alpine-fe/harbor.my.org:1080\/doris\/starrocks-fe/g' ${DORIS_HOME}/${clusterfile}
 $SED -i 's/starrocks\/centos-be/harbor.my.org:1080\/doris\/starrocks-be/g' ${DORIS_HOME}/${clusterfile}

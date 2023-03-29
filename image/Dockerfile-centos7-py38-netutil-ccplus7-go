@@ -1,12 +1,16 @@
 FROM harbor.my.org:1080/base/python:3.8-centos7-netutil
 
-RUN yum install -y centos-release-scl
-RUN yum install -y devtoolset-7-gcc devtoolset-7-make
-RUN yum install -y devtoolset-7-gcc-c++ devtoolset-7-gcc-gfortran
+RUN yum install -y epel-release centos-release-scl scl-utils
+
+RUN yum install -y devtoolset-7
 RUN scl enable devtoolset-7 bash
 RUN echo "source scl_source enable devtoolset-7" >> /root/.bashrc
 
-RUN yum install -y  automake autoconf libtool
+RUN yum install -y devtoolset-10
+RUN scl enable devtoolset-10 bash
+RUN echo "source scl_source enable devtoolset-10" >> /root/.bashrc
+
+RUN yum install -y automake autoconf libtool
 
 #RUN yum install -y gcc make
 #RUN yum install -y gcc-c++ gcc-gfortran

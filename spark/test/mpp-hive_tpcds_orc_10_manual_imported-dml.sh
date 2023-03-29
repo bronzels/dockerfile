@@ -11,6 +11,9 @@ else
     SED=sed
 fi
 
+WORK_HOME=${MYHOME}/workspace
+PRJ_HOME=${WORK_HOME}/dockerfile
+
 :<<EOF
 engine=doris
 svc=fe
@@ -39,16 +42,7 @@ echo -e "query,time" > ${csvfile}
 SQL_FILE_HOME=/app/hdfs/hive
 HDFS_SQL_FILE_HOME=/tmp
 
-kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- \
-  hadoop fs -rm -r -f ${HDFS_SQL_FILE_HOME}/${torun}
-kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- \
-  hadoop fs -mkdir ${HDFS_SQL_FILE_HOME}/${torun}
-kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- \
-  rm -rf ${SQL_FILE_HOME}/${torun}
-kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- \
-  mkdir ${SQL_FILE_HOME}/${torun}
-
-
+${PRJ_HOME}/hdfs-mkdir.sh ${SQL_FILE_HOME} ${HDFS_SQL_FILE_HOME} ${torun}
 
 declare -A map_tbl2cols=()
 map_tbl2cols["call_center"]="*"
@@ -103,17 +97,14 @@ EOF
 shfile=spark-sql-delta.sh
 SPARK_JOB_HOME=/app/hdfs/spark/work-dir
 
-kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- \
+kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-client | awk '{print $1}'` -- \
   curl http://be-domain-search.doris.svc.cluster.local:8040
 
-kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- \
+kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-client | awk '{print $1}'` -- \
   curl http://starrockscluster-fe-service.doris.svc.cluster.local:8030
 
-kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- rm -f *.delta
-kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- rm -f ${SPARK_JOB_HOME}/${shfile}
-kubectl cp ../${shfile} -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'`:${SPARK_JOB_HOME}/${shfile}
-kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- ls -l
-kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- cat ${shfile}
+kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-client | awk '{print $1}'` -- rm -f *.delta
+${PRJ_HOME}/client-upload.sh spark-operator spark-client ${SPARK_JOB_HOME} ${shfile}
 
 
 for tbl in ${arr[*]}
@@ -178,9 +169,9 @@ EOF
 
   kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep doris-fe-0 | awk '{print $1}'` -- \
     mysql --default-character-set=utf8 -h fe -P 9030 -u'root' -e "USE ${db};TRUNCATE TABLE ${tbl};"
-  kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- ${SPARK_JOB_HOME}/${shfile} ${sqlfile_path}
+  kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-client | awk '{print $1}'` -- ${SPARK_JOB_HOME}/${shfile} ${sqlfile_path}
   # > submit-${tbl}-${logfile}  2>&1
-  kubectl cp -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'`:${SPARK_JOB_HOME}/${name}.delta ./${name}.delta
+  kubectl cp -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-client | awk '{print $1}'`:${SPARK_JOB_HOME}/${name}.delta ./${name}.delta
   cat ${name}.delta >> ${csvfile}
   rm -f ${name}.delta
 
@@ -210,8 +201,8 @@ kubectl get pod -n spark-operator|grep tmp-mpp-${engine}-ingestion |grep 'Error'
 kubectl get pod -n spark-operator|grep tmp-mpp-${engine}-ingestion |grep -v 'Running' |awk '{print $1}'| xargs kubectl delete pod "$1" -n spark-operator --force --grace-period=0
 kubectl get pod -n spark-operator|grep tmp-mpp-${engine}-ingestion |grep -v 'Running\|ContainerCreating\Pending' |awk '{print $1}'| xargs kubectl delete pod "$1" -n spark-operator --force --grace-period=0
 
-kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- tail -f submit-${tbl}-${logfile}
-kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- tail -f driver-${tbl}-${logfile}
+kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-client | awk '{print $1}'` -- tail -f submit-${tbl}-${logfile}
+kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-client | awk '{print $1}'` -- tail -f driver-${tbl}-${logfile}
 
 kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- \
   hadoop fs -ls ${HDFS_SQL_FILE_HOME}/${torun}

@@ -229,47 +229,89 @@ E0301 05:23:46.197952       7 reconciler.go:103] Driver check pod juicefs-mdlapu
 (base) [root@dtpct ~]#
 EOF
 
-docker run -itd --name centos7-netutil-ccplus7-go-jdk --restart unless-stopped -v /Volumes/data/m2:/root/.m2 -v $PWD/juicefs-1.0.2:/root/workspace/juicefs -v /Volumes/data/gopath:/root/workspace/gopath harbor.my.org:1080/base/python:3.8-centos7-netutil-ccplus7-go-jdk tail -f /dev/null
+JUICEFS_VERSION=1.0.3
+docker run -itd --name centos7-netutil-ccplus7-go-jdk --restart unless-stopped -v /Volumes/data/m2:/root/.m2 -v $PWD/juicefs-${JUICEFS_VERSION}:/root/workspace/juicefs -v /Volumes/data/gopath:/root/workspace/gopath harbor.my.org:1080/base/python:3.8-centos7-netutil-ccplus7-go-jdk tail -f /dev/null
 docker exec -it centos7-netutil-ccplus7-go-jdk bash
   java -version
-  cd workspace/juicefs/sdk/java
+  cd /root/workspace/juicefs/sdk/java
   make
-docker cp centos7-netutil-ccplus7-go-jdk:/root/workspace/juicefs/sdk/java/target/juicefs-hadoop-1.0.2.jar ./juicefs-hadoop-1.0.2-jdk11-centos7.jar
+docker cp centos7-netutil-ccplus7-go-jdk:/root/workspace/juicefs/sdk/java/target/juicefs-hadoop-${JUICEFS_VERSION}.jar ./juicefs-hadoop-${JUICEFS_VERSION}-jdk11-centos7.jar
 
-docker run -itd --name debian11-ccplus-go-jdk --restart unless-stopped -v /Volumes/data/m2:/root/.m2 -v $PWD/juicefs-1.0.2:/root/juicefs -v /Volumes/data/gopath:/root/gopath harbor.my.org:1080/base/debian11:ccplus-go-jdk tail -f /dev/null
+JUICEFS_VERSION=1.0.2
+docker run -itd --name debian11-ccplus-go-jdk --restart unless-stopped -v /Volumes/data/m2:/root/.m2 -v $PWD/juicefs-${JUICEFS_VERSION}:/root/juicefs -v /Volumes/data/gopath:/root/gopath harbor.my.org:1080/base/debian11:ccplus-go-jdk tail -f /dev/null
 docker exec -it debian11-ccplus-go-jdk bash
   java -version
-  cd juicefs/sdk/java
+  cd /root/juicefs/sdk/java
   make
-docker cp debian11-ccplus-go-jdk:/root/juicefs/sdk/java/target/juicefs-hadoop-1.0.2.jar ./juicefs-hadoop-1.0.2-jdk11-debian11.jar
+docker cp debian11-ccplus-go-jdk:/root/juicefs/sdk/java/target/juicefs-hadoop-${JUICEFS_VERSION}.jar ./juicefs-hadoop-${JUICEFS_VERSION}-jdk11-debian11.jar
 
+JUICEFS_VERSION=1.0.3
+docker run -itd --name ubuntu22-netutil-ccplus7-go-jdk --restart unless-stopped -v /Volumes/data/m2:/root/.m2 -v $PWD/juicefs-${JUICEFS_VERSION}:/root/juicefs -v /Volumes/data/gopath:/root/gopath harbor.my.org:1080/base/ubuntu22:netutil-ccplus7-go-jdk tail -f /dev/null
+docker exec -it ubuntu22-netutil-ccplus7-go-jdk bash
+  java -version
+  cd /root/juicefs/sdk/java
+  make
+docker cp ubuntu22-netutil-ccplus7-go-jdk:/root/juicefs/sdk/java/target/juicefs-hadoop-${JUICEFS_VERSION}.jar ./juicefs-hadoop-${JUICEFS_VERSION}-jdk8-ubuntu22.jar
 
-#debian 11 gcc5的安装，缺少libisl15失败
-RUN wget http://mirrors.ustc.edu.cn/debian/pool/main/g/gcc-6/gcc-6-base_6.3.0-18%2Bdeb9u1_amd64.deb
-RUN dpkg -i gcc-6-base_6.3.0-18+deb9u1_amd64.deb
+JUICEFS_VERSION=1.0.3
+docker run -itd --name ubuntu22-netutil-ccplus7-go-jdk --restart unless-stopped -v /Volumes/data/m2:/root/.m2 -v $PWD/juicefs-${JUICEFS_VERSION}:/root/juicefs -v /Volumes/data/gopath:/root/gopath harbor.my.org:1080/base/ubuntu22:netutil-ccplus7-go-jdk tail -f /dev/null
+docker exec -it ubuntu22-netutil-ccplus7-go-jdk bash
+  java -version
+  PRIORITY_JDK_11=11000
+  update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-11-openjdk-amd64/bin/java ${PRIORITY_JDK_11}
+  update-alternatives --install /usr/bin/javac javac /usr/lib/jvm/java-11-openjdk-amd64/bin/javac ${PRIORITY_JDK_11}
+  update-alternatives --install /usr/bin/javap javap /usr/lib/jvm/java-11-openjdk-amd64/bin/javap ${PRIORITY_JDK_11}
+  update-alternatives --install /usr/bin/javadoc javadoc /usr/lib/jvm/java-11-openjdk-amd64/bin/javadoc ${PRIORITY_JDK_11}
+  update-alternatives --install /usr/bin/jstack jstack /usr/lib/jvm/java-11-openjdk-amd64/bin/jstack ${PRIORITY_JDK_11}
+#  update-alternatives --install /usr/bin/jshell jshell /usr/lib/jvm/java-11-openjdk-amd64/bin/jshell ${PRIORITY_JDK_11}
+  update-alternatives --install /usr/bin/jar jar /usr/lib/jvm/java-11-openjdk-amd64/bin/jar ${PRIORITY_JDK_11}
+  update-alternatives --install /usr/bin/jstat jstat /usr/lib/jvm/java-11-openjdk-amd64/bin/jstat ${PRIORITY_JDK_11}
+  java -version
+  cd /root/juicefs/sdk/java
+  make
+docker cp ubuntu22-netutil-ccplus7-go-jdk:/root/juicefs/sdk/java/target/juicefs-hadoop-${JUICEFS_VERSION}.jar ./juicefs-hadoop-${JUICEFS_VERSION}-jdk11-ubuntu22.jar
 
-RUN wget http://mirrors.ustc.edu.cn/debian/pool/main/g/gcc-6/libubsan0_6.3.0-18+deb9u1_amd64.deb
-RUN dpkg -i libubsan0_6.3.0-18+deb9u1_amd64.deb
+JUICEFS_VERSION=1.0.3
+docker run -itd --name ubuntu20-netutil-ccplus7-go-jdk --restart unless-stopped -v /Volumes/data/m2:/root/.m2 -v $PWD/juicefs-${JUICEFS_VERSION}:/root/juicefs -v /Volumes/data/gopath:/root/gopath harbor.my.org:1080/base/ubuntu20:netutil-ccplus7-go-jdk tail -f /dev/null
+docker exec -it ubuntu20-netutil-ccplus7-go-jdk bash
+  java -version
+  cd /root/juicefs/sdk/java
+  make
+docker cp ubuntu20-netutil-ccplus7-go-jdk:/root/juicefs/sdk/java/target/juicefs-hadoop-${JUICEFS_VERSION}.jar ./juicefs-hadoop-${JUICEFS_VERSION}-jdk11-ubuntu20.jar
 
-RUN wget http://mirrors.ustc.edu.cn/debian/pool/main/g/gcc-6/libcilkrts5_6.3.0-18%2Bdeb9u1_amd64.deb
-RUN dpkg -i libcilkrts5_6.3.0-18+deb9u1_amd64.deb
+#juicefs csi除了删除挂载pod以后相应的pvc pod terminating但是不删除以外，还有一些pvc pod在running状态，但是并没有对应的pvc和挂载pvc的应用pod，用csi-doctor.sh可以检查出来，这些pod都需要删除，不然逐渐累计，系统资源就不够了。
+cat << \EOF > remove-running-pvc-pod-without-app.sh
+#!/bin/bash
 
-RUN mkdir g5_debs
-WORKDIR /root/g5_debs
-RUN wget http://archive.ubuntu.com/ubuntu/pool/universe/g/gcc-5/cpp-5_5.5.0-12ubuntu1_amd64.deb
-RUN wget http://archive.ubuntu.com/ubuntu/pool/universe/g/gcc-5/g++-5_5.5.0-12ubuntu1_amd64.deb
-RUN wget http://archive.ubuntu.com/ubuntu/pool/universe/g/gcc-5/gcc-5_5.5.0-12ubuntu1_amd64.deb
-RUN wget http://archive.ubuntu.com/ubuntu/pool/universe/g/gcc-5/gcc-5-base_5.5.0-12ubuntu1_amd64.deb
-RUN wget http://archive.ubuntu.com/ubuntu/pool/universe/g/gcc-5/libasan2_5.5.0-12ubuntu1_amd64.deb
-RUN wget http://archive.ubuntu.com/ubuntu/pool/universe/g/gcc-5/libgcc-5-dev_5.5.0-12ubuntu1_amd64.deb
-RUN wget http://archive.ubuntu.com/ubuntu/pool/universe/g/gcc-5/libmpx0_5.5.0-12ubuntu1_amd64.deb
-RUN wget http://archive.ubuntu.com/ubuntu/pool/universe/g/gcc-5/libstdc++-5-dev_5.5.0-12ubuntu1_amd64.deb
-RUN dpkg -i *.deb
+podstr=`kubectl get pod -n kube-system | grep juicefs | grep pvc | awk '{print $1}'`
+OLD_IFS="$IFS"
+IFS=" "
+podarr=($podstr)
+IFS="$OLD_IFS"
+for podname in ${podarr[*]}
+do
+  echo "---Debug, pvc podname:$podname"
+  appname=`./csi-doctor.sh get-app $podname`
+  if [[ -z ${appname} ]]; then
+    echo "---Debug, no app for this running pvc pod, removed"
+    kubectl get pod -n kube-system | grep $podname | awk '{print $1}' | xargs kubectl delete pod -n kube-system --force --grace-period=0
+    #kubectl get pod -n kube-system | grep $podname | awk '{print $1}' | xargs kubectl patch pod $1 -n kube-system -p '{"metadata":{"finalizers":null}}'
+  else
+    echo "---Debug, app for this running pvc pod:"
+    echo ${appname}
+  fi
+  echo "---Debug, -----------------------------"
+done  
+EOF
+chmod a+x remove-running-pvc-pod-without-app.sh
+sudo scp ./remove-running-pvc-pod-without-app.sh dtpct:/root/
 
-RUN ls -lha /usr/bin/gcc*
-RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 30
-RUN gcc --version
+sudo ssh dtpct /root/remove-running-pvc-pod-without-app.sh
+kubectl get pod -n kube-system | grep juicefs | grep pvc | grep Running
 
-RUN ls -lha /usr/bin/g++*
-RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-5 30
-RUN g++ --version
+kubectl get pod -n spark-operator
+sudo ssh dtpct
+  ./csi-doctor.sh get-mount mysrv-sparksrv-hs-6c7594cddb-2bnd8 -n spark-operator
+    spark-operator	mysrv-sparksrv-hs-6c7594cddb-2bnd8
+  ./csi-doctor.sh get-app juicefs-mdubu-pvc-5c0e0bab-4f77-49cc-a925-3e300267b23d-yapmri
+

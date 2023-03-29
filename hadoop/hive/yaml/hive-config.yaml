@@ -102,7 +102,7 @@ data:
       </property>
       <property>
         <name>javax.jdo.option.ConnectionURL</name>
-        <value>jdbc:mysql://hive-metadata-mysql-service:3306/metastore?characterEncoding=utf8&amp;createDatabaseIfNotExist=true&amp;useSSL=false</value>
+        <value>jdbc:mysql://mysql-svc.mysql:3306/metastore?characterEncoding=utf8&amp;createDatabaseIfNotExist=true&amp;useSSL=false</value>
       </property>
       <property>
         <name>javax.jdo.option.ConnectionDriverName</name>

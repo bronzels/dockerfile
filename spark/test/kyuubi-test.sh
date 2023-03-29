@@ -33,7 +33,7 @@ kubectl get pod -n spark-operator |grep Running | grep kyuubi-connection-spark-s
 kubectl get pod -n spark-operator |grep Running | grep exec | awk '{print $1}'| xargs kubectl delete pod "$1" -n spark-operator --force --grace-period=0
 kubectl get pod -n spark-operator |grep -v Running | grep kyuubi-connection-spark-sql | awk '{print $1}'| xargs kubectl delete pod "$1" -n spark-operator --force --grace-period=0
 
-kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'` -- bash
+kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-client | awk '{print $1}'` -- bash
   #beeline -u jdbc:hive2://kyuubi-thrift-binary.spark-operator.svc.cluster.local:10009 -n kyuubi
   beeline -u jdbc:hive2://kyuubisrv-thrift-binary.spark-operator.svc.cluster.local:10009 -n hdfs
   #大概有20s才能连接成功

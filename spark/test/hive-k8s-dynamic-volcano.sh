@@ -30,7 +30,7 @@ NODE       CPU REQUESTS   CPU LIMITS     CPU UTIL    MEMORY REQUESTS   MEMORY LI
 *          8250m (29%)    12500m (44%)   557m (1%)   21944Mi (17%)     56660Mi (44%)   12793Mi (10%)
 EOF
 
-kubectl port-forward spark-test -n spark-operator 4040:4040 &
+kubectl port-forward spark-client -n spark-operator 4040:4040 &
 
 kubectl port-forward svc/`kubectl get svc -n spark-operator |grep spark-sql-job-test-manual |awk '{print $1}'` -n spark-operator 4040:4040 &
 
@@ -39,9 +39,9 @@ kubectl get pod -n spark-operator |grep spark-sql-job-test-manual |grep driver |
 kubectl get pod -n spark-operator |grep spark-sql-job |grep driver |grep -v "Running\|Pending" |awk '{print $1}'| xargs kubectl delete pod "$1" -n spark-operator
 
 
-kubectl apply -f spark-test.yaml -n spark-operator
-kubectl delete -f spark-test.yaml -n spark-operator
-kubectl delete pod spark-test -n spark-operator --force --grace-period=0
+kubectl apply -f spark-client.yaml -n spark-operator
+kubectl delete -f spark-client.yaml -n spark-operator
+kubectl delete pod spark-client -n spark-operator --force --grace-period=0
 
 
 ansible all -m shell -a"crictl images|grep spark-juicefs|awk '{print \$3}'|xargs crictl rmi"
@@ -74,7 +74,7 @@ kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive
 kubectl cp -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'`:/tmp/spark-tpcds-10 spark-tpcds-10
 
 
-kubectl exec -it spark-test -n spark-operator -- /bin/bash
+kubectl exec -it spark-client -n spark-operator -- /bin/bash
 
 :<<EOF
 test case

@@ -28,3 +28,6 @@ rules:
   - apiGroups: [""]
     resources: ["nodes"]
     verbs: ["get", "watch", "list"]
+  - apiGroups: ["extensions"]
+    resources: ["deployments"]
+    verbs: ["create", "delete", "update", "get", "watch", "list"]

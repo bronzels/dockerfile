@@ -62,6 +62,7 @@ helm install mysrv -n spark-operator -f values.yaml \
   ./
 #  --set sparkEventLogStorage.logDirectory=jfs://miniofs/jobhistory/sparklogs \
 helm uninstall mysrv -n spark-operator
+kubectl get pod -n spark-operator |grep -v Running | grep mysrv-sparksrv | awk '{print $1}'| xargs kubectl delete pod "$1" -n spark-operator --force --grace-period=0
 #卸载以后重新安装，会出现history pvc无法挂载的情况，需要删除几个和Running pvc pod在同一节点的几个Terminating的pod
 kubectl get pod -n kube-system -o wide | grep juicefs | grep pvc
 kubectl get pod -n kube-system | grep juicefs | grep pvc | grep Terminating | awk '{print $1}' | xargs kubectl delete pod n kube-system --force --grace-period=0
@@ -81,7 +82,7 @@ kubectl port-forward -n spark-operator svc/mysrv-sparksrv-hs 2080:80 &
 hadoop fs -get /jobhistory/sparklogs sparklogs
 kubectl cp -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'`:/app/hdfs/hive/sparklogs sparklogs
 kubectl cp sparklogs -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep myhs-spark-hs | awk '{print $1}'`:/app/hdfs/spark/sparklogs
-#kubectl cp spark-default.conf -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'`:/app/hdfs/spark/conf/spark-default.conf
+#kubectl cp spark-default.conf -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-client | awk '{print $1}'`:/app/hdfs/spark/conf/spark-default.conf
 kubectl logs -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep mysrv-sparksrv-hs | awk '{print $1}'`
 kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep mysrv-sparksrv-hs | awk '{print $1}'` -- bash
   spark-submit \

@@ -17,7 +17,7 @@ fi
 WORK_HOME=${MYHOME}/workspace
 PRJ_HOME=${WORK_HOME}/dockerfile
 
-DORIS_HOME=${PRJ_HOME}/doris
+PRJ_DORIS_HOME=${PRJ_HOME}/doris
 #DORIS_REV=1.2.1
 DORIS_REV=1.2.2
 
@@ -25,7 +25,8 @@ STARROCKS_REV=2.5.2
 STARROCKS_OP_REV=1.3
 #STARROCKS_OP_REV=master
 
-JUICEFS_VERSION=1.0.2
+#JUICEFS_VERSION=1.0.2
+JUICEFS_VERSION=1.0.3
 
 maven_version=3.8.6
 
@@ -33,11 +34,9 @@ maven_home=${MYHOME}/apache-maven-${maven_version}
 m2_home=${MYHOME}/m2
 go_path=${MYHOME}/gopath
 
-
-
 # ### all in ubuntu start--------------------------------------------
-cd ${DORIS_HOME}/starrocks-src
-cp ${PRJ_HOME}/juicefs/juicefs-hadoop-1.0.2-jdk11-ubuntu22.04.jar ./
+cd ${PRJ_DORIS_HOME}/starrocks-src
+cp ${PRJ_HOME}/juicefs/juicefs-hadoop-${JUICEFS_VERSION}-jdk11-ubuntu22.04.jar ./
 cp ${PRJ_HOME}/juicefs/core-site.xml ./
 cp ${PRJ_HOME}/spark/hdfs-site.xml ./
 cp ${PRJ_HOME}/spark/hive-site.xml ./
@@ -48,7 +47,7 @@ docker exec -it starrocks-dev-ubuntu bash
   ./build.sh --fe
 docker stop starrocks-dev-ubuntu rm docker delete starrocks-dev-ubuntu
 
-mv output ${DORIS_HOME}/StarRocks-${STARROCKS_REV}
+mv output ${PRJ_DORIS_HOME}/StarRocks-${STARROCKS_REV}
 
 #be必须在cn的后面
 arr=(Dockerfile-fe-ubuntu Dockerfile-cn-ubuntu Dockerfile-be-ubuntu)
@@ -115,7 +114,7 @@ rm -rf cn/build_Release/ cn/output/
 
 
 # ### only fe in ubuntu start--------------------------------------------
-cd ${DORIS_HOME}/starrocks-src
+cd ${PRJ_DORIS_HOME}/starrocks-src
 arr=(Dockerfile-fe-ubuntu Dockerfile_be_centos Dockerfile_cn_centos)
 for dfile in ${arr[*]}
 do
@@ -158,32 +157,47 @@ COPY hive-site.xml /opt/starrocks/${prj}/conf/
 EOF
 
 if [[ "${prj}" == "fe" ]]; then
-cat << EOF >> docker/dockerfiles/${dfile}
-COPY juicefs-hadoop-1.0.2-jdk11-ubuntu22.04.jar /opt/starrocks/${prj}/lib/
+dockerfile=docker/dockerfiles/${dfile}
+cat << EOF >> ${dockerfile}
+ARG JUICEFS_VERSION=?
+COPY juicefs-hadoop-${JUICEFS_VERSION}-jdk11-ubuntu22.jar /opt/starrocks/${prj}/lib/
 EOF
 elif [[ "${prj}" == "be" ]]; then
-cat << EOF >> ${dpath}/${dfile}
-COPY juicefs-hadoop-1.0.2-jdk11-centos7.jar /opt/starrocks/${prj}/lib/
+dockerfile=${dpath}/${dfile}
+cat << EOF >> ${dockerfile}
+ARG JUICEFS_VERSION=?
+COPY juicefs-hadoop-${JUICEFS_VERSION}-jdk11-centos7.jar /opt/starrocks/${prj}/lib/
 EOF
 else #cn
-cat << EOF >> ${dpath}/${dfile}
-COPY juicefs-hadoop-1.0.2-jdk11-centos7.jar /opt/starrocks/cn/lib/hadoop/hdfs/
+dockerfile=${dpath}/${dfile}
+cat << EOF >> ${dockerfile}
+ARG JUICEFS_VERSION=?
+COPY juicefs-hadoop-${JUICEFS_VERSION}-jdk11-centos7.jar /opt/starrocks/cn/lib/hadoop/hdfs/
 EOF
 fi
 
+cat << EOF >> ${dockerfile}
+ARG TARGET_BUILT=?
+ARG HUDI_VERSION=?
+ARG HUDI_OLD_VERSION=?
+#RUN rm -f /opt/starrocks/${prj}/lib/hudi-common-${HUDI_OLD_VERSION}.jar
+#RUN rm -f /opt/starrocks/${prj}/lib/hudi-hadoop-mr-${HUDI_OLD_VERSION}.jar
+#COPY hudibk/${TARGET_BUILT}/hudi-common-${HUDI_VERSION}.jar /opt/starrocks/${prj}/lib/
+#COPY hudibk/${TARGET_BUILT}/hudi-hadoop-mr-${HUDI_VERSION}.jar /opt/starrocks/${prj}/lib/
+EOF
+
 done
 
-
-
-cd ${DORIS_HOME}/starrocks-src
-cp ${PRJ_HOME}/juicefs/juicefs-hadoop-1.0.2-jdk11-ubuntu22.04.jar ./
+cd ${PRJ_DORIS_HOME}/starrocks-src
+cp -r ${PRJ_DORIS_HOME}/hudibk ./
+cp ${PRJ_HOME}/juicefs/juicefs-hadoop-${JUICEFS_VERSION}-jdk11-ubuntu22.jar ./
 cp ${PRJ_HOME}/juicefs/core-site.xml ./
 cp ${PRJ_HOME}/spark/hdfs-site.xml ./
 cp ${PRJ_HOME}/spark/hive-site.xml ./
 rm -rf .m2 && mkdir .m2
 #！！！必须用腾讯maven源，阿里和华为的都不会导致je jar下载不下来，手工下载下来install提示not readable artifact
 cp ${MYHOME}/m2/settings.xml .m2/
-mv ${DORIS_HOME}/starrocks-src/starrocks-${STARROCKS_REV}/output ${DORIS_HOME}/StarRocks-${STARROCKS_REV}
+mv ${PRJ_DORIS_HOME}/starrocks-src/starrocks-${STARROCKS_REV}/output ${PRJ_DORIS_HOME}/StarRocks-${STARROCKS_REV}
 dfile=Dockerfile-fe-ubuntu
 echo "DEBUG >>>>>> dfile:${dfile}"
 OLD_IFS="$IFS"
@@ -195,18 +209,30 @@ prj=${arr[1]}
 echo "DEBUG >>>>>> prj:${prj}"
 echo "DEBUG >>>>>> dpath:${dpath}"
 
+TARGET_BUILT=hadoop3hive3
+#TARGET_BUILT=hadoop2hive2
+HUDI_VERSION=0.12.2
+HUDI_OLD_VERSION=0.10.1
+
 #--no-cache
-DOCKER_BUILDKIT=1 docker build ./ -f ${dpath}/${dfile} --network=host --progress=plain  --build-arg STARROCKS_REV="${STARROCKS_REV}" --build-arg JUICEFS_VERSION="${JUICEFS_VERSION}" -t harbor.my.org:1080/doris/starrocks-juicefs-${prj}:${STARROCKS_REV}
+DOCKER_BUILDKIT=1 docker build ./ -f ${dpath}/${dfile} --network=host --progress=plain\
+  --build-arg TARGET_BUILT="${TARGET_BUILT}"\
+  --build-arg HUDI_VERSION="${HUDI_VERSION}"\
+  --build-arg HUDI_OLD_VERSION="${HUDI_OLD_VERSION}"\
+  --build-arg STARROCKS_REV="${STARROCKS_REV}"\
+  --build-arg JUICEFS_VERSION="${JUICEFS_VERSION}"\
+  -t harbor.my.org:1080/doris/starrocks-juicefs-${prj}:${STARROCKS_REV}
 docker push harbor.my.org:1080/doris/starrocks-juicefs-${prj}:${STARROCKS_REV}
 
-cd ${DORIS_HOME}/starrocks-src/starrocks-${STARROCKS_REV}
-cp ${PRJ_HOME}/juicefs/juicefs-hadoop-1.0.2-jdk11-centos7.jar ./
+cd ${PRJ_DORIS_HOME}/starrocks-src/starrocks-${STARROCKS_REV}
+cp -r ${PRJ_DORIS_HOME}/hudibk ./
+cp ${PRJ_HOME}/juicefs/juicefs-hadoop-${JUICEFS_VERSION}-jdk11-centos7.jar ./
 cp ${PRJ_HOME}/juicefs/core-site.xml ./
 cp ${PRJ_HOME}/spark/hdfs-site.xml ./
 cp ${PRJ_HOME}/spark/hive-site.xml ./
-mv ${DORIS_HOME}/StarRocks-${STARROCKS_REV} ${DORIS_HOME}/starrocks-src/starrocks-${STARROCKS_REV}/output
+mv ${PRJ_DORIS_HOME}/StarRocks-${STARROCKS_REV} ${PRJ_DORIS_HOME}/starrocks-src/starrocks-${STARROCKS_REV}/output
 arr=(Dockerfile_be_centos Dockerfile_cn_centos)
-arr=(Dockerfile_cn_centos)
+#arr=(Dockerfile_cn_centos)
 for dfile in ${arr[*]}
 do
   echo "DEBUG >>>>>> dfile:${dfile}"
@@ -220,18 +246,78 @@ do
   echo "DEBUG >>>>>> dpath:${dpath}"
 
   #--no-cache
-  DOCKER_BUILDKIT=1 docker build ./ -f ${dpath}/${dfile} --network=host --progress=plain  --build-arg STARROCKS_REV="${STARROCKS_REV}" --build-arg JUICEFS_VERSION="${JUICEFS_VERSION}" -t harbor.my.org:1080/doris/starrocks-juicefs-${prj}:${STARROCKS_REV}
+  DOCKER_BUILDKIT=1 docker build ./ -f ${dpath}/${dfile} --network=host --progress=plain\
+    --build-arg TARGET_BUILT="${TARGET_BUILT}"\
+    --build-arg HUDI_VERSION="${HUDI_VERSION}"\
+    --build-arg HUDI_OLD_VERSION="${HUDI_OLD_VERSION}"\
+    --build-arg STARROCKS_REV="${STARROCKS_REV}"\
+    --build-arg JUICEFS_VERSION="${JUICEFS_VERSION}"\
+    -t harbor.my.org:1080/doris/starrocks-juicefs-${prj}:${STARROCKS_REV}
   docker push harbor.my.org:1080/doris/starrocks-juicefs-${prj}:${STARROCKS_REV}
 done
 
 
 # ### only fe in ubuntu end--------------------------------------------
 
-
-
+#rebuild in docker from source code for all other than just fe in Dockerfile
+STARROCKS_2BUILD=3.0.0-avro
+cd $PWD/starrocks-${STARROCKS_2BUILD}/thirdparty
+file=vars.sh
+cp ${file} ${file}.bk
+#$SED -i 's/LIBEVENT_MD5SUM="c6c4e7614f03754b8c67a17f68177649"/LIBEVENT_MD5SUM="d41d8cd98f00b204e9800998ecf8427e"/g' ${file}
+#$SED -i 's/PROTOBUF_MD5SUM="0c9d2a96f3656ba7ef3b23b533fb6170"/PROTOBUF_MD5SUM="d41d8cd98f00b204e9800998ecf8427e"/g' ${file}
+$SED -i 's/GTEST_MD5SUM="ecd1fa65e7de707cd5c00bdac56022cd"/GTEST_MD5SUM="d41d8cd98f00b204e9800998ecf8427e"/g' ${file}
+$SED -i 's/AWS_SDK_CPP_MD5SUM="3a4e2703eaeeded588814ee9e61a3342"/AWS_SDK_CPP_MD5SUM="d41d8cd98f00b204e9800998ecf8427e"/g' ${file}
+$SED -i 's///g' ${file}
+cd $PWD/starrocks-${STARROCKS_2BUILD}
+SED=sed
+file=build.sh
+cp ${file} ${file}.bk
+$SED -i 's/-DskipTests/-DskipTests -Dspotless.check.skip=true -Dmaven.javadoc.skip=true -Dcheckstyle.skip=true -Dlicense.skip=true/g' ${file}
+-DskipTests
+#mac
+docker run -itd --name centos7-netutil-ccplus7-go-jdk --restart unless-stopped -v /Volumes/data/m2:/root/.m2 -v $PWD/starrocks-${STARROCKS_2BUILD}:/root/workspace/starrocks -v /Volumes/data/gopath:/root/workspace/gopath harbor.my.org:1080/base/python:3.8-centos7-netutil-ccplus7-go-jdk tail -f /dev/null
+docker stop centos7-netutil-ccplus7-go-jdk && docker rm centos7-netutil-ccplus7-go-jdk
+docker exec -it centos7-netutil-ccplus7-go-jdk bash
+#dtpct
+cd /data0
+wget -c https://github.com/containernetworking/plugins/releases/download/v1.2.0/cni-plugins-linux-amd64-v1.2.0.tgz
+cd /opt/cni/bin
+tar xzvf /data0/cni-plugins-linux-amd64-v1.2.0.tgz
+cd /data0
+nerdctl run -d --insecure-registry --ulimit nofile=65536:65536 --name centos7-netutil-ccplus7-go-jdk -v $PWD/.m2:/root/.m2 -v $PWD/starrocks-${STARROCKS_2BUILD}:/root/workspace/starrocks -v $PWD/gopath:/root/workspace/gopath harbor.my.org:1080/base/python:3.8-centos7-netutil-ccplus7-go-jdk tail -f /dev/null
+nerdctl stop centos7-netutil-ccplus7-go-jdk && nerdctl rm centos7-netutil-ccplus7-go-jdk
+nerdctl exec -it centos7-netutil-ccplus7-go-jdk bash
+  export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-11.0.18.0.10-1.el7_9.x86_64
+  java -version
+  scl enable devtoolset-10 bash
+  source scl_source enable devtoolset-10
+  gcc --version
+  cmake -version
+  
+  cd /root/workspace/starrocks
+  cd thirdparty/
+  ./download-thirdparty.sh
+  ./build-thirdparty.sh
+  cd ..
+  export STARROCKS_VERSION="3.0.0-avro"
+:<<EOF
+be/src/service/starrocks_main.cpp:74:2: error: #error _GLIBCXX_USE_CXX11_ABI must be non-zero
+我临时删除了be/src/service/starrocks_main.cpp中的来重新编译
+if !_GLIBCXX_USE_CXX11_ABI
+error _GLIBCXX_USE_CXX11_ABI must be non-zero
+endif
+file=be/src/service/starrocks_main.cpp
+cp ${file} ${file}.bk
+EOF
+  #多重复运行build.sh也能下载下来
+  mvn install:install-file -DgroupId=com.amazonaws -DartifactId=aws-java-sdk-bundle -Dversion=1.11.1026 -Dpackaging=jar -Dfile=aws-java-sdk-bundle-1.11.1026.jar
+  ./build.sh
+  #sh build.sh  --fe --be --spark-dpp --clean
+  
 
 # ### backup for rebuild juicefs jar in centos --------------------------------------------
-cd ${DORIS_HOME}/starrocks-src
+cd ${PRJ_DORIS_HOME}/starrocks-src
 arr=(Dockerfile-fe-ubuntu Dockerfile_be_centos Dockerfile_cn_centos)
 for dfile in ${arr[*]}
 do
@@ -323,8 +409,8 @@ EOF
 fi
 
 
-cd ${DORIS_HOME}/starrocks-src
-mv ${DORIS_HOME}/starrocks-src/starrocks-${STARROCKS_REV}/output ${DORIS_HOME}/StarRocks-${STARROCKS_REV}
+cd ${PRJ_DORIS_HOME}/starrocks-src
+mv ${PRJ_DORIS_HOME}/starrocks-src/starrocks-${STARROCKS_REV}/output ${PRJ_DORIS_HOME}/StarRocks-${STARROCKS_REV}
 arr=(Dockerfile-fe-ubuntu Dockerfile_be_centos Dockerfile_cn_centos)
 for dfile in ${arr[*]}
 do
@@ -367,8 +453,8 @@ do
   fi
 
   if [[ "${prj}" == "fe" ]]; then
-    mv ${DORIS_HOME}/StarRocks-${STARROCKS_REV} ${DORIS_HOME}/starrocks-src/starrocks-${STARROCKS_REV}/output
-    cd ${DORIS_HOME}/starrocks-src/starrocks-${STARROCKS_REV}
+    mv ${PRJ_DORIS_HOME}/StarRocks-${STARROCKS_REV} ${PRJ_DORIS_HOME}/starrocks-src/starrocks-${STARROCKS_REV}/output
+    cd ${PRJ_DORIS_HOME}/starrocks-src/starrocks-${STARROCKS_REV}
     if [[ ! -f ./core-site.xml ]]; then
       echo "DEBUG >>>>>> copy hadoop xml files for Dockerfile"
       cp ${PRJ_HOME}/juicefs/core-site.xml ./

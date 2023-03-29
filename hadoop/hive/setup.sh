@@ -61,7 +61,16 @@ do
   $SED -i 's@set hive.optimize.sort.dynamic.partition.threshold=0;@set hive.optimize.sort.dynamic.partition=true;@g' ${file}
 done
 
-docker build ./ --progress=plain --build-arg HIVEREV="${HIVEREV}" -t harbor.my.org:1080/bronzels/hive-ubussh-${distfs}:0.1
+TARGET_BUILT=hadoop3hive3
+#TARGET_BUILT=hadoop2hive2
+HUDI_VERSION=0.12.2
+#HUDI_VERSION=0.13.0
+
+docker build ./ --progress=plain\
+ --build-arg HIVEREV="${HIVEREV}"\
+ --build-arg TARGET_BUILT="${TARGET_BUILT}"\
+ --build-arg HUDI_VERSION="${HUDI_VERSION}"\
+  -t harbor.my.org:1080/bronzels/hive-ubussh-${distfs}:0.1
 docker push harbor.my.org:1080/bronzels/hive-ubussh-${distfs}:0.1
 
 git clone git@github.com:chenlein/database-tools.git
@@ -75,9 +84,13 @@ $SED -i "s@compile@implementation@g" ${file}
 $SED -i "s@testCompile@testImplementation@g" ${file}
 $SED -i "s@runtime@runtimeClasspath@g" ${file}
 
+:<<EOF
 gradle build
 ls build/distributions/database-tools-1.0-SNAPSHOT.tar
 cp build/distributions/database-tools-1.0-SNAPSHOT.tar ../
+EOF
+mvn clean package
+cp target/database-tools-1.0.jar ../
 
 cd $HIVEHOME/image
 
@@ -87,11 +100,11 @@ docker images|grep database-tools
 docker images|grep database-tools|awk '{print $3}'|xargs docker rmi -f
 docker images|grep database-tools
 #docker
-sudo ansible all -m shell -a"docker images|grep database-tools|awk '{print \$3}'|xargs docker rmi -f"
-sudo ansible all -m shell -a"docker images|grep database-tools"
+ansible all -m shell -a"docker images|grep database-tools|awk '{print \$3}'|xargs docker rmi -f"
+ansible all -m shell -a"docker images|grep database-tools"
 #containerd
-sudo ansible all -m shell -a"crictl images|grep database-tools|awk '{print \$3}'|xargs crictl rmi"
-sudo ansible all -m shell -a"crictl images|grep database-tools"
+ansible all -m shell -a"crictl images|grep database-tools|awk '{print \$3}'|xargs crictl rmi"
+ansible all -m shell -a"crictl images|grep database-tools"
 
 docker build -f Dockerfile.dbtool -t harbor.my.org:1080/bronzels/database-tools:1.0-SNAPSHOT ./
 docker push harbor.my.org:1080/bronzels/database-tools:1.0-SNAPSHOT
@@ -225,13 +238,36 @@ EOF
 kubectl apply -n hadoop -f hadoop-configmap.yaml
 kubectl delete -n hadoop -f hadoop-configmap.yaml
 
+:<<EOF
+#元数据使用mysql统一到mysql ns的实例，不需要单独自建mysql
 #需要先安装好nfs client sc
-#kubectl apply -f meta-pvc.yaml -n hadoop
+kubectl apply -f meta-pvc.yaml -n hadoop
+#谨慎操作，所有hive元数据会丢失，包括tpcds大量测试数据
+kubectl delete -f meta-pvc.yaml -n hadoop
+密码：Dameng@777
+EOF
+#依赖mysql ns的实例先正常运行
 kubectl apply -n hadoop -f yaml/
 kubectl delete -n hadoop -f yaml/
 kubectl get pod -n hadoop |grep -v Running |awk '{print $1}'| xargs kubectl delete pod "$1" -n hadoop --force --grace-period=0
-#kubectl delete -f meta-pvc.yaml -n hadoop
-kubectl logs -n hadoop `kubectl get pod -n hadoop | grep hive-serv | awk '{print $1}'`
+kubectl logs -n hadoop `kubectl get pod -n hadoop | grep hive-serv | awk '{print $1}'` init-database
+kubectl logs -n hadoop `kubectl get pod -n hadoop | grep hive-serv | awk '{print $1}'` hive
+
+#备份数据库
+echo RGFtZW5nQDc3Nw== > pwdbased
+base64 --decode -i pwdbased
+  Dameng@777
+bkfile=metastore-bk-`date +%F`.sql
+
+kubectl exec -it -n mysql `kubectl get pod -n mysql | grep Running | grep mysql | awk '{print $1}'` -- bash
+  bkfile=metastore-bk-`date +%F`.sql
+  mysqldump -uroot -p123456 metastore > /tmp/$bkfile
+kubectl cp -n hadoop `kubectl get pod -n hadoop | grep Running | grep metadata-mysql | awk '{print $1}'`:/tmp/$bkfile $PWD/$bkfile
+
+#还原数据库
+kubectl cp $PWD/metastore-bk-2023-03-25.sql -n hadoop `kubectl get pod -n hadoop | grep Running | grep metadata-mysql | awk '{print $1}'`:/tmp/metastore-bk-2023-03-25.sql
+kubectl exec -it -n mysql `kubectl get pod -n mysql | grep Running | grep mysql | awk '{print $1}'` -- bash
+  mysql -uroot -p123456 < /tmp/metastore-bk-2023-03-25.sql
 
 cat << students.txt > EOF
 EOF
@@ -259,8 +295,10 @@ kubectl get configmap hive-custom-config-cm-ext -n hadoop -o yaml
 
 kubectl run test-myubussh -n hadoop -ti --image=praqma/network-multitool --rm=true --restart=Never -- bash
 
+watch kubectl get pod -n hadoop -o wide
 kubectl get pod -n hadoop -o wide
 kubectl get pvc -n hadoop -o wide
 kubectl get svc -n hadoop -o wide
+kubectl get pv|grep meta-mysql
 
 EOF

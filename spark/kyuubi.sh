@@ -51,7 +51,7 @@ $SED -i "/USER \${kyuubi_uid}/i\COPY --chown=hdfs:root spark-defaults.conf \${SP
 $SED -i 's/spark-binary/spark/g' ${file}
 $SED -i '/COPY LICENSE NOTICE RELEASE/i\RUN chown -R kyuubi:root ${SPARK_HOME}' ${file}
 
-kubectl cp -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-test | awk '{print $1}'`:/opt/spark park
+kubectl cp -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-client | awk '{print $1}'`:/opt/spark park
 chmod a+x spark/bin/*
 chmod a+x spark/sbin/*
 file=spark/conf/core-site.xml

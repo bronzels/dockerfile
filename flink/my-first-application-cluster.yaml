@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  annotations:
+    deployment.kubernetes.io/desired-replicas: "1"
+    deployment.kubernetes.io/max-replicas: "2"
+    deployment.kubernetes.io/revision: "1"
+  creationTimestamp: "2023-03-14T04:33:02Z"
+  generation: 1
+  labels:
+    app: my-first-application-cluster
+    component: jobmanager
+    pod-template-hash: 57f9f66cdd
+    type: flink-native-kubernetes
+  name: my-first-application-cluster-57f9f66cdd
+  namespace: flink
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: my-first-application-cluster
+    uid: d83ca78b-8fde-44d0-9c41-0c1c4fedb211
+  resourceVersion: "11583801"
+  selfLink: /apis/apps/v1/namespaces/flink/replicasets/my-first-application-cluster-57f9f66cdd
+  uid: d81f4faf-b822-44ac-9200-b388c7a7e645
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-first-application-cluster
+      component: jobmanager
+      pod-template-hash: 57f9f66cdd
+      type: flink-native-kubernetes
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: my-first-application-cluster
+        component: jobmanager
+        pod-template-hash: 57f9f66cdd
+        type: flink-native-kubernetes
+    spec:
+      containers:
+      - args:
+        - bash
+        - -c
+        - kubernetes-jobmanager.sh kubernetes-application
+        command:
+        - /docker-entrypoint.sh
+        env:
+        - name: _POD_IP_ADDRESS
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: HADOOP_CONF_DIR
+          value: /opt/hadoop/conf
+        image: harbor.my.org:1080/flink/flink-juicefs:1.15.3
+        imagePullPolicy: IfNotPresent
+        name: flink-main-container
+        ports:
+        - containerPort: 8081
+          name: rest
+          protocol: TCP
+        - containerPort: 6123
+          name: jobmanager-rpc
+          protocol: TCP
+        - containerPort: 6124
+          name: blobserver
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "1"
+            memory: 2Gi
+          requests:
+            cpu: "1"
+            memory: 2Gi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /opt/hadoop/conf
+          name: hadoop-config-volume
+        - mountPath: /opt/flink/conf
+          name: flink-config-volume
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: core-site.xml
+            path: core-site.xml
+          - key: hdfs-site.xml
+            path: hdfs-site.xml
+          name: hadoop-config-my-first-application-cluster
+        name: hadoop-config-volume
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: logback-console.xml
+            path: logback-console.xml
+          - key: log4j-console.properties
+            path: log4j-console.properties
+          - key: flink-conf.yaml
+            path: flink-conf.yaml
+          name: flink-config-my-first-application-cluster
+        name: flink-config-volume
+status:
+  fullyLabeledReplicas: 1
+  observedGeneration: 1
+  replicas: 1

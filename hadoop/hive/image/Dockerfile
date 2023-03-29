@@ -1,0 +1,33 @@
+FROM harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib
+
+ARG HIVEREV
+
+COPY --chown=hdfs:root apache-hive-${HIVEREV}-bin.tar.gz /app/hdfs/
+WORKDIR /app/hdfs/
+RUN tar xzvf apache-hive-${HIVEREV}-bin.tar.gz
+RUN ln -s /app/hdfs/apache-hive-${HIVEREV}-bin /app/hdfs/hive
+ADD --chown=hdfs:root mysql-connector-java.jar /app/hdfs/hive/lib
+RUN rm -f /app/hdfs/hive/lib/guava*.jar
+RUN cp ${HADOOP_HOME}/share/hadoop/common/lib/guava*.jar /app/hdfs/hive/lib/
+
+ENV HIVE_HOME /app/hdfs/hive
+ENV PATH $HIVE_HOME/bin:$PATH
+WORKDIR $HIVE_HOME
+
+#RUN git clone https://github.com/hortonworks/hive-testbench.git -b hdp3
+COPY --chown=hdfs:root hive-testbench $HIVE_HOME/hive-testbench
+WORKDIR $HIVE_HOME/hive-testbench
+COPY --chown=hdfs:root load-partitioned.sql settings/load-partitioned.sql
+#COPY --chown=hdfs:root load-flat.sql settings/load-flat.sql
+COPY --chown=hdfs:root ddl-tpcds-bin_partitioned ddl-tpcds/bin_partitioned
+RUN ./tpcds-build.sh
+RUN ./tpch-build.sh
+WORKDIR $HIVE_HOME
+
+#RUN sed -i '/export HADOOP_CLIENT_OPTS/a\  export HIVE_METASTORE_HADOOP_OPTS="-Xms2048m -Xmx4096m"\' /app/hdfs/hive/bin/ext/metastore.sh
+
+#TARGET_BUILT=hadoop2hive2
+ARG TARGET_BUILT=?
+ARG HUDI_VERSION=?
+COPY --chown=hdfs:root hudi/${TARGET_BUILT}/hudi-hive-sync-bundle-${HUDI_VERSION}.jar /app/hdfs/hive/lib
+COPY --chown=hdfs:root hudi/${TARGET_BUILT}/hudi-hadoop-mr-bundle-${HUDI_VERSION}.jar /app/hdfs/hive/lib

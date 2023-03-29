@@ -16,14 +16,15 @@ fi
 
 WORK_HOME=${MYHOME}/workspace
 PRJ_HOME=${WORK_HOME}/dockerfile
-PRESTO_HOME=${PRJ_HOME}/presto
+PRJ_PRESTO_HOME=${PRJ_HOME}/presto
 
 TRINO_VERSION=406
 TRINO_HELM_VERSION=0.9.0
 
 PRESTO_VERSION=0.279
 
-JUICEFS_VERSION=1.0.2
+#JUICEFS_VERSION=1.0.2
+JUICEFS_VERSION=1.0.3
 
 maven_version=3.8.6
 
@@ -31,7 +32,7 @@ maven_home=${MYHOME}/apache-maven-${maven_version}
 m2_home=${MYHOME}/m2
 go_path=${MYHOME}/gopath
 
-cd ${PRESTO_HOME}
+cd ${PRJ_PRESTO_HOME}
 
 # trino start--------------------------------------------
 wget -c https://github.com/trinodb/trino/archive/refs/tags/406.zip
@@ -85,9 +86,9 @@ cd core/docker
 file=Dockerfile
 #cp ${file}.bk ${file}
 cp ${file} ${file}.bk
-cp ${PRESTO_HOME}/trino-${TRINO_VERSION}/client/trino-cli/target/trino-cli-406-executable.jar ./
+cp ${PRJ_PRESTO_HOME}/trino-${TRINO_VERSION}/client/trino-cli/target/trino-cli-406-executable.jar ./
 
-tar xzvf ${PRESTO_HOME}/trino-server-${TRINO_VERSION}.tar.gz
+tar xzvf ${PRJ_PRESTO_HOME}/trino-server-${TRINO_VERSION}.tar.gz
 
 $SED -i '/FROM eclipse-temurin:17-jdk AS builder/i\FROM harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:3.3.1 AS builder' ${file}
 $SED -i 's@FROM eclipse-temurin:17-jdk@FROM registry.cn-hangzhou.aliyuncs.com/bronzels/eclipse-temurin-17-jdk:1.0 AS base@g' ${file}
@@ -130,7 +131,7 @@ ansible all -m shell -a"docker images|grep trino-juicefs|awk '{print \$3}'|xargs
 ansible all -m shell -a"crictl images|grep trino-juicefs"
 ansible all -m shell -a"crictl images|grep trino-juicefs|awk '{print \$3}'|xargs crictl rmi"
 
-cd ${PRESTO_HOME}
+cd ${PRJ_PRESTO_HOME}
 helm repo add trino https://trinodb.github.io/charts/
 helm repo update
 
@@ -301,16 +302,16 @@ cd presto-${PRESTO_VERSION}
 cd docker
 
 #server bin package
-tar xzvf ${PRESTO_HOME}/presto-server-${PRESTO_VERSION}.tar.gz
+tar xzvf ${PRJ_PRESTO_HOME}/presto-server-${PRESTO_VERSION}.tar.gz
 cp ${PRJ_HOME}/juicefs/juicefs-hadoop-${JUICEFS_VERSION}-jdk11.jar presto-server-${PRESTO_VERSION}/plugin/hive-hadoop2/
 mkdir presto-server-${PRESTO_VERSION}/hadoopconf
 cp ${PRJ_HOME}/juicefs/core-site.xml presto-server-${PRESTO_VERSION}/hadoopconf/
 cp ${PRJ_HOME}/spark/hdfs-site.xml presto-server-${PRESTO_VERSION}/hadoopconf/
 tar czvf presto-server-${PRESTO_VERSION}.tar.gz presto-server-${PRESTO_VERSION}/
 rm -rf presto-server-${PRESTO_VERSION}
-mv presto-server-${PRESTO_VERSION} ${PRESTO_HOME}/
+mv presto-server-${PRESTO_VERSION} ${PRJ_PRESTO_HOME}/
 #client jar
-cp ${PRESTO_HOME}/presto-${PRESTO_VERSION}/presto-cli/target/presto-cli-${PRESTO_VERSION}-SNAPSHOT-executable.jar ./presto-cli-${PRESTO_VERSION}-executable.jar
+cp ${PRJ_PRESTO_HOME}/presto-${PRESTO_VERSION}/presto-cli/target/presto-cli-${PRESTO_VERSION}-SNAPSHOT-executable.jar ./presto-cli-${PRESTO_VERSION}-executable.jar
 #os repo
 cp ${PRJ_HOME}/image/Centos-7.repo ./
 
@@ -323,8 +324,8 @@ $SED -i 's@RUN yum install tar gzip java-11-amazon-corretto less procps@RUN yum 
 $SED -i 's/COPY etc /#COPY etc /g' ${file}
 $SED -i 's/COPY entrypoint.sh /#COPY entrypoint.sh /g' ${file}
 $SED -i 's/ENTRYPOINT /#ENTRYPOINT /g' ${file}
-$SED -i '/mkdir -p $PRESTO_HOME\/etc /,+d' ${file}
-$SED -i '/mkdir -p $PRESTO_HOME\/etc\/catalog /,+d' ${file}
+$SED -i '/mkdir -p $PRJ_PRESTO_HOME\/etc /,+d' ${file}
+$SED -i '/mkdir -p $PRJ_PRESTO_HOME\/etc\/catalog /,+d' ${file}
 
 docker build ./ --progress=plain --build-arg PRESTO_VERSION="${PRESTO_VERSION}" -t harbor.my.org:1080/presto/presto-juicefs:${PRESTO_VERSION}
 docker push harbor.my.org:1080/presto/presto-juicefs:${PRESTO_VERSION}
@@ -336,7 +337,7 @@ ansible all -m shell -a"docker images|grep 'presto-juicefs '|awk '{print \$3}'|x
 ansible all -m shell -a"crictl images|grep 'presto-juicefs '"
 ansible all -m shell -a"crictl images|grep 'presto-juicefs '|awk '{print \$3}'|xargs crictl rmi"
 
-cd ${PRESTO_HOME}
+cd ${PRJ_PRESTO_HOME}
 #git clone git@github.com:dnskr/presto.git presto-helm
 
 
@@ -376,7 +377,7 @@ helm install my -n presto -f values.yaml \
 # presto official end--------------------------------------------
 
 # presto 2h-kim start--------------------------------------------
-cd ${PRESTO_HOME}
+cd ${PRJ_PRESTO_HOME}
 #git clone git@github.com:2h-kim/presto-cluster.git
 unzip -x presto-cluster-main.zip
 
@@ -402,67 +403,8 @@ mkdir hadoopconf
 cp ${PRJ_HOME}/juicefs/core-site.xml hadoopconf/
 cp ${PRJ_HOME}/spark/hdfs-site.xml hadoopconf/
 
-$SED -i 's/FROM ubuntu:latest/FROM ubuntu:latest AS base/g' ${file}
-cp ${PRJ_HOME}/juicefs/juicefs-${JUICEFS_VERSION}.tar.gz ./
-cp ${PRJ_HOME}/image/go1.19.2.linux-amd64.tar.gz ./
-$SED -i 's@COPY ./scripts /home/presto/scripts@COPY --chown=presto:presto ./scripts /home/presto/scripts@g' ${file}
-cat << \EOF >> ${file}
-
-ENV MY_HOME=/home/presto
-
-USER root
-COPY --chown=presto:presto ./hadoopconf ${MY_HOME}/hadoopconf
-ARG PRESTO_CLI_JAR=presto-cli-$PRESTO_VERSION-executable.jar
-COPY --chown=presto:presto $PRESTO_CLI_JAR ${PRESTO_SERVER_HOME}/bin/presto-cli
-RUN chmod +x ${PRESTO_SERVER_HOME}/bin/presto-cli
-USER presto
-WORKDIR ${MY_HOME}
-
-FROM base as juicefs
-ARG JUICEFS_VERSION=?
-COPY --chown=presto:presto go1.19.2.linux-amd64.tar.gz ./
-RUN tar xzvf go1.19.2.linux-amd64.tar.gz
-ENV PATH ${MY_HOME}/go/bin:$PATH
-ENV GOPROXY https://goproxy.cn
-
-COPY --chown=presto:presto juicefs-${JUICEFS_VERSION}.tar.gz ./
-RUN tar xzvf juicefs-${JUICEFS_VERSION}.tar.gz
-
-USER root
-RUN apt install -y gcc-7 g++-7
-RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 100
-RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 100
-RUN gcc --version
-RUN apt install -y make
-RUN make --version
-
-COPY --chown=presto:presto gopath ${MY_HOME}/gopath
-ENV GOPATH ${MY_HOME}/gopath
-COPY --chown=presto:presto apache-maven ${MY_HOME}/maven
-COPY --chown=presto:presto .m2 ${MY_HOME}/.m2
-USER presto
-
-WORKDIR ${MY_HOME}/juicefs-${JUICEFS_VERSION}/sdk/java
-ENV PATH ${MY_HOME}/maven/bin:$PATH
-#RUN ls -la ${MY_HOME}
-RUN sed -i 's/-Dmaven.test.skip=true/-Dmaven.test.skip=true -Dmaven.javadoc.skip=true/g' Makefile
-RUN make
-
-FROM base as final
-ARG JUICEFS_VERSION=?
-USER root
-COPY --from=juicefs --chown=presto:presto ${MY_HOME}/juicefs-${JUICEFS_VERSION}/sdk/java/target/juicefs-hadoop-${JUICEFS_VERSION}.jar ${PRESTO_SERVER_HOME}/plugin/hive-hadoop2/juicefs-hadoop-${JUICEFS_VERSION}-jdk11.jar
-COPY --from=juicefs --chown=presto:presto ${MY_HOME}/juicefs-${JUICEFS_VERSION}/sdk/java/target/juicefs-hadoop-${JUICEFS_VERSION}.jar ${PRESTO_SERVER_HOME}/plugin/hudi/juicefs-hadoop-${JUICEFS_VERSION}-jdk11.jar
-COPY --from=juicefs --chown=presto:presto ${MY_HOME}/juicefs-${JUICEFS_VERSION}/sdk/java/target/juicefs-hadoop-${JUICEFS_VERSION}.jar ${PRESTO_SERVER_HOME}/plugin/iceberg/juicefs-hadoop-${JUICEFS_VERSION}-jdk11.jar
-USER presto
-
-USER root
-RUN apt install -y less
-
-EOF
-
 #client jar, build in jdk11
-#cp ${PRESTO_HOME}/presto-${PRESTO_VERSION}/presto-cli/target/presto-cli-${PRESTO_VERSION}-SNAPSHOT-executable.jar ./presto-cli-${PRESTO_VERSION}-executable.jar
+#cp ${PRJ_PRESTO_HOME}/presto-${PRESTO_VERSION}/presto-cli/target/presto-cli-${PRESTO_VERSION}-SNAPSHOT-executable.jar ./presto-cli-${PRESTO_VERSION}-executable.jar
 wget -c https://repo1.maven.org/maven2/com/facebook/presto/presto-cli/0.279/presto-cli-0.279-executable.jar
 
 mv scripts/start-presto.sh scripts/start-presto-coordinator.sh
@@ -476,28 +418,56 @@ chmod a+x scripts/start-presto-worker.sh
 $SED -i 's/COPY .\/catalog/#COPY .\/catalog/g' ${file}
 $SED -i '/    && mkdir -p ${PRESTO_SERVER_HOME}\/etc\/catalog/,+d' ${file}
 
-:<<EOF
-mv ${maven_home} ./apache-maven
-#mv ${m2_home} ./
-mv ${go_path} ./
-DOCKER_BUILDKIT=1 docker build ./ --progress=plain --build-arg PRESTO_VERSION="${PRESTO_VERSION}" --build-arg JUICEFS_VERSION="${JUICEFS_VERSION}" -t harbor.my.org:1080/presto/presto-juicefs-new:${PRESTO_VERSION}
-docker push harbor.my.org:1080/presto/presto-juicefs-new:${PRESTO_VERSION}
-mv apache-maven ${MYHOME}/apache-maven-${maven_version}
-#mv m2 ${MYHOME}/
-mv ${go_path} ${MYHOME}/
-chown -R $USER ${maven_home}
-chown -R $USER ${m2_home}
-chown -R $USER ${go_path}
+
+#$SED -i 's/FROM ubuntu:latest/FROM ubuntu:latest AS base/g' ${file}
+#cp ${PRJ_HOME}/juicefs/juicefs-${JUICEFS_VERSION}.tar.gz ./
+cp ${PRJ_HOME}/juicefs/juicefs-hadoop-${JUICEFS_VERSION}-jdk11-ubuntu20.jar ./
+#cp ${PRJ_HOME}/image/go1.19.2.linux-amd64.tar.gz ./
+$SED -i 's@COPY ./scripts /home/presto/scripts@COPY --chown=presto:presto ./scripts /home/presto/scripts@g' ${file}
+$SED -i '/COPY --chown=presto:presto .\/scripts/i\USER root' ${file}
+
+cp -r ${PRJ_PRESTO_HOME}/hudibk ./
+
+cat << \EOF >> ${file}
+
+ENV MY_HOME=/home/presto
+
+COPY --chown=presto:presto ./hadoopconf ${MY_HOME}/hadoopconf
+
+ARG PRESTO_CLI_JAR=presto-cli-$PRESTO_VERSION-executable.jar
+COPY --chown=presto:presto $PRESTO_CLI_JAR ${PRESTO_SERVER_HOME}/bin/presto-cli
+RUN chmod +x ${PRESTO_SERVER_HOME}/bin/presto-cli
+WORKDIR ${MY_HOME}
+
+ARG JUICEFS_VERSION=?
+COPY --chown=presto:presto juicefs-hadoop-${JUICEFS_VERSION}-jdk11-ubuntu20.jar ${PRESTO_SERVER_HOME}/plugin/hive-hadoop2/
+COPY --chown=presto:presto juicefs-hadoop-${JUICEFS_VERSION}-jdk11-ubuntu20.jar ${PRESTO_SERVER_HOME}/plugin/hudi/
+COPY --chown=presto:presto juicefs-hadoop-${JUICEFS_VERSION}-jdk11-ubuntu20.jar ${PRESTO_SERVER_HOME}/plugin/iceberg/
+
+RUN apt install -y less
+
+ARG TARGET_BUILT=?
+ARG HUDI_VERSION=?
+ARG HUDI_OLD_VERSION=?
+RUN rm -f ${PRESTO_SERVER_HOME}/plugin/hudi/hudi-presto-bundle-${HUDI_OLD_VERSION}.jar
+COPY --chown=presto:presto hudibk/${TARGET_BUILT}/hudi-presto-bundle-${HUDI_VERSION}.jar ${PRESTO_SERVER_HOME}/plugin/hudi/
+
+USER presto
 EOF
 
-mv ${maven_home} ./apache-maven
-mv ${go_path} ./
-mkdir .m2
-cp ${MYHOME}/m2/settings.xml .m2/
-DOCKER_BUILDKIT=1 docker build ./ --progress=plain --build-arg JUICEFS_VERSION="${JUICEFS_VERSION}" -t harbor.my.org:1080/presto/presto-juicefs-new:${PRESTO_VERSION}
+TARGET_BUILT=hadoop3hive3
+#TARGET_BUILT=hadoop2hive2
+HUDI_VERSION=0.12.2
+HUDI_OLD_VERSION=0.12.0
+
+DOCKER_BUILDKIT=1 docker build ./ --progress=plain\
+  --build-arg TARGET_BUILT="${TARGET_BUILT}"\
+  --build-arg HUDI_VERSION="${HUDI_VERSION}"\
+  --build-arg HUDI_OLD_VERSION="${HUDI_OLD_VERSION}"\
+  --build-arg PRESTO_VERSION="${PRESTO_VERSION}"\
+  --build-arg JUICEFS_VERSION="${JUICEFS_VERSION}"\
+  -t harbor.my.org:1080/presto/presto-juicefs-new:${PRESTO_VERSION}
 docker push harbor.my.org:1080/presto/presto-juicefs-new:${PRESTO_VERSION}
-mv apache-maven ${MYHOME}/apache-maven-${maven_version}
-mv gopath ${MYHOME}/
 
 #docker
 ansible all -m shell -a"docker images|grep presto-juicefs-new"
@@ -506,7 +476,7 @@ ansible all -m shell -a"docker images|grep presto-juicefs-new|awk '{print \$3}'|
 ansible all -m shell -a"crictl images|grep presto-juicefs-new"
 ansible all -m shell -a"crictl images|grep presto-juicefs-new|awk '{print \$3}'|xargs crictl rmi"
 
-cd ${PRESTO_HOME}
+cd ${PRJ_PRESTO_HOME}
 git clone git@github.com:2h-kim/presto-kube.git
 cd presto-kube
 :<<EOF
@@ -548,8 +518,8 @@ do
 done
 
 
-cp ${PRESTO_HOME}/configmap-catalog.yaml templates/
-cp ${PRESTO_HOME}/configmap-common.yaml templates/
+cp ${PRJ_PRESTO_HOME}/configmap-catalog.yaml templates/
+cp ${PRJ_PRESTO_HOME}/configmap-common.yaml templates/
 
 file=values.yaml
 cp ${file} ${file}.bk
@@ -625,4 +595,66 @@ Accessing deployed release:
     kubectl port-forward svc/my 8080:8080 -n presto
   and then open the browser on 127.0.0.1:8080
 
+EOF
+
+#backup of build juicefs in Dockerfile
+:<<EOF
+mv ${maven_home} ./apache-maven
+#mv ${m2_home} ./
+mv ${go_path} ./
+DOCKER_BUILDKIT=1 docker build ./ --progress=plain --build-arg PRESTO_VERSION="${PRESTO_VERSION}" --build-arg JUICEFS_VERSION="${JUICEFS_VERSION}" -t harbor.my.org:1080/presto/presto-juicefs-new:${PRESTO_VERSION}
+docker push harbor.my.org:1080/presto/presto-juicefs-new:${PRESTO_VERSION}
+mv apache-maven ${MYHOME}/apache-maven-${maven_version}
+#mv m2 ${MYHOME}/
+mv ${go_path} ${MYHOME}/
+chown -R $USER ${maven_home}
+chown -R $USER ${m2_home}
+chown -R $USER ${go_path}
+
+mv ${maven_home} ./apache-maven
+mv ${go_path} ./
+mkdir .m2
+cp ${MYHOME}/m2/settings.xml .m2/
+#docker build
+mv apache-maven ${MYHOME}/apache-maven-${maven_version}
+mv gopath ${MYHOME}/
+EOF
+:<<EOF
+
+FROM base as juicefs
+ARG JUICEFS_VERSION=?
+COPY --chown=presto:presto go1.19.2.linux-amd64.tar.gz ./
+RUN tar xzvf go1.19.2.linux-amd64.tar.gz
+ENV PATH ${MY_HOME}/go/bin:$PATH
+ENV GOPROXY https://goproxy.cn
+
+COPY --chown=presto:presto juicefs-${JUICEFS_VERSION}.tar.gz ./
+RUN tar xzvf juicefs-${JUICEFS_VERSION}.tar.gz
+
+USER root
+RUN apt install -y gcc-7 g++-7
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 100
+RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 100
+RUN gcc --version
+RUN apt install -y make
+RUN make --version
+
+COPY --chown=presto:presto gopath ${MY_HOME}/gopath
+ENV GOPATH ${MY_HOME}/gopath
+COPY --chown=presto:presto apache-maven ${MY_HOME}/maven
+COPY --chown=presto:presto .m2 ${MY_HOME}/.m2
+USER presto
+
+WORKDIR ${MY_HOME}/juicefs-${JUICEFS_VERSION}/sdk/java
+ENV PATH ${MY_HOME}/maven/bin:$PATH
+#RUN ls -la ${MY_HOME}
+RUN sed -i 's/-Dmaven.test.skip=true/-Dmaven.test.skip=true -Dmaven.javadoc.skip=true/g' Makefile
+RUN make
+
+FROM base as final
+ARG JUICEFS_VERSION=?
+USER root
+COPY --from=juicefs --chown=presto:presto ${MY_HOME}/juicefs-${JUICEFS_VERSION}/sdk/java/target/juicefs-hadoop-${JUICEFS_VERSION}.jar ${PRESTO_SERVER_HOME}/plugin/hive-hadoop2/juicefs-hadoop-${JUICEFS_VERSION}-jdk11.jar
+COPY --from=juicefs --chown=presto:presto ${MY_HOME}/juicefs-${JUICEFS_VERSION}/sdk/java/target/juicefs-hadoop-${JUICEFS_VERSION}.jar ${PRESTO_SERVER_HOME}/plugin/hudi/juicefs-hadoop-${JUICEFS_VERSION}-jdk11.jar
+COPY --from=juicefs --chown=presto:presto ${MY_HOME}/juicefs-${JUICEFS_VERSION}/sdk/java/target/juicefs-hadoop-${JUICEFS_VERSION}.jar ${PRESTO_SERVER_HOME}/plugin/iceberg/juicefs-hadoop-${JUICEFS_VERSION}-jdk11.jar
 EOF

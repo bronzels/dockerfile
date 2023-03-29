@@ -91,7 +91,7 @@ ERROR 1105 (HY000): errCode = 2, detailMessage = get file split failed for table
   -- doris end
 
   -- starrocks start
-  DROP EXTERNAL CATALOG hive IF EXISTS;
+  DROP CATALOG hive;
   CREATE EXTERNAL CATALOG hive PROPERTIES (
       'type'='hive',
       'hive.metastore.uris' = 'thrift://hive-service.hadoop.svc.cluster.local:9083'
@@ -107,6 +107,62 @@ Library names
 [/tmp/libjfs-amd64.7.so]
 Search paths:
 [/usr/lib/jvm/java-11-openjdk/lib/server, /usr/lib/jvm/java-11-openjdk/lib, /usr/lib/jvm/java-11-openjdk/../lib, /usr/java/packages/lib, /usr/lib64, /lib64, /lib, /usr/li
+  SELECT * FROM store_sales LIMIT 5;
+  -- after fe hudi 0.10.1 is replaced by 0.12.2, not working, errors in fe log
+WARNING: sun.reflect.Reflection.getCallerClass is not supported. This will impact performance.
+Exception in thread "process reaper" java.lang.StackOverflowError
+	at java.base/java.lang.invoke.MethodType.equals(MethodType.java:797)
+	at java.base/java.lang.invoke.MethodType.equals(MethodType.java:792)
+	at java.base/java.lang.invoke.MethodType$ConcurrentWeakInternSet$WeakEntry.equals(MethodType.java:1341)
+	at java.base/java.util.concurrent.ConcurrentHashMap.get(ConcurrentHashMap.java:940)
+	at java.base/java.lang.invoke.MethodType$ConcurrentWeakInternSet.get(MethodType.java:1279)
+	at java.base/java.lang.invoke.MethodType.makeImpl(MethodType.java:300)
+	at java.base/java.lang.invoke.MethodTypeForm.canonicalize(MethodTypeForm.java:355)
+	at java.base/java.lang.invoke.MethodTypeForm.findForm(MethodTypeForm.java:317)
+	at java.base/java.lang.invoke.MethodType.makeImpl(MethodType.java:315)
+	at java.base/java.lang.invoke.MethodType.insertParameterTypes(MethodType.java:410)
+	at java.base/java.lang.invoke.VarHandle$AccessDescriptor.<init>(VarHandle.java:1853)
+	at java.base/java.lang.invoke.MethodHandleNatives.varHandleOperationLinkerMethod(MethodHandleNatives.java:518)
+	at java.base/java.lang.invoke.MethodHandleNatives.linkMethodImpl(MethodHandleNatives.java:462)
+	at java.base/java.lang.invoke.MethodHandleNatives.linkMethod(MethodHandleNatives.java:450)
+	at java.base/java.util.concurrent.CompletableFuture.completeThrowable(CompletableFuture.java:319)
+	at java.base/java.util.concurrent.CompletableFuture.uniHandle(CompletableFuture.java:932)
+	at java.base/java.util.concurrent.CompletableFuture$UniHandle.tryFire(CompletableFuture.java:907)
+	at java.base/java.util.concurrent.CompletableFuture.postComplete(CompletableFuture.java:506)
+	at java.base/java.util.concurrent.CompletableFuture.complete(CompletableFuture.java:2073)
+	at java.base/java.lang.ProcessHandleImpl$1.run(ProcessHandleImpl.java:162)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)
+	at java.base/java.lang.Thread.run(Thread.java:829)
+
+
+
+  DROP CATALOG hudi;
+  CREATE EXTERNAL CATALOG hudi PROPERTIES (
+      'type'='hudi',
+      'hive.metastore.uris' = 'thrift://hive-service.hadoop.svc.cluster.local:9083'
+  );
+
+  USE hudi.hudi_mydb;
+  SHOW TABLES;
+
+  SELECT * FROM products_hudi_sink;
+  SELECT * FROM products_hudi_sink_ro;
+  SELECT * FROM products_hudi_sink_rt;
+没有任何hudi相关改动以前
+MySQL [hudi.hudi_mydb]>   SELECT * FROM products_hudi_sink;
+Empty set (0.27 sec)
+MySQL [hudi.hudi_mydb]>   SELECT * FROM products_hudi_sink_ro;
+Empty set (0.17 sec)
+MySQL [hudi.hudi_mydb]>   SELECT * FROM products_hudi_sink_rt;
+ERROR 1064 (HY000): Failed to open the off-heap table scanner.:file = jfs://miniofs/flinkhudi/mydb/products/dt=20201214/
+  -- after fe hudi 0.10.1 is replaced by 0.12.2, not working, errors in fe log
+MySQL [hudi.hudi_mydb]>   SELECT * FROM products_hudi_sink;
+Empty set (0.27 sec)
+MySQL [hudi.hudi_mydb]>   SELECT * FROM products_hudi_sink_ro;
+Empty set (0.17 sec)
+MySQL [hudi.hudi_mydb]>   SELECT * FROM products_hudi_sink_rt;
+死住无法返回。
 
   -- starrocks end
 

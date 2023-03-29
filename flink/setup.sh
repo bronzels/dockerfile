@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "Mac detected."
     #mac
@@ -14,14 +15,22 @@ WORK_HOME=${MYHOME}/workspace
 PRJ_HOME=${WORK_HOME}/dockerfile
 
 PRJ_FLINK_HOME=${PRJ_HOME}/flink
+
+FLINK_VERSION=1.15.4
+FLINK_SHORT_VERSION=1.15
+
+:<<EOF
+FLINK_VERSION=1.17.0
+FLINK_SHORT_VERSION=1.17
+
 FLINK_VERSION=1.16.1
 FLINK_SHORT_VERSION=1.16
-:<<EOF
+
 FLINK_VERSION=1.15.3
 FLINK_SHORT_VERSION=1.15
 
-FLINK_VERSION=1.14.6
 FLINK_VERSION=1.14.0
+FLINK_VERSION=1.14.6
 FLINK_SHORT_VERSION=1.14
 
 EOF
@@ -32,16 +41,24 @@ FLINKOP_VERSION=1.3.1
 #HADOOP_VERSION=3.3.1
 #HADOOP_VERSION=3.1.1
 HADOOP_VERSION=3.3.4
+#HADOOP_VERSION=2.10.2
 HIVEREV=3.1.2
+#HIVEREV=2.3.6
+#HIVEREV=2.3.9
+#HIVEREV=3.1.3
 
-JUICEFS_VERSION=1.0.2
+#JUICEFS_VERSION=1.0.2
+JUICEFS_VERSION=1.0.3
 
 STARROCKS_CONNECTOR_VERSION=1.2.5
 
 SCALA_VERSION=2.12
 
-#HUDI_VERSION=0.12.2
-HUDI_VERSION=0.13.0
+HUDI_VERSION=0.12.2
+#1.16.1 only support hudi 0.13.0
+#HUDI_VERSION=0.13.0
+
+CDC_VERSION=2.3.0
 
 PYTHON_VERSION=3.7.9
 
@@ -188,8 +205,8 @@ mvn -ntp clean install -DskipTests=true -Dmaven.test.skip=true -Dmaven.javadoc.s
 cd ${PRJ_FLINK_HOME}/flink-kubernetes-operator-release-${FLINKOP_VERSION}
 
 cd ${PRJ_FLINK_HOME}
-#cp ${PRJ_HOME}/juicefs/juicefs-hadoop-${JUICEFS_VERSION}-jdk11-debian11.jar ./
-cp ${PRJ_HOME}/juicefs/juicefs-hadoop-${JUICEFS_VERSION}-jdk11-ubuntu22.04.jar ./
+#cp ${PRJ_HOME}/juicefs/juicefs-hadoop-${JUICEFS_VERSION}-jdk11-ubuntu22.04.jar ./
+cp ${PRJ_HOME}/juicefs/juicefs-hadoop-${JUICEFS_VERSION}.jar ./
 
 :<<EOF
 mkdir -p conf/hadoop
@@ -212,15 +229,37 @@ SET parallism.default=10;
 SET pipeline.auto-watermark-interval=500;
 EOF
 cat << EOF > setting.sql
+SET execution.checkpointing.interval = 3s;
+  
+-- SET table.local-time-zone=Asia/Shanghai;
+  
 CREATE CATALOG hive WITH (
     'type' = 'hive',
     'default-database' = 'default',
     'hive-conf-dir' = '/opt/flink/hiveconf',
     'hadoop-conf-dir'='/opt/hadoop/conf'
 );
--- set the HiveCatalog as the current catalog of the session
-USE CATALOG hive;
+
+CREATE CATALOG hudi_catalog WITH (
+    'type' = 'hudi',
+    'mode' = 'hms',
+    'default-database' = 'default',
+    'hive.conf.dir' = '/opt/flink/hiveconf',
+    'table.external' = 'true'
+);
 EOF
+
+cat << EOF > create_databases.sql
+CREATE DATABASE IF NOT EXISTS hive.flink_mydb;
+CREATE DATABASE IF NOT EXISTS hive.flink_tpcds;
+CREATE DATABASE IF NOT EXISTS hudi_catalog.hudi_mydb;
+CREATE DATABASE IF NOT EXISTS hudi_catalog.hudi_tpcds;
+EOF
+
+SQL_FILE_HOME=/app/hdfs/hive
+HDFS_SQL_FILE_HOME=/flink/scripts
+
+../hdfs_upload_file.sh ${SQL_FILE_HOME} ${HDFS_SQL_FILE_HOME} create_databases.sql
 
 :<<EOF
 maven repo下载如下4个jar，1和4必须
@@ -269,27 +308,114 @@ kubectl create cm flink-config-sql-runner -n flink --from-file=conf
 kubectl delete cm flink-config-sql-runner -n flink
 kubectl get cm flink-config-sql-runner -n flink -o yaml
 
-kubectl cp -n flink flink-test:/docker-entrypoint.sh docker-entrypoint.sh
+kubectl cp -n flink flink-client:/docker-entrypoint.sh docker-entrypoint.sh
 
-wget -c https://github.com/apache/flink/archive/refs/tags/release-1.15.3.tar.gz
+wget -c https://github.com/apache/flink/archive/refs/tags/release-${FLINK_VERSION}.tar.gz
 cd flink-release-${FLINK_VERSION}
-mvn clean install -DskipTests -Dmaven.test.skip=true -Dspotless.check.skip=true -Dfast -T 1C -Dhadoop.version=3.1.1 -Dmaven.javadoc.skip=true -Dcheckstyle.skip=true -Dlicense.skip=true -Drat.ignoreErrors=true
+# (shade-flink) on project flink-sql-connector-kinesis:GC overhead limit exceeded
+#allied to hadoop3/hive3
+#1.15.4
+mvn clean install -DskipTests -Dspotless.check.skip=true -Dfast -T 1C -Dhadoop.version=3.3.4 -Dhive.version=3.1.2 -Dhivemetastore.hadoop.version=3.3.4 -Dmaven.javadoc.skip=true -Dcheckstyle.skip=true -Dlicense.skip=true -Drat.ignoreErrors=true
+#1.17.0
+#hive.version can't be 3.1.2 as no such already built lib as dep
+mvn clean install -DskipTests -Dspotless.check.skip=true -Dfast -T 1C -Dflink.hadoop.version=3.3.4 -Dhive.version=3.1.3 -Dmaven.javadoc.skip=true -Dcheckstyle.skip=true -Dlicense.skip=true -Drat.ignoreErrors=true
+#default hadoop2/hive2
+:<<EOF
+#flink
+    <hadoop.version>2.8.5</hadoop.version>
+    <hive.version>2.3.9</hive.version>
+    <hive-2.2.0-orc-version>1.4.3</hive-2.2.0-orc-version>
+    <orc.version>1.5.6</orc.version>
+    <!--
+            Hive 2.3.4 relies on Hadoop 2.7.2 and later versions.
+            For Hadoop 2.7, the minor Hadoop version supported for flink-shaded-hadoop-2-uber is 2.7.5
+    -->
+    <hivemetastore.hadoop.version>2.7.5</hivemetastore.hadoop.version>
+#hudi
+    <hadoop.version>2.10.1</hadoop.version>
+    <hive.groupid>org.apache.hive</hive.groupid>
+    <hive.version>2.3.1</hive.version>
+    <hive.parquet.version>1.10.1</hive.parquet.version>
+    <hive.avro.version>1.8.2</hive.avro.version>
+    <hive.exec.classifier>core</hive.exec.classifier>
+    <orc.version>1.6.0</orc.version>
+    <spark.version>${spark2.version}</spark.version>
+    <spark2.version>2.4.4</spark2.version>
+    <spark3.version>3.3.1</spark3.version>
+    <sparkbundle.version></sparkbundle.version>
+    <flink1.15.version>1.15.1</flink1.15.version>
+    <flink1.14.version>1.14.5</flink1.14.version>
+    <flink1.13.version>1.13.6</flink1.13.version>
+    <flink.version>${flink1.15.version}</flink.version>
+    <hudi.flink.module>hudi-flink1.15.x</hudi.flink.module>
+EOF
+mvn clean install -DskipTests -Dspotless.check.skip=true -Dfast -T 1C -Dmaven.javadoc.skip=true -Dcheckstyle.skip=true -Dlicense.skip=true -Drat.ignoreErrors=true
 :<<EOF
 [ERROR] Failed to execute goal com.github.eirslett:frontend-maven-plugin:1.11.0:npm (npm install) on project flink-runtime-web: Failed to run task: 'npm ci --cache-max=0 --no-save ${npm.proxy}' failed. org.apache.commons.exec.ExecuteException: Process exited with an error: 1 (Exit value: 1) -> [Help 1]
-修改flink-runtime-web/pom.xml的<id>npm install</id>处的configuration为install -g -registry=https://registry.npm.taobao
-.org --cache-max=0 --no-save
-
-          <execution>
-                        <id>npm install</id>
-                        <goals>
-                            <goal>npm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>install -g -registry=https://registry.npm.taobao
-.org --cache-max=0 --no-save</arguments>
-                        </configuration>
-          </execution>
+先cd到flink-runtime-web模块进行编译
+1> 删除web-dashboard下面的node_modules文件夹
+2> 修改runtime-web下面的pom文件
+vim pom.xml
+/--cache-max=0 --no-save 搜索这个字符串把他修改成install -g -registry=https://registry.npm.taobao.org --cache-max=0 --no-save
+3> 在web-dashboard下执行 npm install命令（需要等待很长时间）
 EOF
+-rf :flink-runtime-web
+export MAVEN_OPTS="-Xms1024m -Xmx4096m"
+-rf :flink-sql-connector-kinesis
+#1.15.4
+mvn install:install-file -DgroupId=io.confluent -DartifactId=kafka-schema-registry-client -Dversion=6.2.2 -Dpackaging=jar -Dfile=kafka-schema-registry-client-6.2.2.jar
+#1.17.0
+mvn install:install-file -DgroupId=io.confluent -DartifactId=kafka-schema-registry-client -Dversion=7.2.2 -Dpackaging=jar -Dfile=kafka-schema-registry-client-7.2.2.jar
+-rf :flink-sql-avro-confluent-registry
+cd flink-connectors && 单独编译 flink-connectors && cd ..
+[ERROR] /Users/apple/flink-release-1.15.4/flink-formats/flink-avro-confluent-registry/src/test/java/org/apache/flink/formats/avro/registry/confluent/CachedSchemaCoderProviderTest.java:[89,21] 无法访问org.apache.kafka.common.Configurable
+[ERROR]   找不到org.apache.kafka.common.Configurable的类文件承担
+                <dependency>
+                        <!-- include 2.0 server for tests  -->
+                        <groupId>org.apache.kafka</groupId>
+                        <artifactId>kafka_${scala.binary.version}</artifactId>
+                        <version>${kafka.version}</version>
+                        <exclusions>
+                                <exclusion>
+                                        <groupId>org.slf4j</groupId>
+                                        <artifactId>slf4j-api</artifactId>
+                                </exclusion>
+                        </exclusions>
+                        <scope>test</scope>
+                </dependency>
+-rf :flink-avro-confluent-registry
+#1.15.4
+mvn install:install-file -DgroupId=io.confluent -DartifactId=kafka-avro-serializer -Dversion=6.2.2 -Dpackaging=jar -Dfile=kafka-avro-serializer-6.2.2.jar
+#1.17.0
+mvn install:install-file -DgroupId=io.confluent -DartifactId=kafka-avro-serializer -Dversion=7.2.2 -Dpackaging=jar -Dfile=kafka-avro-serializer-7.2.2.jar
+-rf :flink-end-to-end-tests-common-kafka
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.8.0:testCompile (default-testCompile) on project flink-end-to-end-tests-common-kafka: Compilation failure
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-assembly-plugin:2.4:single (create-test-dependency-user-jar-depend) on project flink-clients: Failed to create assembly: Error creating assembly archive test-user-classloader-job-lib-jar: You must set at least one file. -> [Help 1]
+flink-clients/pom.xml ，删除<build></build>
+[ERROR] /Users/apple/flink-release-1.15.4/flink-end-to-end-tests/flink-end-to-end-tests-common-kafka/src/test/java/org/apache/flink/tests/util/kafka/SQLClientSchemaRegistryITCase.java:[124,20] 无法访问io.confluent.kafka.serializers.AbstractKafkaSchemaSerDe
+[ERROR]   找不到io.confluent.kafka.serializers.AbstractKafkaSchemaSerDe的类文件
+在flink-end-to-end-tests的pom.xml注释掉flink-end-to-end-tests-common-kafka子项目
+#1.17.0
+[ERROR] Failed to execute goal on project flink-sql-gateway-test: Could not resolve dependencies for project org.apache.flink:flink-sql-gateway-test:jar:1.17.0: Could not find artifact org.apache.flink:flink-sql-connector-hive-3.1.2_2.12:jar:1.17.0 in nexus-tencentyun (http://mirrors.cloud.tencent.com/nexus/repository/maven-public/) -> [Help 1]
+mvn install:install-file -DgroupId=org.apache.flink -DartifactId=flink-sql-connector-hive-3.1.2_2.12 -Dversion=1.17.0 -Dpackaging=jar -Dfile=flink-sql-connector-hive-3.1.2_2.12-1.17.0.jar
+#default hadoop2/hive2
+[ERROR] Failed to execute goal on project flink-connector-hive_2.12: Could not resolve dependencies for project org.apache.flink:flink-connector-hive_2.12:jar:1.15.4: Could not find artifact org.pentaho:pentaho-aggdesigner-algorithm:jar:5.1.5-jhyde in nexus-tencentyun (http://mirrors.cloud.tencent.com/nexus/repository/maven-public/) -> [Help 1]
+mvn install:install-file -DgroupId=org.pentaho -DartifactId=pentaho-aggdesigner-algorithm -Dversion=5.1.5-jhyde -Dpackaging=jar -Dfile=pentaho-aggdesigner-algorithm-5.1.5-jhyde.jar
+-rf :flink-connector-hive_2.12
+TARGET_BUILT=hadoop3hive3
+HIVEREV=3.1.2
+#HIVEREV=3.1.3
+#TARGET_BUILT=hadoop2hive2
+#HIVEREV=2.3.6
+mv flink-dist/target/flink-${FLINK_VERSION}-bin/flink-${FLINK_VERSION} ${PRJ_FLINK_HOME}/flink-${FLINK_VERSION}-${TARGET_BUILT}
+cp flink-connectors/flink-sql-connector-hive-${HIVEREV}/target/flink-sql-connector-hive-${HIVEREV}_${SCALA_VERSION}-${FLINK_VERSION}.jar ${PRJ_FLINK_HOME}/flink-${FLINK_VERSION}-${TARGET_BUILT}/lib/
+cp flink-connectors/flink-connector-hive/target/flink-connector-hive_${SCALA_VERSION}-${FLINK_VERSION}.jar ${PRJ_FLINK_HOME}/flink-${FLINK_VERSION}-${TARGET_BUILT}/lib/
+cp flink-connectors/flink-sql-connector-kafka/target/flink-sql-connector-kafka-${FLINK_VERSION}.jar ${PRJ_FLINK_HOME}/flink-${FLINK_VERSION}-${TARGET_BUILT}/lib/
+cp flink-connectors/flink-sql-connector-hive-${HIVEREV}/target/flink-sql-connector-hive-${HIVEREV}_${SCALA_VERSION}-${FLINK_VERSION}.jar ${PRJ_FLINK_HOME}/flinkbk/${TARGET_BUILT}/
+cp flink-connectors/flink-connector-hive/target/flink-connector-hive_${SCALA_VERSION}-${FLINK_VERSION}.jar ${PRJ_FLINK_HOME}/flinkbk/${TARGET_BUILT}/
+cp flink-connectors/flink-sql-connector-kafka/target/flink-sql-connector-kafka-${FLINK_VERSION}.jar ${PRJ_FLINK_HOME}/flinkbk/${TARGET_BUILT}/
+cd ..
+mv flink-release-${FLINK_VERSION} ${PRJ_FLINK_HOME}/flink-release-${FLINK_VERSION}-${TARGET_BUILT}
 
 tar xzvf ${PRJ_HOME}/hadoop/hadoop-${HADOOP_VERSION}.tar.gz
 rm -rf hadoop-${HADOOP_VERSION}/share/doc
@@ -299,7 +425,8 @@ cp conf/hdfs-site.xml hadoop-${HADOOP_VERSION}/conf/
 cp conf/core-site.xml hadoop-${HADOOP_VERSION}/etc/hadoop
 cp conf/hdfs-site.xml hadoop-${HADOOP_VERSION}/etc/hadoop
 
-DOCKER_BUILDKIT=1 docker build ./ --progress=plain\
+#DOCKER_BUILDKIT=1 docker build ./ --progress=plain\
+DOCKER_BUILDKIT=1 docker build -f Dockerfile-rebuild ./ --progress=plain\
  --build-arg FLINKOP_VERSION="${FLINKOP_VERSION}"\
  --build-arg JUICEFS_VERSION="${JUICEFS_VERSION}"\
  --build-arg STARROCKS_CONNECTOR_VERSION="${STARROCKS_CONNECTOR_VERSION}"\
@@ -309,8 +436,10 @@ DOCKER_BUILDKIT=1 docker build ./ --progress=plain\
  --build-arg HIVEREV="${HIVEREV}"\
  --build-arg HUDI_VERSION="${HUDI_VERSION}"\
  --build-arg HADOOP_VERSION="${HADOOP_VERSION}"\
- -t harbor.my.org:1080/flink/flink-juicefs:${FLINK_VERSION}
-docker push harbor.my.org:1080/flink/flink-juicefs:${FLINK_VERSION}
+ --build-arg CDC_VERSION="${CDC_VERSION}"\
+ --build-arg TARGET_BUILT="${TARGET_BUILT}"\
+ -t harbor.my.org:1080/flink/flink-juicefs-${TARGET_BUILT}:${FLINK_VERSION}
+docker push harbor.my.org:1080/flink/flink-juicefs-${TARGET_BUILT}:${FLINK_VERSION}
 
 #docker
 ansible all -m shell -a"docker images|grep flink-juicefs"
@@ -383,136 +512,6 @@ file=sql-runner.yaml
 $SED -i "s@image: flink-sql-runner-example:latest@image: harbor.my.org:1080/flink/flink-juicefs:${FLINK_VERSION}@g" ${file}
 $SED -i "s@  name: sql-example@  name: sql-runner@g" ${file}
 
-
-cd ${PRJ_FLINK_HOME}/test
-
-mkdir testsql
-cd testsql
-:<<EOF
-echo "USE hive.tpcds_bin_partitioned_orc_10;SHOW TABLES;" > show_tables.sql
-echo "USE hive.tpcds_bin_partitioned_orc_10;SELECT * FROM date_dim LIMIT 5;" > select_date_dim_5.sql
-echo "USE hive.tpcds_bin_partitioned_orc_10;SELECT * FROM store_sales LIMIT 5;" > select_store_sales_limit_5.sql
-echo "USE hive.tpcds_bin_partitioned_orc_10;SELECT COUNT(1) FROM store_sales;" > select_count_store_sales.sql
-EOF
-echo "SHOW TABLES;" > show_tables.sql
-echo "SELECT * FROM date_dim LIMIT 5" > select_date_dim_5.sql
-echo "SELECT * FROM store_sales LIMIT 5;" > select_store_sales_limit_5.sql
-echo "SELECT COUNT(1) FROM store_sales;" > select_count_store_sales.sql
-
-mkdir testsql-hivecat
-cd testsql-hivecat
-arr=(show_tables select_date_dim_5 select_store_sales_limit_5 select_count_store_sales)
-for torun in ${arr[*]}
-do
-  torun=${torun}.sql
-  cat ../../setting.sql > ${torun}
-  cat ../testsql/${torun} >> ${torun}
-  cat ${torun}
-done
-
-SQL_FILE_HOME=/app/hdfs/hive
-HDFS_SQL_FILE_HOME=/tmp
-
-arr=(show_tables select_date_dim_5 select_store_sales_limit_5 select_count_store_sales)
-for torun in ${arr[*]}
-do
-  torun=${torun}.sql
-  kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- \
-    rm -f ${SQL_FILE_HOME}/${torun}
-  kubectl cp ${torun} -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'`:${SQL_FILE_HOME}/${torun}
-  kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- \
-    hadoop fs -rm -f ${HDFS_SQL_FILE_HOME}/${torun}
-  kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- \
-    hadoop fs -put ${torun} ${HDFS_SQL_FILE_HOME}/${torun}
-  kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- \
-    hadoop fs -cat ${HDFS_SQL_FILE_HOME}/${torun}
-done
-
-arr=(show_tables)
-for torun in ${arr[*]}
-do
-  torun=${torun}.sql
-  cp ${PRJ_FLINK_HOME}/flink-kubernetes-operator-release-${FLINKOP_VERSION}/examples/flink-sql-runner-example/sql-runner.yaml sql-runner.yaml
-  $SED -i "/    args:/d" sql-runner.yaml
-  $SED -i "/ jarURI: local:/a\    args: [\"/opt/flink/usrlib/testsql-hivecat/${torun}\"]" sql-runner.yaml
-  #$SED -i "/ jarURI: local:/a\    args: [\"local:///opt/flink/usrlib/testsql/${torun}\"]" sql-runner.yaml
-  #$SED -i "/ jarURI: local:/a\    args: [\"jfs://miniofs/tmp/${torun}\"]" sql-runner.yaml
-  cat sql-runner.yaml
-  kubectl create -n flink -f sql-runner.yaml
-  kubectl logs -f -n flink `kubectl get pod -n flink | grep sql-runner | awk '{print $1}'`
-  kubectl logs -n flink `kubectl get pod -n flink | grep sql-runner | awk '{print $1}'`
-  kubectl delete -n flink -f sql-runner.yaml
-  kubectl get pod -n flink |grep -v Running |grep sql-runner|awk '{print $1}'| xargs kubectl delete pod "$1" -n flink --force --grace-period=0
-done
-
-kubectl get pod -n flink
-watch kubectl get pod -n flink
-
-kubectl apply -f test/flink-test.yaml -n flink
-kubectl delete -f test/flink-test.yaml -n flink
-kubectl delete pod flink-test -n flink --force --grace-period=0
-
-kubectl cp -n flink flink-test:/opt/flink flink
-chmod a+x flink/bin/*
-export FLINK_HOME=$PWD/flink
-export PATH=$PATH:${FLINK_HOME}/bin
-export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-11.0.17.jdk/Contents/Home
-:<<EOF
-本地运行需要CLASS_PATH设置可能
-java.lang.NoClassDefFoundError: com/ctc/wstx/io/InputBootstrapper
-	at io.juicefs.FlinkFileSystemFactory.configure(FlinkFileSystemFactory.java:36)
-	at org.apache.flink.core.fs.FileSystem.initialize(FileSystem.java:344)
-	at org.apache.flink.client.cli.CliFrontend.<init>(CliFrontend.java:127)
-	at org.apache.flink.client.cli.CliFrontend.<init>(CliFrontend.java:116)
-	at org.apache.flink.client.cli.CliFrontend.main(CliFrontend.java:1160)
-Caused by: java.lang.ClassNotFoundException: com.ctc.wstx.io.InputBootstrapper
-	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:581)
-	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:178)
-	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:521)
-	... 5 more
-EOF
-
-:<<EOF
-1, operator提供的example里执行SQL文件的接口，不能执行SET命令
-
-2，flink-config-${APPNAME}是operator创建的，事先手工创建没用
-
-3, 不再报错找不到core/hive等xml，但是flink官方image的docker-entrypoint.sh似乎根据FlinkDeployment李的job/task配置，cat修改flink-conf.yaml，
-但是operator自己生成的job pod里，用configmap方式挂载了conf目录导致flink-conf.yaml不可写，最终导致job配置没有写入flink-conf.yaml。
-localhost:test apple$ kubectl logs -f -n flink `kubectl get pod -n flink | grep sql-runner | awk '{print $1}'`
-/docker-entrypoint.sh: line 73: /opt/flink/conf/flink-conf.yaml: Permission denied
-/docker-entrypoint.sh: line 73: /opt/flink/conf/flink-conf.yaml: Permission denied
-/docker-entrypoint.sh: line 73: /opt/flink/conf/flink-conf.yaml: Permission denied
-/docker-entrypoint.sh: line 89: /opt/flink/conf/flink-conf.yaml.tmp: Read-only file system
-[ERROR] The execution result is empty.
-[ERROR] Could not get JVM parameters and dynamic configurations properly.
-[ERROR] Raw output from BashJavaUtils:
-WARNING: sun.reflect.Reflection.getCallerClass is not supported. This will impact performance.
-INFO  [] - Loading configuration property: taskmanager.numberOfTaskSlots, 2
-INFO  [] - Loading configuration property: classloader.check-leaked-classloader, false
-Exception in thread "main" org.apache.flink.configuration.IllegalConfigurationException: JobManager memory configuration failed: Either required fine-grained memory (jobmanager.memory.heap.size), or Total Flink Memory size (Key: 'jobmanager.memory.flink.size' , default: null (fallback keys: [])), or Total Process Memory size (Key: 'jobmanager.memory.process.size' , default: null (fallback keys: [])) need to be configured explicitly.
-	at org.apache.flink.runtime.jobmanager.JobManagerProcessUtils.processSpecFromConfigWithNewOptionToInterpretLegacyHeap(JobManagerProcessUtils.java:78)
-	at org.apache.flink.runtime.util.bash.BashJavaUtils.getJmResourceParams(BashJavaUtils.java:98)
-	at org.apache.flink.runtime.util.bash.BashJavaUtils.runCommand(BashJavaUtils.java:69)
-	at org.apache.flink.runtime.util.bash.BashJavaUtils.main(BashJavaUtils.java:56)
-Caused by: org.apache.flink.configuration.IllegalConfigurationException: Either required fine-grained memory (jobmanager.memory.heap.size), or Total Flink Memory size (Key: 'jobmanager.memory.flink.size' , default: null (fallback keys: [])), or Total Process Memory size (Key: 'jobmanager.memory.process.size' , default: null (fallback keys: [])) need to be configured explicitly.
-	at org.apache.flink.runtime.util.config.memory.ProcessMemoryUtils.failBecauseRequiredOptionsNotConfigured(ProcessMemoryUtils.java:129)
-	at org.apache.flink.runtime.util.config.memory.ProcessMemoryUtils.memoryProcessSpecFromConfig(ProcessMemoryUtils.java:86)
-	at org.apache.flink.runtime.jobmanager.JobManagerProcessUtils.processSpecFromConfig(JobManagerProcessUtils.java:83)
-	at org.apache.flink.runtime.jobmanager.JobManagerProcessUtils.processSpecFromConfigWithNewOptionToInterpretLegacyHeap(JobManagerProcessUtils.java:73)
-	... 3 more
-EOF
-
-:<<EOF
-#创建一个账户
-kubectl create serviceaccount flink -n flink
-#service account和角色的绑定
-kubectl create clusterrolebinding flink-role-binding \
-  --clusterrole=edit \
-  --serviceaccount=flink:flink
-EOF
-
-
 kubectl apply -f clusterrole-endpoints-reader-flink.yaml
 kubectl create clusterrolebinding endpoints-reader-default-flink \
   --clusterrole=endpoints-reader-flink  \
@@ -522,207 +521,5 @@ kubectl delete clusterrolebinding endpoints-reader-default-flink
 kubectl delete -f clusterrole-endpoints-reader-flink.yaml
 EOF
 
-kubectl get pod -n flink
-watch kubectl get pod -n flink my-first-application-cluster-
-
-kubectl logs -f -n flink
-
-kubectl delete deployments.apps -n flink my-first-application-cluster
-
-cat << EOF > /opt/flink/usrlib/testsql-hivecat/show_tables.sql
-CREATE CATALOG hive WITH (
-    'type' = 'hive',
-    'default-database' = 'default',
-    'hive-conf-dir' = '/opt/flink/hiveconf',
-    'hadoop-conf-dir'='/opt/hadoop/conf'
-);
--- set the HiveCatalog as the current catalog of the session
-USE hive.tpcds_bin_partitioned_orc_10;SHOW TABLES;
-EOF
-
-cat << \EOF > sql-client-env.sh
-#!/usr/bin/env bash
-################################################################################
-#  Licensed to the Apache Software Foundation (ASF) under one
-#  or more contributor license agreements.  See the NOTICE file
-#  distributed with this work for additional information
-#  regarding copyright ownership.  The ASF licenses this file
-#  to you under the Apache License, Version 2.0 (the
-#  "License"); you may not use this file except in compliance
-#  with the License.  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-# limitations under the License.
-################################################################################
-
-################################################################################
-# Adopted from "flink" bash script
-################################################################################
-
-target="$0"
-# For the case, the executable has been directly symlinked, figure out
-# the correct bin path by following its symlink up to an upper bound.
-# Note: we can't use the readlink utility here if we want to be POSIX
-# compatible.
-iteration=0
-while [ -L "$target" ]; do
-    if [ "$iteration" -gt 100 ]; then
-        echo "Cannot resolve path: You have a cyclic symlink in $target."
-        break
-    fi
-    ls=`ls -ld -- "$target"`
-    target=`expr "$ls" : '.* -> \(.*\)$'`
-    iteration=$((iteration + 1))
-done
-
-# Convert relative path to absolute path
-bin=`dirname "$target"`
-
-# get flink config
-. "$bin"/config.sh
-
-if [ "$FLINK_IDENT_STRING" = "" ]; then
-        FLINK_IDENT_STRING="$USER"
-fi
-
-CC_CLASSPATH=`constructFlinkClassPath`
-
-################################################################################
-# SQL client specific logic
-################################################################################
-
-log=$FLINK_LOG_DIR/flink-$FLINK_IDENT_STRING-sql-client-$HOSTNAME.log
-log_setting=(-Dlog.file="$log" -Dlog4j.configuration=file:"$FLINK_CONF_DIR"/log4j-cli.properties -Dlog4j.configurationFile=file:"$FLINK_CONF_DIR"/log4j-cli.properties -Dlogback.configurationFile=file:"$FLINK_CONF_DIR"/logback.xml)
-
-# get path of jar in /opt if it exist
-FLINK_SQL_CLIENT_JAR=$(find "$FLINK_OPT_DIR" -regex ".*flink-sql-client.*.jar")
-
-# add flink-python jar to the classpath
-if [[ ! "$CC_CLASSPATH" =~ .*flink-python.*.jar ]]; then
-    FLINK_PYTHON_JAR=$(find "$FLINK_OPT_DIR" -regex ".*flink-python.*.jar")
-    if [ -n "$FLINK_PYTHON_JAR" ]; then
-        CC_CLASSPATH="$CC_CLASSPATH:$FLINK_PYTHON_JAR"
-    fi
-fi
-EOF
-
-kubectl cp -f docker-entrypoint.sh -n flink `kubectl get pod -n flink | grep flink-test | awk '{print $1}'`:/docker-entrypoint.sh
-
-kubectl exec -it -n flink `kubectl get pod -n flink | grep flink-test | awk '{print $1}'` -- bash
-  #FLINK_VERSION=1.16.1
-  FLINK_VERSION=1.15.3
-  arr=(show_tables)
-  for torun in ${arr[*]}
-  do
-    torun=${torun}.sql
-
-    flink run-application \
-    --target kubernetes-application \
-    -Dexecution.attached=true \
-    -Dkubernetes.namespace=flink \
-    -Dkubernetes.cluster-id=my-first-application-cluster \
-    -Dkubernetes.high-availability=org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory \
-    -Dhigh-availability.storageDir=jfs://miniofs/flink/recovery \
-    -Dkubernetes.container.image=harbor.my.org:1080/flink/flink-juicefs-py37:${FLINK_VERSION} \
-    -Dkubernetes.rest-service.exposed.type=NodePort \
-    -Djobmanager.memory.process.size=2048m \
-    -Dkubernetes.jobmanager.cpu=1 \
-    -Dtaskmanager.memory.process.size=2048m \
-    -Dkubernetes.taskmanager.cpu=1 \
-    -Dtaskmanager.numberOfTaskSlots=2 \
-    -Dstate.backend=rocksdb \
-    -Dstate.checkpoints.dir=jfs://miniofs/flink/checkpoints \
-    -Dstate.backend.incremental=true \
-    -C file:/opt/flink/opt/flink-python_2.12-1.15.3.jar \
-    -c org.apache.flink.table.client.SqlClient \
-    local:///opt/flink/opt/flink-sql-client-1.15.3.jar -i /opt/flink/usrlib/setting.sql -e 'SELECT * FROM tpcds_bin_partitioned_orc_10.date_dim LIMIT 5'
-    #-f /opt/flink/usrlib/testsql/select_date_dim_5_yat.sql
-    #show_tables.sql
-    #/opt/flink/usrlib/sql-scripts/simple.sql
-
-    flink cancel --target kubernetes-application -Dkubernetes.cluster-id=my-first-application-cluster -Dkubernetes.namespace=flink `flink list --target kubernetes-application -Dkubernetes.cluster-id=my-first-application-cluster -Dkubernetes.namespace=flink`
-
-    echo 'stop' | kubernetes-session.sh -Djobmanager.memory.process.size=2048m -Dexecution.attached=true -Dtaskmanager.memory.process.size=2048m -Dkubernetes.cluster-id=my-first-application-cluster
-
-    kubectl logs -f -n flink `kubectl get pod -n flink | grep sql-runner | awk '{print $1}'`
-    kubectl logs -n flink `kubectl get pod -n flink | grep sql-runner | awk '{print $1}'`
-    kubectl delete -n flink -f sql-runner.yaml
-    kubectl get pod -n flink |grep -v Running |grep sql-runner|awk '{print $1}'| xargs kubectl delete pod "$1" -n flink --force --grace-period=0
-  done
-:<<EOF
-flink run-application
-Caused by: java.lang.IllegalArgumentException: only single statement supported
-	at org.apache.flink.util.Preconditions.checkArgument(Preconditions.java:138) ~[flink-dist-1.15.3.jar:1.15.3]
-	at org.apache.flink.table.planner.delegation.ParserImpl.parse(ParserImpl.java:103) ~[?:?]
-	at org.apache.flink.table.api.internal.TableEnvironmentImpl.executeSql(TableEnvironmentImpl.java:695) ~[flink-table-api-java-uber-1.15.3.jar:1.15.3]
-	at org.apache.flink.examples.SqlRunner.main(SqlRunner.java:52) ~[?:?]
-	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?]
-	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke(Unknown Source) ~[?:?]
-	at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source) ~[?:?]
-	at java.lang.reflect.Method.invoke(Unknown Source) ~[?:?]
-	at org.apache.flink.client.program.PackagedProgram.callMainMethod(PackagedProgram.java:355) ~[flink-dist-1.15.3.jar:1.15.3]
-	at org.apache.flink.client.program.PackagedProgram.invokeInteractiveModeForExecution(PackagedProgram.java:222) ~[flink-dist-1.15.3.jar:1.15.3]
-	at org.apache.flink.client.ClientUtils.executeProgram(ClientUtils.java:114) ~[flink-dist-1.15.3.jar:1.15.3]
-	at org.apache.flink.client.deployment.application.ApplicationDispatcherBootstrap.runApplicationEntryPoint(ApplicationDispatcherBootstrap.java:291) ~[flink-dist-1.15.3.jar:1.15.3]
-	... 13 more
-EOF
-
-  #FLINK_VERSION=1.15.3
-  #FLINK_VERSION=1.14.6
-  #FLINK_VERSION=1.16.1
-  FLINK_VERSION=1.14.0
-  kubernetes-session.sh \
-      -Dexecution.attached=true \
-      -Dkubernetes.namespace=flink \
-      -Dkubernetes.cluster-id=my-first-application-cluster \
-      -Dkubernetes.high-availability=org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory \
-      -Dhigh-availability.storageDir=jfs://miniofs/flink/recovery \
-      -Dkubernetes.container.image=harbor.my.org:1080/flink/flink-juicefs:${FLINK_VERSION} \
-      -Dkubernetes.rest-service.exposed.type=NodePort \
-      -Djobmanager.memory.process.size=2048m \
-      -Dkubernetes.jobmanager.cpu=1 \
-      -Dtaskmanager.memory.process.size=2048m \
-      -Dkubernetes.taskmanager.cpu=1 \
-      -Dtaskmanager.numberOfTaskSlots=2 \
-      -Dstate.backend=rocksdb \
-      -Dstate.checkpoints.dir=jfs://miniofs/flink/checkpoints \
-      -Dstate.backend.incremental=true
-
-#1.15.3
-Flink SQL>   SELECT * FROM date_dim LIMIT 5;
->
-13:57:48.002 [ORC_GET_SPLITS #0] ERROR org.apache.hadoop.hive.ql.io.AcidUtils - Failed to get files with ID; using regular API: Only supported for DFS; got class io.juicefs.JuiceFileSystem
-#1.14.6
-Flink SQL>   SELECT * FROM date_dim LIMIT 5;
->
-13:57:48.002 [ORC_GET_SPLITS #0] ERROR org.apache.hadoop.hive.ql.io.AcidUtils - Failed to get files with ID; using regular API: Only supported for DFS; got class io.juicefs.JuiceFileSystem
-[ERROR] Could not execute SQL statement. Reason:
-java.lang.NoSuchMethodError: java.nio.ByteBuffer.limit(I)Ljava/nio/ByteBuffer;
-#1.14.6
-Flink SQL> SELECT * FROM time_dim LIMIT 5;
-01:11:37.918 [ORC_GET_SPLITS #0] ERROR org.apache.hadoop.hive.ql.io.AcidUtils - Failed to get files with ID; using regular API: Only supported for DFS; got class io.juicefs.JuiceFileSystem
-#1.14.0
-Flink SQL> SELECT * FROM time_dim LIMIT 5;
-01:11:37.918 [ORC_GET_SPLITS #0] ERROR org.apache.hadoop.hive.ql.io.AcidUtils - Failed to get files with ID; using regular API: Only supported for DFS; got class io.juicefs.JuiceFileSystem
-[ERROR] Could not execute SQL statement. Reason:
-java.lang.NoSuchMethodError: java.nio.ByteBuffer.limit(I)Ljava/nio/ByteBuffer;
-
-
-#1.15.3
-Flink SQL> set table.sql-dialect=hive;
-[ERROR] Could not execute SQL statement. Reason:
-org.apache.flink.table.api.ValidationException: Could not find any factory for identifier 'hive' that implements 'org.apache.flink.table.planner.delegation.ParserFactory' in the classpath.
-
-Available factory identifiers are:
-
-
-
-kubectl exec -it -n flink `kubectl get pod -n flink | grep my-first-application-cluster | awk '{print $1}'` -- sql-client.sh embedded -i /opt/flink/usrlib/setting.sql
-kubectl exec -it -n flink `kubectl get pod -n flink | grep my-first-application-cluster | awk '{print $1}'` -- sql-client.sh
-  SHOW TABLES;
-  SELECT * FROM date_dim LIMIT 5;
+kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- hadoop fs -mkdir -p /flink/checkpoints
+kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- hadoop fs -mkdir -p /flink/recovery
