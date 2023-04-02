@@ -16,6 +16,8 @@ PRJ_HOME=${WORK_HOME}/dockerfile
 
 PRJ_FLINK_HOME=${PRJ_HOME}/flink
 
+PATH=$PATH:${PRJ_HOME}:${PRJ_FLINK_HOME}
+
 FLINK_VERSION=1.15.4
 FLINK_SHORT_VERSION=1.15
 
@@ -33,14 +35,13 @@ FLINK_SHORT_VERSION=1.14
 
 EOF
 
-#HUDI_VERSION=0.12.2
+HUDI_VERSION=0.12.2
 #1.16.1 only support hudi 0.13.0
-HUDI_VERSION=0.13.0
+#HUDI_VERSION=0.13.0
 
 CDC_VERSION=2.3.0
 
 cd ${PRJ_FLINK_HOME}
-
 
 
 kubectl apply -f flink-client.yaml -n flink
@@ -52,11 +53,7 @@ kubectl get pod -n flink |grep -v Running |awk '{print $1}'| xargs kubectl delet
 kubectl get pod -n flink
 watch kubectl get pod -n flink
 
-NONAME=taskmanager
-SESSION=cdc-hudi-test-basic
 
-FLINK_VERSION=1.15.4
-TARGET_BUILT=hadoop3hive3
 kubectl exec -it -n flink `kubectl get pod -n flink | grep flink-client | awk '{print $1}'` -- \
  kubernetes-session.sh \
     -Dexecution.attached=true \
@@ -401,17 +398,6 @@ Caused by: java.lang.NoSuchMethodError: org.apache.hudi.org.apache.avro.specific
 
 
 
-
-  SELECT * FROM products_hudi_sinker;
-
-
-    'compaction.schedule.enabled' = 'true',
-    'compaction.async.enabled' = 'false',
-    'compaction.schedule.enabled' = 'true'
-
-
-
-
 kubectl exec -it -n flink `kubectl get pod -n flink | grep ${SESSION} | awk '{print $1}'` -- cat /tmp/juicefs.access.log
 
 SQL_FILE_HOME=/app/hdfs/hive
@@ -429,191 +415,3 @@ EOF
 #kubectl exec -it -n flink `kubectl get pod -n flink | grep flink-client | awk '{print $1}'` -- sql-client.sh embedded -i usrlib/setting.sql -f jfs://miniofs/flink/scripts/create_databases.sql
 #SQL Client only supports to load files in local.
 
-flink-sql-interact.sh ${SESSION}
-  USE hive.test1;
-  SELECT * FROM employee;
-
-cat << EOF > upload-sql-files.sh
-#!/usr/bin/env bash
-
-${PRJ_HOME}/client-upload.sh flink ${SESSION} /opt/flink/usrlib showcatalogs.sql ${NONAME}
-${PRJ_HOME}/client-upload.sh flink ${SESSION} /opt/flink/usrlib create_databases.sql ${NONAME}
-${PRJ_HOME}/client-upload.sh flink ${SESSION} /opt/flink/usrlib showdatabases.sql ${NONAME}
-${PRJ_HOME}/client-upload.sh flink ${SESSION} /opt/flink/usrlib showtables.sql ${NONAME}
-${PRJ_HOME}/client-upload.sh flink ${SESSION} /opt/flink/usrlib dropdatabases.sql ${NONAME}
-${PRJ_HOME}/client-upload.sh flink ${SESSION} /opt/flink/usrlib droptables.sql ${NONAME}
-${PRJ_HOME}/client-upload.sh flink ${SESSION} /opt/flink/usrlib cdc-hudi-test-basic.sql ${NONAME}
-${PRJ_HOME}/client-upload.sh flink ${SESSION} /opt/flink/usrlib cdc-hudi-test-basic-onlyjob.sql ${NONAME}
-EOF
-cat upload-sql-files.sh
-chmod a+x upload-sql-files.sh
-
-#FLINK_VERSION=1.15.4
-FLINK_VERSION=1.17.0
-TARGET_BUILT=hadoop3hive3
-kubectl exec -it -n flink `kubectl get pod -n flink | grep flink-client | awk '{print $1}'` -- \
- kubernetes-session.sh \
-    -Dexecution.attached=true \
-    -Dkubernetes.namespace=flink \
-    -Dkubernetes.cluster-id=${SESSION} \
-    -Dkubernetes.container.image=harbor.my.org:1080/flink/flink-juicefs-${TARGET_BUILT}:${FLINK_VERSION} \
-    -Djobmanager.memory.process.size=2048m \
-    -Dkubernetes.jobmanager.cpu=1 \
-    -Dtaskmanager.memory.process.size=2048m \
-    -Dkubernetes.taskmanager.cpu=1 \
-    -Dtaskmanager.numberOfTaskSlots=2
-
-upload-sql-files.sh
-
-#../client-upload.sh flink ${SESSION} /opt/flink/usrlib create_databases.sql ${NONAME}
-flink-sql-exec.sh ${SESSION} create_databases.sql
-#kubectl exec -it -n flink `kubectl get pod -n flink | grep flink-client | awk '{print $1}'` -- sql-client.sh embedded -i usrlib/setting.sql -e "SHOW CATALOGS"
-#不支持-e
-
-kubectl exec -it -n flink `kubectl get pod -n flink | grep cdc-hudi-test-basic | awk '{print $1}'` -- bash
-  #source-sin
-  flink cancel --target kubernetes-application -Dkubernetes.cluster-id=cdc-hudi-test-basic -Dkubernetes.namespace=flink 97e7d4cd82e26055147bf4b4a7a34143
-  #手工insert
-  flink cancel --target kubernetes-application -Dkubernetes.cluster-id=cdc-hudi-test-basic -Dkubernetes.namespace=flink 
-  exit
-
-flink-sql-exec.sh ${SESSION} dropdatabases.sql
-kubectl delete deployments.apps -n flink cdc-hudi-test-basic 
-kubectl get pod -n flink |grep -v Running |awk '{print $1}'| xargs kubectl delete pod "$1" -n flink --force --grace-period=0
-
-kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- hadoop fs -rm -r -f /flink/checkpoints
-kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- hadoop fs -mkdir /flink/checkpoints
-kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- hadoop fs -ls /flink/checkpoints
-
-kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- hadoop fs -rm -r -f /flinkhudi/mydb/products
-kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- hadoop fs -mkdir /flinkhudi/mydb/products
-kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- hadoop fs -ls /flinkhudi/mydb/products
-
-
-cat << \EOF > showcatalogs.sql
-  SHOW CATALOGS;
-EOF
-../client-upload.sh flink ${SESSION} /opt/flink/usrlib showcatalogs.sql ${NONAME}
-flink-sql-exec.sh ${SESSION} showcatalogs.sql
-
-cat << \EOF > showdatabases.sql
-  USE CATALOG hive;
-  SHOW DATABASES;
-  USE CATALOG hudi_catalog;
-  SHOW DATABASES;
-EOF
-../client-upload.sh flink ${SESSION} /opt/flink/usrlib showdatabases.sql ${NONAME}
-flink-sql-exec.sh ${SESSION} showdatabases.sql
-
-
-cat << \EOF > showtables.sql
-  USE hive.flink_mydb;
-  SHOW TABLES;
-  USE hudi_catalog.hudi_mydb;
-  SHOW TABLES;
-EOF
-../client-upload.sh flink ${SESSION} /opt/flink/usrlib showtables.sql ${NONAME}
-flink-sql-exec.sh ${SESSION} showtables.sql
-
-cat << \EOF > dropdatabases.sql
-  USE CATALOG hive;
-  DROP DATABASE IF EXISTS flink_mydb CASCADE;
-  USE CATALOG hudi_catalog;
-  DROP DATABASE IF EXISTS hudi_mydb CASCADE;
-EOF
-../client-upload.sh flink ${SESSION} /opt/flink/usrlib dropdatabases.sql ${NONAME}
-flink-sql-exec.sh ${SESSION} dropdatabases.sql
-
-cat << \EOF > droptables.sql
-  USE hive.flink_mydb;
-  DROP TABLE IF EXISTS products_cdc_source;
-  USE hudi_catalog.hudi_mydb;
-  DROP TABLE IF EXISTS products_hudi_sink;
-EOF
-../client-upload.sh flink ${SESSION} /opt/flink/usrlib droptables.sql ${NONAME}
-flink-sql-exec.sh ${SESSION} droptables.sql
-
-kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` --\
- hive -e "USE hudi_mydb;\
-  DROP TABLE IF EXISTS products_hudi_sink_ro;\
-  DROP TABLE IF EXISTS products_hudi_sink_rt;\
-"
-
-#mysql
-DB_PORT=3306
-DB_CONNECTOR=mysql-cdc
-#postgresql
-DB_PORT=5432
-DB_CONNECTOR=postgres-cdc
-cat << EOF > cdc-hudi-test-basic.sql
-  CREATE TABLE hive.flink_mydb.products_cdc_source (
-      id INT,
-      name STRING,
-      description STRING,
-      dt VARCHAR(10),
-      PRIMARY KEY (id) NOT ENFORCED
-    ) WITH (
-    'connector' = '${DB_CONNECTOR}',
-    'server-time-zone' = 'Asia/Shanghai',
-    'scan.incremental.snapshot.enabled'='true',
-    'hostname' = '192.168.3.9',
-    'port' = '${DB_PORT}',
-    'username' = 'flink',
-    'password' = 'flinkpw',
-    'database-name' = 'mydb',
-    'table-name' = 'products'
-    );
-
-  CREATE TABLE hudi_catalog.hudi_mydb.products_hudi_sink(
-      id BIGINT NOT NULL,
-      name STRING,
-      description STRING,
-      dt VARCHAR(10),
-      PRIMARY KEY (id) NOT ENFORCED
-    )
-      PARTITIONED BY (`dt`)
-      WITH (
-    'connector' = 'hudi',
-    'path' = 'jfs://miniofs/flinkhudi/mydb/products',
-    'table.type' = 'MERGE_ON_READ',
-    'changelog.enabled' = 'true',
-    'hoodie.datasource.write.recordkey.field' = 'id',
-    'write.precombine.field' = 'name',
-    'hoodie.datasource.write.keygenerator.class' = 'org.apache.hudi.keygen.ComplexAvroKeyGenerator',
-    'hoodie.datasource.write.hive_style_partitioning' = 'true',
-    'compaction.async.enabled' = 'false',
-    'hive_sync.conf.dir' = '/opt/flink/hiveconf'
-  );
-
-  INSERT INTO hudi_catalog.hudi_mydb.products_hudi_sink SELECT * FROM hive.flink_mydb.products_cdc_source;
-EOF
-../client-upload.sh flink ${SESSION} /opt/flink/usrlib cdc-hudi-test-basic.sql ${NONAME}
-flink-sql-exec.sh ${SESSION} cdc-hudi-test-basic.sql
-  不加上'changelog.enabled' = 'true',sink表就变成一个批表，INSERT作业也是处于FINISH状态，后续对mysql的修改不会被同步过来
-  加上'read.streaming.enabled'= 'true'就变成和cdc source，kafka一样的流表了
-    在sql-client里查询会卡主一直在等待新数据。
-    先启动source到sink作业，查询是source数据，再INSERT单条记录会启动新的作业，查询是INSERT单条的记录，不会同时把所有记录都显示出来
-  加上'changelog.enabled' = 'true'，不加read.streaming.enabled'= 'true'，作业是流的，表是动态的，
-    只有SOURCE->SINK作业写表时，mysql更新，SELECT会立刻显示hive更新
-    INSERT作业加入后，两个作业的数据SELECT都会显示，但是SOURCE-SINK数据不刷新
-    CANCEL作业id时，两个作业都是活动的
-
-
-cat << \EOF > selecttables.sql
-  SET sql-client.execution.result-mode=TABLEAU;
-  -- SELECT * FROM hive.flink_mydb.products_cdc_source;
-  -- SELECT流表会一直读，要ctrl + c才能退出，又变成交互的了
-  SELECT * FROM hudi_catalog.hudi_mydb.products_hudi_sink;
-EOF
-../client-upload.sh flink ${SESSION} /opt/flink/usrlib selecttables.sql taskmanager ${NONAME}
-flink-sql-exec.sh ${SESSION} selecttables.sql
-
-cat << \EOF > cdc-hudi-test-basic-onlyjob.sql
-  SET execution.checkpointing.interval = 3s;
-  INSERT INTO hudi_catalog.hudi_mydb.products_hudi_sink SELECT * FROM hive.flink_mydb.products_cdc_source;
-EOF
-../client-upload.sh flink ${SESSION} /opt/flink/usrlib cdc-hudi-test-basic-onlyjob.sql taskmanager ${NONAME}
-flink-sql-exec.sh ${SESSION} cdc-hudi-test-basic-onlyjob.sql
-
-
-flink-sql-interact.sh ${SESSION}

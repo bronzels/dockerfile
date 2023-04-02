@@ -316,6 +316,8 @@ cd flink-release-${FLINK_VERSION}
 #allied to hadoop3/hive3
 #1.15.4
 mvn clean install -DskipTests -Dspotless.check.skip=true -Dfast -T 1C -Dhadoop.version=3.3.4 -Dhive.version=3.1.2 -Dhivemetastore.hadoop.version=3.3.4 -Dmaven.javadoc.skip=true -Dcheckstyle.skip=true -Dlicense.skip=true -Drat.ignoreErrors=true
+#1.16.1
+mvn clean install -DskipTests -Dspotless.check.skip=true -Dfast -T 1C -Dhadoop.version=3.3.4 -Dhive.version=3.1.2 -Dhivemetastore.hadoop.version=3.3.4 -Dmaven.javadoc.skip=true -Dcheckstyle.skip=true -Dlicense.skip=true -Drat.ignoreErrors=true
 #1.17.0
 #hive.version can't be 3.1.2 as no such already built lib as dep
 mvn clean install -DskipTests -Dspotless.check.skip=true -Dfast -T 1C -Dflink.hadoop.version=3.3.4 -Dhive.version=3.1.3 -Dmaven.javadoc.skip=true -Dcheckstyle.skip=true -Dlicense.skip=true -Drat.ignoreErrors=true
@@ -523,3 +525,15 @@ EOF
 
 kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- hadoop fs -mkdir -p /flink/checkpoints
 kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- hadoop fs -mkdir -p /flink/recovery
+
+#开启harbor等同机器的docker远程访问，一些流作业操作平台要build成镜像push以后再在k8s上application session方式运行
+#运行socat容器：
+docker run -d --name dockerremote --restart always -p 2375:2375 -v /var/run/docker.sock:/var/run/docker.sock alpine/socat TCP4-LISTEN:2375,fork,reuseaddr UNIX-CONNECT:/var/run/docker.sock
+#docker run -d -v /var/run/docker.sock:/var/run/docker.sock -p 2376:2375 bobrik/socat TCP4-LISTEN:2375,fork,reuseaddr UNIX-CONNECT:/var/run/docker.sock
+:<<EOF
+vim .bash_profile
+添加内容：export DOCKER_HOST=tcp://localhost:2375
+source .bash_profile
+EOF
+curl localhost:2375/version
+

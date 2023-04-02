@@ -1,0 +1,4 @@
+  USE CATALOG hive;
+  DROP DATABASE IF EXISTS flink_mydb CASCADE;
+  USE CATALOG hudi_catalog;
+  DROP DATABASE IF EXISTS hudi_mydb CASCADE;

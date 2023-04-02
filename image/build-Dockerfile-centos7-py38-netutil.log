@@ -1,0 +1,60 @@
+#1 [internal] load build definition from Dockerfile-centos7-py38-netutil
+#1 sha256:72814697d77d748adf53d7bdfe067feac8f3b3758a6c318a4aa0fc4084e61658
+#1 transferring dockerfile: 720B 0.1s done
+#1 DONE 1.6s
+
+#2 [internal] load .dockerignore
+#2 sha256:a1d2543b929d08d2afaa512031bd42051b9f3d74a0fac30d9ef50e010815214d
+#2 transferring context: 2B 0.1s done
+#2 DONE 2.2s
+
+#3 [internal] load metadata for docker.io/centos/python-38-centos7:latest
+#3 sha256:4d826bd5a26367f37163fbd296047d02c659d62bff0349f3f2e379a61eeb9b28
+#3 DONE 18.8s
+
+#4 [ 1/15] FROM docker.io/centos/python-38-centos7@sha256:4b66b1a8da1cba90313da11b518852baf120f6bba794d6ece2abde4d54cebb1a
+#4 sha256:842741f7dcf78c1d4f0ea1a045c5a102674bce20483d6e8a27226e6ea5ecaa82
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 sha256:c47ef9edd0d5f01056a8fc8d6338b0e037d92bf43543c1c861c890353b78ab7c
+#5 transferring context:
+#5 transferring context: 124B done
+#5 DONE 0.8s
+
+#6 [ 2/15] COPY resolv.conf /etc/resolv.conf
+#6 sha256:f0b7be52dc5644d6d7ea28913542b9cc56afa2095b26d5fcd6c8dd62953e1eb0
+#6 CACHED
+
+#7 [ 3/15] RUN curl www.baidu.com
+#7 sha256:050cd70b0e6115d2425f0561b6c37ea0b24af16d9747150bf88dad01f03709e3
+#7 4.744   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+#7 4.749                                  Dload  Upload   Total   Spent    Left  Speed
+#7 4.752   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0100  2381  100  2381    0     0    925      0  0:00:02  0:00:02 --:--:--   925
+#7 7.317 <!DOCTYPE html>
+#7 7.317 <!--STATUS OK--><html> <head><meta http-equiv=content-type content=text/html;charset=utf-8><meta http-equiv=X-UA-Compatible content=IE=Edge><meta content=always name=referrer><link rel=stylesheet type=text/css href=http://s1.bdstatic.com/r/www/cache/bdorz/baidu.min.css><title>百度一下，你就知道</title></head> <body link=#0000cc> <div id=wrapper> <div id=head> <div class=head_wrapper> <div class=s_form> <div class=s_form_wrapper> <div id=lg> <img hidefocus=true src=//www.baidu.com/img/bd_logo1.png width=270 height=129> </div> <form id=form name=f action=//www.baidu.com/s class=fm> <input type=hidden name=bdorz_come value=1> <input type=hidden name=ie value=utf-8> <input type=hidden name=f value=8> <input type=hidden name=rsv_bp value=1> <input type=hidden name=rsv_idx value=1> <input type=hidden name=tn value=baidu><span class="bg s_ipt_wr"><input id=kw name=wd class=s_ipt value maxlength=255 autocomplete=off autofocus></span><span class="bg s_btn_wr"><input type=submit id=su value=百度一下 class="bg s_btn"></span> </form> </div> </div> <div id=u1> <a href=http://news.baidu.com name=tj_trnews class=mnav>新闻</a> <a href=http://www.hao123.com name=tj_trhao123 class=mnav>hao123</a> <a href=http://map.baidu.com name=tj_trmap class=mnav>地图</a> <a href=http://v.baidu.com name=tj_trvideo class=mnav>视频</a> <a href=http://tieba.baidu.com name=tj_trtieba class=mnav>贴吧</a> <noscript> <a href=http://www.baidu.com/bdorz/login.gif?login&amp;tpl=mn&amp;u=http%3A%2F%2Fwww.baidu.com%2f%3fbdorz_come%3d1 name=tj_login class=lb>登录</a> </noscript> <script>document.write('<a href="http://www.baidu.com/bdorz/login.gif?login&tpl=mn&u='+ encodeURIComponent(window.location.href+ (window.location.search === "" ? "?" : "&")+ "bdorz_come=1")+ '" name="tj_login" class="lb">登录</a>');</script> <a href=//www.baidu.com/more/ name=tj_briicon class=bri style="display: block;">更多产品</a> </div> </div> </div> <div id=ftCon> <div id=ftConw> <p id=lh> <a href=http://home.baidu.com>关于百度</a> <a href=http://ir.baidu.com>About Baidu</a> </p> <p id=cp>&copy;2017&nbsp;Baidu&nbsp;<a href=http://www.baidu.com/duty/>使用百度前必读</a>&nbsp; <a href=http://jianyi.baidu.com/ class=cp-feedback>意见反馈</a>&nbsp;京ICP证030173号&nbsp; <img src=//www.baidu.com/img/gs.gif> </p> </div> </div> </div> </body> </html>
+#7 DONE 8.8s
+
+#8 [ 4/15] COPY Centos-7.repo /etc/yum.repos.d/CentOS-Base.repo
+#8 sha256:adad8b53ffed8e98bf1403996ec122335fa239043c78a1a61b24ac5698055f88
+#8 DONE 2.8s
+
+#9 [ 5/15] COPY epel-7.repo /etc/yum.repos.d/epel-7.repo
+#9 sha256:e9c351363c1da65296bfa7d47fe91ccfe1c04b2169f2f4429f127a133330acde
+#9 DONE 3.1s
+
+#10 [ 6/15] RUN yum clean all && yum makecache && yum -y update
+#10 sha256:f688590fd8e567cb306b3abeddf6237ee8dc0e1b6c174c15a4e3741984393c86
+#10 5.827 Loaded plugins: fastestmirror, ovl
+#10 9.555 Cleaning repos: base centos-sclo-rh centos-sclo-sclo epel extras updates
+#10 9.886 Loaded plugins: fastestmirror, ovl
+#10 10.03 Determining fastest mirrors
+#10 13.84  * base: mirrors.aliyun.com
+#10 13.87  * centos-sclo-rh: mirrors.ustc.edu.cn
+#10 13.87  * centos-sclo-sclo: mirrors.ustc.edu.cn
+#10 13.87  * extras: mirrors.aliyun.com
+#10 13.87  * updates: mirrors.aliyun.com
+#10 14.57 http://mirrors.cloud.aliyuncs.com/centos/7/os/x86_64/repodata/6d0c3a488c282fe537794b5946b01e28c7f44db79097bb06826e1c0c88bad5ef-primary.sqlite.bz2: [Errno 14] curl#6 - "Could not resolve host: mirrors.cloud.aliyuncs.com; Unknown error"
+#10 14.57 Trying other mirror.
+#10 44.47 http://mirrors.aliyuncs.com/centos/7/os/x86_64/repodata/d6d94c7d406fe7ad4902a97104b39a0d8299451832a97f31d71653ba982c955b-filelists.sqlite.bz2: [Errno 12] Timeout on http://mirrors.aliyuncs.com/centos/7/os/x86_64/repodata/d6d94c7d406fe7ad4902a97104b39a0d8299451832a97f31d71653ba982c955b-filelists.sqlite.bz2: (28, 'Connection timed out after 30000 milliseconds')
+#10 44.47 Trying other mirror.

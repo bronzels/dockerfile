@@ -19,7 +19,7 @@ metadata:
     app: hive
 type: Opaque
 data:
-  database-dba-password: RGFtZW5nQDc3Nw==
+  database-dba-password: MTIzNDU2
   database-user-password: RGFtZW5nQDc3Nw==
 ---
 apiVersion: apps/v1
@@ -38,13 +38,13 @@ spec:
         app: hive
     spec:
       initContainers:
-        - name: init-dababase
-          image:  harbor.my.org:1080/bronzels/database-tools:1.0-SNAPSHOT
+        - name: init-database
+          image:  harbor.my.org:1080/bronzels/database-tools:1.0
           env:
             - name: DRIVER_NAME
               value: "com.mysql.jdbc.Driver"
             - name: URL
-              value: "jdbc:mysql://hive-metadata-mysql-service:3306/mysql?useUnicode=true&characterEncoding=utf8&useSSL=false"
+              value: "jdbc:mysql://mysql-svc.mysql:3306/mysql?useUnicode=true&characterEncoding=utf8&useSSL=false"
             - name: USERNAME
               value: "root"
             - name: PASSWORD
@@ -58,7 +58,7 @@ spec:
                   name: hive-metastore-secret
                   key: database-user-password
           volumeMounts:
-            - name: init-dababase-volume
+            - name: init-database-volume
               mountPath: /root/db_tools/script
       containers:
         - name: hive
@@ -92,7 +92,7 @@ spec:
         - name: hive-custom-config-volume
           configMap:
             name: hive-custom-config-cm
-        - name: init-dababase-volume
+        - name: init-database-volume
           configMap:
             name: hive-metastore-database
 ---

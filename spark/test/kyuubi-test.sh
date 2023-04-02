@@ -34,6 +34,7 @@ kubectl get pod -n spark-operator |grep Running | grep exec | awk '{print $1}'| 
 kubectl get pod -n spark-operator |grep -v Running | grep kyuubi-connection-spark-sql | awk '{print $1}'| xargs kubectl delete pod "$1" -n spark-operator --force --grace-period=0
 
 kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep spark-client | awk '{print $1}'` -- bash
+kubectl exec -it -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep kyuubisrv | awk '{print $1}'` -- bash
   #beeline -u jdbc:hive2://kyuubi-thrift-binary.spark-operator.svc.cluster.local:10009 -n kyuubi
   beeline -u jdbc:hive2://kyuubisrv-thrift-binary.spark-operator.svc.cluster.local:10009 -n hdfs
   #大概有20s才能连接成功
@@ -78,7 +79,10 @@ EOF
   #beeline -n hdfs -u 'jdbc:hive2://kyuubisrv-thrift-binary.spark-operator.svc.cluster.local:10009/tpcds_bin_partitioned_orc_10;spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup-high.yaml;spark.driver.memory=2g;spark.driver.cores=1;spark.executor.memory=4g;spark.executor.cores=1；'
   #beeline -n hdfs -u 'jdbc:hive2://kyuubisrv-thrift-binary.spark-operator.svc.cluster.local:10009/tpcds_bin_partitioned_orc_10;kyuubi.engineEnv.spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup-high.yaml;kyuubi.engineEnv.spark.driver.memory=2g;kyuubi.engineEnv.spark.driver.cores=1;kyuubi.engineEnv.spark.executor.memory=4g;kyuubi.engineEnv.spark.executor.cores=1；'
   #数据库名到第一个配置项中间是;#，漏了#不行
-  beeline -n hdfs -u 'jdbc:hive2://kyuubisrv-thrift-binary.spark-operator.svc.cluster.local:10009/tpcds_bin_partitioned_orc_10;#spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup-high.yaml;spark.driver.memory=2g;spark.driver.cores=1;spark.executor.memory=4g;spark.executor.cores=1;'
+  #db
+    #hudi_mydb
+    #tpcds_bin_partitioned_orc_10
+  beeline -n hdfs -u 'jdbc:hive2://kyuubisrv-thrift-binary.spark-operator.svc.cluster.local:10009/hudi_mydb;spark.driver.memory=8g;spark.driver.cores=1;spark.executor.memory=4g;spark.executor.cores=1;'
   #从server的日志检查检查连接设置正确格式化成了spark-submit命令
 kubectl logs -n spark-operator `kubectl get pod -n spark-operator | grep Running | grep kyuubisrv | awk '{print $1}'`
 spark-submit \
@@ -139,7 +143,7 @@ kubectl get pod -n spark-operator `kubectl get pod -n spark-operator | grep Runn
 
 cat << EOF > setting.sql
 SET spark.kubernetes.scheduler.volcano.podGroupTemplateFile=/opt/spark/work-dir/podgroups/volcano-halfavailable-podgroup-high.yaml;
-SET spark.driver.memory=2g;
+SET spark.driver.memory=4g;
 SET spark.driver.cores=1;
 SET spark.executor.memory=4g;
 SET spark.executor.cores=1;

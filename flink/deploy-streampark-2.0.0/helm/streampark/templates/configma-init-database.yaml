@@ -1,0 +1,31 @@
+{{- if .Values.streamParkInitDatabase.create }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: init-database
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "streampark.labels" . | nindent 4 }}
+data:
+  execute01.sql: |+
+{{- if .Values.streamParkInitDatabase.append }}
+    {{- $.Files.Get "conf/init-database/execute01.sql"  | nindent 4 -}}
+{{- end }}
+{{- if index (.Values.streamParkInitDatabase) "execute01.sql" }}
+    {{- index (.Values.streamParkInitDatabase) "execute01.sql" | nindent 4 -}}
+{{- end }}
+  execute02.sql: |+
+{{- if .Values.streamParkInitDatabase.append }}
+    {{- $.Files.Get "conf/init-database/execute02.sql"  | nindent 4 -}}
+{{- end }}
+{{- if index (.Values.streamParkInitDatabase) "execute02.sql" }}
+    {{- index (.Values.streamParkInitDatabase) "execute02.sql" | nindent 4 -}}
+{{- end }}
+  procedure.sql: |+
+{{- if .Values.streamParkInitDatabase.append }}
+    {{- $.Files.Get "conf/init-database/procedure.sql"  | nindent 4 -}}
+{{- end }}
+{{- if index (.Values.streamParkInitDatabase) "procedure.sql" }}
+    {{- index (.Values.streamParkInitDatabase) "procedure.sql" | nindent 4 -}}
+{{- end }}
+{{- end }}

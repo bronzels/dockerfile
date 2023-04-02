@@ -1,0 +1,4 @@
+  USE CATALOG hive;
+  SHOW DATABASES;
+  USE CATALOG hudi_catalog;
+  SHOW DATABASES;

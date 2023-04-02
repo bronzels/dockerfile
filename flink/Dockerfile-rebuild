@@ -62,8 +62,6 @@ ARG JUICEFS_VERSION=?
 #COPY --chown=flink:flink juicefs-hadoop-${JUICEFS_VERSION}-jdk11-ubuntu22.04.jar $FLINK_HOME/lib/
 COPY --chown=flink:flink juicefs-hadoop-${JUICEFS_VERSION}.jar $FLINK_HOME/lib/
 
-COPY --chown=flink:flink setting.sql $FLINK_HOME/usrlib/
-
 COPY --chown=flink:flink conf/log4j.properties $FLINK_HOME/conf/
 COPY --chown=flink:flink conf/log4j-console.properties $FLINK_HOME/conf/
 COPY --chown=flink:flink conf/core-site.xml $FLINK_HOME/conf/
@@ -130,10 +128,12 @@ COPY --chown=flink:flink conf/flink-conf.yaml $FLINK_HOME/conf/
 #one of the files which may lead to hive/hudi conflict and hudi not working if added into flink lib/, hive dialect can not be set maybe due to absence these files
 #COPY --chown=flink:flink flinkbk/${TARGET_BUILT}/flink-connector-hive_${SCALA_VERSION}-${FLINK_VERSION}.jar $FLINK_HOME/lib/
 
-#COPY --chown=flink:flink calcite-core-1.14.0.jar $FLINK_HOME/lib/
+#1.15.4需要
+#1.17.0不需要
+COPY --chown=flink:flink calcite-core-1.14.0.jar $FLINK_HOME/lib/
 
 # Configure container
-COPY docker-entrypoint.sh /
+COPY docker-entrypoint-${FLINK_SHORT_VERSION}.sh /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
 EXPOSE 6123 8081
 CMD ["help"]
@@ -145,3 +145,7 @@ RUN useradd -u 10001 -d /opt/hdfs hdfs && \
  chown hdfs:hdfs /opt/hdfs && \
  usermod -g root hdfs
 
+RUN mkdir $FLINK_HOME/hadoopconf
+RUN chown flink:flink $FLINK_HOME/hadoopconf
+COPY --chown=flink:flink conf/core-site.xml $FLINK_HOME/hadoopconf/
+COPY --chown=flink:flink conf/hdfs-site.xml $FLINK_HOME/hadoopconf/

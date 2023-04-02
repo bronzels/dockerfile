@@ -144,4 +144,7 @@ USER hdfs
 
 ARG TARGET_BUILT=?
 ARG HUDI_VERSION=?
+#hudi built for spark
 COPY hudibk/${TARGET_BUILT}/hudi-spark${SPARK_SHORT_VERSION}-bundle_${SCALA_VERSION}-${HUDI_VERSION}.jar /opt/spark/jars/
+#hudi built for flink
+#COPY hudibk/${TARGET_BUILT}/hudi-spark-bundle_${SCALA_VERSION}-${HUDI_VERSION}.jar /opt/spark/jars/

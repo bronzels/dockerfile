@@ -1,6 +1,0 @@
-CREATE USER 'flink'@'%' IDENTIFIED BY 'flinkpw';
--- 授权
-GRANT SELECT, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'flink'@'%' IDENTIFIED BY 'flinkpw';
--- 查看授权
-SHOW GRANTS FOR 'flink'@'%';
-FLUSH PRIVILEGES;

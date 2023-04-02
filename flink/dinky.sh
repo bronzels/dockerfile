@@ -37,6 +37,8 @@ EOF
 DINKY_VERSION=0.7.2
 PRJ_MYSQL_HOME=${PRJ_HOME}/mysql
 
+SCALA_VERSION=2.12
+
 #wget -c https://github.com/DataLinkDC/dinky/releases/download/v${DINKY_VERSION}/dlink-release-${DINKY_VERSION}.tar.gz
 wget -c https://github.com/DataLinkDC/dinky/archive/refs/tags/v${DINKY_VERSION}.tar.gz
 tar xzvf dinky-${DINKY_VERSION}.tar.gz
@@ -57,26 +59,67 @@ docker push harbor.my.org:1080/flink/dinky:${DINKY_VERSION}
 
 file=auto.sh
 cp ${PRJ_FLINK_HOME}/auto-${DINKY_VERSION}.sh ${file}
-#$SED -i '/restart() {/a\  sed -i "s@___DINKY___@${DINKY_IDENTIFIED}@g" /opt/dlink/config/application.yml' ${file}
-#$SED -i '/restart() {/a\  cp /opt/dlink/config/application.yml.securedpwd /opt/dlink/config/application.yml' ${file}
 
+#$SED -i '/restart() {/a\  cp /opt/dlink/config/application.yml.customize /opt/dlink/config/application.yml' ${file}
+$SED -i 's/CLASS_PATH="/CLASS_PATH=".\/config\/*:/g' ${file}
+
+file=${PRJ_FLINK_HOME}/DinkyFlinkDockerfile
+cp ${file} ${file}.bk
+$SED -i 's/ARG FLINK_VERSION=1.14.5/ARG FLINK_VERSION=1.15.4/g' ${file}
+$SED -i "/ARG FLINK_VERSION=1.15.4/a\ARG TARGET_BUILT=${TARGET_BUILT}" ${file}
+$SED -i 's/FROM flink/FROM harbor.my.org:1080\/flink\/flink-juicefs-\${TARGET_BUILT}/g' ${file}
+$SED -i 's/1.16/1.15/g' ${file}
+cp ${file} ./
+
+cp ${PRJ_FLINK_HOME}/flink-shaded-hadoop-3-3.1.1.7.2.9.0-173-9.0.jar ./
 file=DockerfileDinkyFlink
 cp ${file} ${file}.bk
 $SED -i '/FROM flink/i\ARG TARGET_BUILT=?' ${file}
 $SED -i 's/FROM flink/FROM harbor.my.org:1080\/flink\/flink-juicefs-\${TARGET_BUILT}/g' ${file}
+cat << \EOF > ${file}
+COPY DinkyFlinkDockerfile /opt/dinky/config/
+ARG SCALA_VERSION=?
+ARG FLINK_VERSION=?
+#COPY --from=reqired-stage  /opt/flink/opt/*.jar  /opt/dinky/plugins/flink${FLINK_BIG_VERSION}
+COPY --from=reqired-stage  /opt/flink/opt/flink-table-planner_${SCALA_VERSION}-${FLINK_VERSION}.jar /opt/dinky/plugins/flink${FLINK_BIG_VERSION}
+RUN rm -f /opt/dinky/plugins/flink${FLINK_BIG_VERSION}/flink-table-planner-loader-${FLINK_VERSION}.jar
+RUN rm -f /opt/dinky/plugins/flink${FLINK_BIG_VERSION}/calcite-core-1.14.0.jar
+COPY --from=reqired-stage /opt/flink/conf /opt/dinky/flinkconf
+RUN mkdir /opt/flink
+COPY --from=reqired-stage /opt/flink/hiveconf /opt/flink/hiveconf
+COPY --from=reqired-stage /opt/flink/hadoopconf /opt/flink/hadoopconf
+COPY --from=reqired-stage /opt/hadoop/share/hadoop/common/lib/* /opt/dinky/plugins/flink${FLINK_BIG_VERSION}/
+COPY --from=reqired-stage /opt/hadoop/share/hadoop/common/* /opt/dinky/plugins/flink${FLINK_BIG_VERSION}/
+COPY --from=reqired-stage /opt/hadoop/share/hadoop/hdfs/lib/* /opt/dinky/plugins/flink${FLINK_BIG_VERSION}/
+COPY --from=reqired-stage /opt/hadoop/share/hadoop/hdfs/* /opt/dinky/plugins/flink${FLINK_BIG_VERSION}/
+COPY --from=reqired-stage /opt/hadoop/share/hadoop/mapreduce/* /opt/dinky/plugins/flink${FLINK_BIG_VERSION}/
+COPY --from=reqired-stage /opt/hadoop/share/hadoop/yarn/lib/* /opt/dinky/plugins/flink${FLINK_BIG_VERSION}/
+COPY --from=reqired-stage /opt/hadoop/share/hadoop/yarn/* /opt/dinky/plugins/flink${FLINK_BIG_VERSION}/
+EOF
 
 DINKY_IMAGE=harbor.my.org:1080/flink/dinky:${DINKY_VERSION}
 DOCKER_BUILDKIT=1 docker build ./ -f DockerfileDinkyFlink --progress=plain\
  --build-arg DINKY_IMAGE="${DINKY_IMAGE}"\
  --build-arg FLINK_BIG_VERSION="${FLINK_BIG_VERSION}"\
  --build-arg FLINK_VERSION="${FLINK_VERSION}"\
+ --build-arg SCALA_VERSION="${SCALA_VERSION}"\
  --build-arg TARGET_BUILT="${TARGET_BUILT}"\
  -t harbor.my.org:1080/flink/dinky-flink:${DINKY_VERSION}_${FLINK_VERSION}
 docker push harbor.my.org:1080/flink/dinky-flink:${DINKY_VERSION}_${FLINK_VERSION}
 
+
+#docker
+ansible all -m shell -a"docker images|grep dinky-flink"
+ansible all -m shell -a"docker images|grep dinky-flink|awk '{print \$3}'|xargs docker rmi -f"
+#containerd
+ansible all -m shell -a"crictl images|grep dinky-flink"
+ansible all -m shell -a"crictl images|grep dinky-flink|awk '{print \$3}'|xargs crictl rmi"
+
+#CREATE初始化脚本改造，/**/的licence说明要删掉
+#INSERT初始化脚本改造，;要替换成###SEP###
 cd ${PRJ_FLINK_HOME}
-mkdir init-dababase
-file=init-dababase/execute.sql
+mkdir init-database-dinky
+file=init-database/execute.sql
 cat << \EOF > ${file}
 -- create database
 CREATE DATABASE IF NOT EXISTS dlink DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
@@ -146,6 +189,10 @@ kubectl exec -it -n flink `kubectl get pod -n flink |grep dlink | grep Running |
 kubectl exec -it -n flink `kubectl get pod -n flink |grep dlink | grep Running | awk '{print $1}'` -c dlink-flink -- cat logs/dlink.log  
 kubectl exec -it -n flink `kubectl get pod -n flink |grep dlink | grep Running | awk '{print $1}'` -c dlink-flink -- tail -f logs/dlink.log  
 
+kubectl exec -it -n flink `kubectl get pod -n flink |grep dlink | grep Running | awk '{print $1}'` -c dlink-flink -- cat config/DinkyFlinkDockerfile
+kubectl exec -it -n flink `kubectl get pod -n flink |grep dlink | grep Running | awk '{print $1}'` -c dlink-flink -- cat auto.sh
+
 kubectl exec -it -n mysql `kubectl get pod -n mysql | grep Running | awk '{print $1}'` -- mysql -h127.0.0.1 -udlink -pDlink@1234 -e"SHOW DATABASES"
 kubectl exec -it -n mysql `kubectl get pod -n mysql | grep Running | awk '{print $1}'` -- mysql -h127.0.0.1 -udlink -pdlinkpw -e"SELECT * FROM dlink_flink_document"
+
 

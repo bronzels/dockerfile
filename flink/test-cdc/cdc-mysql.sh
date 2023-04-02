@@ -14,14 +14,16 @@ fi
 WORK_HOME=${MYHOME}/workspace
 PRJ_HOME=${WORK_HOME}/dockerfile
 
-VENV_HOME=${WORK_HOME}/venv
-
 PRJ_FLINK_HOME=${PRJ_HOME}/flink
+
+PATH=$PATH:${PRJ_HOME}:${PRJ_FLINK_HOME}
+
+VENV_HOME=${WORK_HOME}/venv
 
 DB_VERSION=5.7.28
 
 
-cat << EOF > mysql-env.sh
+cat << EOF > db-env.sh
 DB_CONTAINER=mysql-binlog2
 DB_PORT=3306
 DB_USR=root
@@ -30,7 +32,7 @@ DB_PRIV="SELECT, RELOAD, SHOW DATABASES, REPLICATION SLAVE, REPLICATION CLIENT"
 DOCKER_DIR=${MYHOME}/dockervol/mysqlmaster/conf
 INSIDE_DIR=/etc/mysql
 EOF
-cat << EOF > mysql-env.sh
+cat << EOF > db-env.sh
 DB_CONTAINER=ploardbx-binlog2
 DB_PORT=8527
 DB_USR=polardbx_root

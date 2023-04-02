@@ -1,0 +1,6 @@
+spring:
+  datasource:
+    username: ${MYSQL_USERNAME:streamx}
+    password: ${MYSQL_PASSWORD:streamx}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_ADDR:127.0.0.1:3306}/${MYSQL_DATABASE:streamx}?useSSL=false&useUnicode=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=false&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=GMT%2B8

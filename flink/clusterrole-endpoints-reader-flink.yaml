@@ -31,3 +31,6 @@ rules:
   - apiGroups: ["extensions"]
     resources: ["deployments"]
     verbs: ["create", "delete", "update", "get", "watch", "list"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["create", "delete", "update", "get", "watch", "list"]

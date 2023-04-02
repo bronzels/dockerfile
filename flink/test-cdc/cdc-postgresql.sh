@@ -14,9 +14,11 @@ fi
 WORK_HOME=${MYHOME}/workspace
 PRJ_HOME=${WORK_HOME}/dockerfile
 
-VENV_HOME=${WORK_HOME}/venv
-
 PRJ_FLINK_HOME=${PRJ_HOME}/flink
+
+PATH=$PATH:${PRJ_HOME}:${PRJ_FLINK_HOME}
+
+VENV_HOME=${WORK_HOME}/venv
 
 POSTGRESQL_VERSION=12.1
 
@@ -25,7 +27,7 @@ POSTGRESQL_VERSION=12.1
 mv ${MYHOME}/dockervol/postgresql/data10 ${PRJ_FLINK_HOME}/tpcds-kit/tools/
 rm -rf ${MYHOME}/dockervol/postgresql
 mkdir -p ${MYHOME}/dockervol/postgresql
-docker run --name postgres -e POSTGRES_PASSWORD=123456 -v ${MYHOME}/dockervol/postgresql:/var/lib/postgresql/data -p 5432:5432 -d postgres:12.1
+docker run --name postgres --restart always -e POSTGRES_PASSWORD=123456 -v ${MYHOME}/dockervol/postgresql:/var/lib/postgresql/data -p 5432:5432 -d postgres:12.1
 docker run --name pgadmin -p 5080:80 \
   -e 'PGADMIN_DEFAULT_EMAIL=bronzels@hotmail.com' \
   -e 'PGADMIN_DEFAULT_PASSWORD=123456' \
@@ -66,7 +68,7 @@ INSIDE_DIR=/var/lib/postgresql/data
 EOF
 . ./db-env.sh 
 
-docker exec -it ${DB_CONTAINER} psql -h 127.0.0.1 -p ${DB_PORT} -U ${DB_USR}
+docker exec -it ${DB_CONTAINER} psql -h 127.0.0.1 -p ${DB_PORT} -U ${DB_USR} -d mydb
 
 docker exec -it postgres bash
 
