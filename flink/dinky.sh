@@ -155,6 +155,14 @@ docker exec -it mysql-binlog2 mysql -h127.0.0.1 -uroot -p123456 -P3306
 echo -n 'Dlink@1234' | base64
 echo 'RGxpbmtAMTIzNA=='|base64 --decode
 
+#启动1台工作节点的docker，设置远程访问
+file=/usr/lib/systemd/system/docker.service 
+cp ${file} ${file}.bk
+sed -i "s@ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock@ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock -H tcp://0.0.0.0:2375@g" ${file}
+systemctl daemon-reload 
+systemctl restart docker
+curl http://192.168.3.6:2375/version
+
 kubectl create cm init-database-dinky -n flink --from-file=init-database-dinky
 kubectl apply -f dinky-yaml/dlink-configmap.yaml -n flink
 kubectl apply -f dinky-yaml/dlink-deployment.yaml -n flink

@@ -21,13 +21,16 @@ DORIS_HOME=${PRJ_HOME}/doris
 #DORIS_REV=1.2.1
 DORIS_REV=1.2.2
 
-STARROCKS_REV=2.5.2
+#STARROCKS_REV=2.5.2
 #STARROCKS_REV=3.0.0-avro
+STARROCKS_REV=3.0.0-rc01
 STARROCKS_OP_REV=1.3
 #STARROCKS_OP_REV=master
 
 #JUICEFS_VERSION=1.0.2
 JUICEFS_VERSION=1.0.3
+
+clusterfile=starrocks-fe-and-be-and-cn-with-autoscaler.yaml
 
 cd ${DORIS_HOME}
 
@@ -713,8 +716,6 @@ $SED -i "/  starRocksBeSpec:/a\    storageVolumes:\n      - name: be-data\n     
 
 cd ${DORIS_HOME}
 
-clusterfile=starrocks-fe-and-be-and-cn-with-autoscaler.yaml
-
 #hive外表tpcds测试
 :<<EOF
   starRocksBeSpec:
@@ -778,6 +779,7 @@ cp ${clusterfile} ${clusterfile}.bk
 $SED -i 's/starrocks-/starrocks-juicefs-/g' ${DORIS_HOME}/${clusterfile}
 
 
+
 kubectl logs -f -n doris `kubectl get pod -n doris | grep controller | awk '{print $1}'`
 
 
@@ -789,6 +791,23 @@ kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep cn-0 |
 cat /opt/starrocks/cn/log/cn.WARNING
 kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep cn-0 | awk '{print $1}'` -- \
 cat /opt/starrocks/cn/log/cn.INFO
+
+#升级到3.0.0-avro，3.0.0-rc01，都是cn启动时coredump
+kubectl logs -n doris starrockscluster-cn-0
+    [Thu Apr  6 03:44:00 UTC 2023] Add myself (starrockscluster-cn-0.cn-domain-search.doris.svc.cluster.local:9050) into FE ...
+    ERROR 1064 (HY000) at line 1: Unexpected exception: Same compute node already exists[starrockscluster-cn-0.cn-domain-search.doris.svc.cluster.local:9050]
+    [Thu Apr  6 03:44:00 UTC 2023] Empty $CONFIGMAP_MOUNT_PATH env var, skip it!
+    [Thu Apr  6 03:44:00 UTC 2023] run start_cn.sh
+    /opt/starrocks/cn/bin/start_backend.sh: line 185:   531 Segmentation fault      (core dumped) ${START_BE_CMD} "$@" >> ${LOG_FILE} 2>&1 < /dev/null
+kubectl get pod -n doris starrockscluster-cn-0 -o yaml > _tmp_starrockscluster-cn-0.yaml
+    Command: ["tail","-f","/dev/null"]
+    删除2个probe代码
+kubectl apply -n doris -f _tmp_starrockscluster-cn-0.yaml 
+kubectl exec -it -n doris `kubectl get pod -n doris | grep Running | grep cn-0-debug | awk '{print $1}'` -- bash
+  yum install -y gdb
+  /opt/starrocks/cn_entrypoint.sh ${FE_SERVICE_NAME}
+  gdb /opt/starrocks/cn/lib/starrocks_be
+  Reading symbols from /opt/starrocks/cn/lib/starrocks_be...(no debugging symbols found)...done.
 
 # starrocks end--------------------------------------------
 

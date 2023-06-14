@@ -1,0 +1,162 @@
+{{if .Values.DataEase.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{.Values.common.dataease.host}}
+spec:
+  replicas: {{.Values.DataEase.replicas}}
+  selector:
+    matchLabels:
+      app: {{.Values.common.dataease.host}}
+  template:
+    metadata:
+      labels:
+        app: {{.Values.common.dataease.host}}
+    spec:
+      initContainers:
+        - name: init-database
+          image:  harbor.my.org:1080/bronzels/database-tools:1.0
+          env:
+            - name: DRIVER_NAME
+              value: "com.mysql.jdbc.Driver"
+            - name: URL
+              value: "jdbc:mysql://mysql-svc.mysql:3306/mysql?useUnicode=true&characterEncoding=utf8&useSSL=false"
+            - name: USERNAME
+              value: "root"
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dataease-secret
+                  key: database-dba-password
+            - name: USER_IDENTIFIER
+              valueFrom:
+                secretKeyRef:
+                  name: dataease-secret
+                  key: database-user-password
+          volumeMounts:
+            - name: init-database-volume
+              mountPath: /root/db_tools/script      
+      containers:
+        - name: dataease
+          image: {{.Values.common.imagePrefix}}{{.Values.DataEase.image}}:{{.Values.DataEase.imageTag}}
+          imagePullPolicy: {{.Values.common.imagePullPolicy}}
+          resources:
+            limits:
+              cpu: {{.Values.DataEase.resourceLimits.cpu}}
+              memory: {{.Values.DataEase.resourceLimits.memory}}
+            requests:
+              memory: 512Mi
+              cpu: 0.4
+          env:
+            - name: JAVA_OPTIONS
+              value: {{.Values.DataEase.java_options}}
+            - name: MYSQL_ADDR
+              value: mysql-svc.mysql
+            - name: MYSQL_USERNAME
+              value: dataease
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dataease-secret
+                  key: database-user-password        
+            - name: MYSQL_DATABASE
+              value: dataease
+            - name: INIT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dataease-secret
+                  key: init-password        
+          ports:
+            - name: tcp
+              containerPort: 8081
+          volumeMounts:
+            - mountPath: /opt/dataease/conf/dataease.properties
+              name: opt-dataease-config
+              subPath: dataease.properties
+            - mountPath: /opt/dataease/logs
+              name: opt-dataease-logs
+            - mountPath: /opt/dataease/plugins/thirdpart
+              name: opt-dataease-plugins-thirdpart
+            - mountPath: /opt/dataease/data/kettle
+              name: opt-dataease-data-kettle              
+            - mountPath: /opt/dataease/data/static-resource
+              name: opt-dataease-data-static-resource
+            - mountPath: /opt/dataease/custom-drivers
+              name: opt-dataease-custom-drivers
+            - mountPath: /opt/dataease/data/custom
+              name: opt-dataease-data-custom
+            - mountPath: /opt/dataease/data/business
+              name: opt-dataease-data-business
+      {{if ne (.Values.common.imagePullSecrets | default "nil") "nil"}}
+      imagePullSecrets:
+        - name: {{.Values.common.imagePullSecrets}}
+      {{ end }}
+      volumes:
+        - name: opt-dataease-config
+          configMap:
+            name: dataease-config
+            defaultMode: 420
+        - name: opt-dataease-logs
+          {{if .Values.logPersistence.enabled}}
+          persistentVolumeClaim:
+            claimName: dataease-logs-pvc
+          {{ else }}
+          emptyDir: {}
+          {{ end }}
+        - name: opt-dataease-plugins-thirdpart
+          persistentVolumeClaim:
+            claimName: dataease-plugins-thirdpart-pvc
+        - name: opt-dataease-data-kettle
+          {{if and (eq .Values.DataEase.engine_mode "cluster")}}
+          persistentVolumeClaim:
+            claimName: kettle-data-pvc
+          {{ else }}
+          emptyDir: {}
+          {{ end }}
+        - name: opt-dataease-data-static-resource
+          persistentVolumeClaim:
+            claimName: dataease-data-static-resource-pvc
+        - name: opt-dataease-custom-drivers
+          persistentVolumeClaim:
+            claimName: dataease-custom-drivers-pvc
+        - name: opt-dataease-data-custom
+          persistentVolumeClaim:
+            claimName: dataease-data-custom-pvc
+        - name: opt-dataease-data-business
+          persistentVolumeClaim:
+            claimName: dataease-data-business-pvc
+        - configMap:
+            name: init-database
+          name: init-database-volume                    
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.Values.common.dataease.host}}
+  labels:
+    app: {{.Values.common.dataease.host}}
+spec:
+  sessionAffinity: ClientIP
+  selector:
+    app: {{.Values.common.dataease.host}}
+  ports:
+    - name: http
+      port: 8081
+      protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dataease-http
+  labels:
+    app: {{.Values.common.dataease.host}}
+spec:
+  type: NodePort
+  selector:
+    app: {{.Values.common.dataease.host}}
+  ports:
+  - port: 8081
+    targetPort: 8081
+    nodePort: {{.Values.common.dataease.nodeport_port}}
+{{end}}

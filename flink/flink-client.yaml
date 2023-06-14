@@ -7,13 +7,14 @@ metadata:
 spec:
   containers:
     - name: flink-client
+      #image: "flink:1.15"
+      #image: "harbor.my.org:1080/flink/flink:1.15.3"
       #image: "harbor.my.org:1080/flink/flink-juicefs:1.15.3"
       #image: "harbor.my.org:1080/flink/flink-juicefs:1.14.6"
       #image: "harbor.my.org:1080/flink/flink-juicefs:1.16.1"
       #image: "harbor.my.org:1080/flink/flink-juicefs:1.14.0"
       #image: "harbor.my.org:1080/flink/flink-juicefs-hadoop3hive3:1.15.4"
-      image: "harbor.my.org:1080/flink/flink-juicefs-hadoop3hive3:1.17.0"
-      #image: "flink:1.15"
-      #image: "harbor.my.org:1080/flink/flink:1.15.3"
+      #image: "harbor.my.org:1080/flink/flink-juicefs-hadoop3hive3:1.17.0
+      image: "harbor.my.org:1080/flink/flink-juicefs:hadoop3hive3"
       command: ["tail"]
       args: ["-f", "/dev/null"]

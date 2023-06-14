@@ -249,9 +249,15 @@ EOF
 #依赖mysql ns的实例先正常运行
 kubectl apply -n hadoop -f yaml/
 kubectl delete -n hadoop -f yaml/
+
+kubectl describe pod -n hadoop `kubectl get pod -n hadoop | grep hive-serv | awk '{print $1}'`
+
 kubectl get pod -n hadoop |grep -v Running |awk '{print $1}'| xargs kubectl delete pod "$1" -n hadoop --force --grace-period=0
 kubectl logs -n hadoop `kubectl get pod -n hadoop | grep hive-serv | awk '{print $1}'` init-database
 kubectl logs -n hadoop `kubectl get pod -n hadoop | grep hive-serv | awk '{print $1}'` hive
+
+kubectl get all -n hadoop
+watch kubectl get all -n hadoop
 
 #备份数据库
 echo RGFtZW5nQDc3Nw== > pwdbased

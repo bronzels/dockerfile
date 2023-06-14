@@ -38,7 +38,6 @@ COPY --chown=flink:flink flink-${FLINK_VERSION}-${TARGET_BUILT} /opt/flink
 
 # Prepare environment
 ENV FLINK_HOME=/opt/flink
-ENV PATH=$FLINK_HOME/bin:$PATH
 RUN groupadd --system --gid=9999 flink && \
     useradd --system --home-dir $FLINK_HOME --uid=9999 --gid=flink flink
 WORKDIR $FLINK_HOME
@@ -52,6 +51,7 @@ RUN \
   sed -i 's/taskmanager.bind-host: localhost/taskmanager.bind-host: 0.0.0.0/g' $FLINK_HOME/conf/flink-conf.yaml; \
   sed -i '/taskmanager.host: localhost/d' $FLINK_HOME/conf/flink-conf.yaml;
 
+ENV OLDPATH=$PATH
 ENV PATH=$PATH:$FLINK_HOME/bin
 
 RUN mkdir /opt/flink/usrlib
@@ -68,10 +68,6 @@ COPY --chown=flink:flink conf/core-site.xml $FLINK_HOME/conf/
 COPY --chown=flink:flink conf/hdfs-site.xml $FLINK_HOME/conf/
 COPY --chown=flink:flink conf/hive-site.xml $FLINK_HOME/conf/
 
-RUN mkdir $FLINK_HOME/hiveconf
-RUN chown flink:flink $FLINK_HOME/hiveconf
-COPY --chown=flink:flink conf/hive-site.xml $FLINK_HOME/hiveconf/
-
 ARG HADOOP_VERSION=?
 COPY --chown=flink:flink hadoop-${HADOOP_VERSION} /opt/hadoop
 ENV HADOOP_HOME=/opt/hadoop \
@@ -81,6 +77,20 @@ ENV HADOOP_HOME=/opt/hadoop \
     PATH=${PATH}:/opt/hadoop/bin
 ENV HADOOP_CLASSPATH=/opt/hadoop/etc/hadoop:/opt/hadoop/share/hadoop/common/lib/*:/opt/hadoop/share/hadoop/common/*:/opt/hadoop/share/hadoop/hdfs:/opt/hadoop/share/hadoop/hdfs/lib/*:/opt/hadoop/share/hadoop/hdfs/*:/opt/hadoop/share/hadoop/mapreduce/lib/*:/opt/hadoop/share/hadoop/mapreduce/*:/opt/hadoop/share/hadoop/yarn:/opt/hadoop/share/hadoop/yarn/lib/*:/opt/hadoop/share/hadoop/yarn/*
 COPY --chown=flink:flink config.sh $FLINK_HOME/bin/config.sh
+
+RUN useradd -u 10001 -d /opt/hdfs hdfs && \
+ mkdir -p /opt/hdfs && \
+ chown hdfs:hdfs /opt/hdfs && \
+ usermod -g root hdfs
+
+RUN mkdir /opt/hadoopconf
+RUN chown flink:flink /opt/hadoopconf
+COPY --chown=flink:flink conf/core-site.xml /opt/hadoopconf/
+COPY --chown=flink:flink conf/hdfs-site.xml /opt/hadoopconf/
+
+RUN mkdir /opt/hiveconf
+RUN chown flink:flink /opt/hiveconf
+COPY --chown=flink:flink conf/hive-site.xml /opt/hiveconf/
 
 ARG HIVEREV=?
 ARG SCALA_VERSION=?
@@ -108,14 +118,16 @@ ENV HADOOP_USER_NAME=hdfs
 
 ARG FLINK_SHORT_VERSION=?
 ARG HUDI_VERSION=?
-COPY --chown=flink:flink hudibk/${TARGET_BUILT}/hudi-flink${FLINK_SHORT_VERSION}-bundle-${HUDI_VERSION}.jar $FLINK_HOME/lib/
+#1.16/1.17也用的是hudi用1.15编译出的版本
+#COPY --chown=flink:flink hudibk/${TARGET_BUILT}/hudi-flink${FLINK_SHORT_VERSION}-bundle-${HUDI_VERSION}.jar $FLINK_HOME/lib/
+COPY --chown=flink:flink hudibk/${TARGET_BUILT}/hudi-flink-bundle-${HUDI_VERSION}.jar $FLINK_HOME/lib/
 #COPY --chown=flink:flink hudi-hive-sync-bundle-${HUDI_VERSION}.jar $FLINK_HOME/lib/
 #COPY --chown=flink:flink htrace-core4-4.1.0-incubating.jar $FLINK_HOME/lib/
 
-#ARG STARROCKS_CONNECTOR_VERSION=?
+ARG STARROCKS_CONNECTOR_VERSION=?
 #COPY --chown=flink:flink starrocks-connector-for-apache-flink-${STARROCKS_CONNECTOR_VERSION}/target/flink-connector-starrocks-${STARROCKS_CONNECTOR_VERSION}_flink-${FLINK_SHORT_VERSION}.jar $FLINK_HOME/lib/
+COPY --chown=flink:flink starrocksbk/flink-connector-starrocks-${STARROCKS_CONNECTOR_VERSION}_flink.jar $FLINK_HOME/lib/
 
-COPY --chown=flink:flink conf/flink-conf.yaml $FLINK_HOME/conf/
 #USER flink
 
 #three of the files which may lead to hive/hudi conflict and hudi not working if added into flink lib/, hive dialect can not be set maybe due to absence these files
@@ -129,23 +141,17 @@ COPY --chown=flink:flink conf/flink-conf.yaml $FLINK_HOME/conf/
 #COPY --chown=flink:flink flinkbk/${TARGET_BUILT}/flink-connector-hive_${SCALA_VERSION}-${FLINK_VERSION}.jar $FLINK_HOME/lib/
 
 #1.15.4需要
+#1.16.1？
 #1.17.0不需要
 COPY --chown=flink:flink calcite-core-1.14.0.jar $FLINK_HOME/lib/
 
 # Configure container
-COPY docker-entrypoint-${FLINK_SHORT_VERSION}.sh /docker-entrypoint.sh
+#比较了1.15.4/1.16.1/1.17.0入口脚本相同
+#COPY docker-entrypoint-${FLINK_SHORT_VERSION}.sh /docker-entrypoint.sh
+COPY docker-entrypoint.sh /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
 EXPOSE 6123 8081
 CMD ["help"]
 
 COPY --chown=flink:flink setting.sql $FLINK_HOME/usrlib/
-
-RUN useradd -u 10001 -d /opt/hdfs hdfs && \
- mkdir -p /opt/hdfs && \
- chown hdfs:hdfs /opt/hdfs && \
- usermod -g root hdfs
-
-RUN mkdir $FLINK_HOME/hadoopconf
-RUN chown flink:flink $FLINK_HOME/hadoopconf
-COPY --chown=flink:flink conf/core-site.xml $FLINK_HOME/hadoopconf/
-COPY --chown=flink:flink conf/hdfs-site.xml $FLINK_HOME/hadoopconf/
+COPY --chown=flink:flink conf/flink-conf.yaml $FLINK_HOME/conf/

@@ -16,15 +16,15 @@ PRJ_HOME=${WORK_HOME}/dockerfile
 
 PRJ_FLINK_HOME=${PRJ_HOME}/flink
 
-FLINK_VERSION=1.15.4
-FLINK_SHORT_VERSION=1.15
+FLINK_VERSION=1.16.1
+FLINK_SHORT_VERSION=1.16
 
 :<<EOF
 FLINK_VERSION=1.17.0
 FLINK_SHORT_VERSION=1.17
 
-FLINK_VERSION=1.16.1
-FLINK_SHORT_VERSION=1.16
+FLINK_VERSION=1.15.4
+FLINK_SHORT_VERSION=1.15
 
 FLINK_VERSION=1.15.3
 FLINK_SHORT_VERSION=1.15
@@ -50,7 +50,8 @@ HIVEREV=3.1.2
 #JUICEFS_VERSION=1.0.2
 JUICEFS_VERSION=1.0.3
 
-STARROCKS_CONNECTOR_VERSION=1.2.5
+#STARROCKS_CONNECTOR_VERSION=1.2.5
+STARROCKS_CONNECTOR_VERSION=1.2.6
 
 SCALA_VERSION=2.12
 
@@ -62,49 +63,10 @@ CDC_VERSION=2.3.0
 
 PYTHON_VERSION=3.7.9
 
+TARGET_BUILT=hadoop3hive3
+
+
 cd ${PRJ_FLINK_HOME}/
-
-#starrocks connector
-#虽然flink官方image的jdk是11，但是thrift和connector的pom都要求8
-#export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-11.0.17.jdk/Contents/Home
-#2 libs for starrrocks spark connector
-tar xzvf starrocks-connector-for-apache-flink-1.2.5.tar.gz
-cd starrocks-connector-for-apache-flink-1.2.5
-cd starrocks-stream-load-sdk/
-mvn clean install -DskipTests -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
-cd ..
-cd starrocks-thrift-sdk/
-:<<EOF
-file=pom.xml
-cp ${file} ${file}.bk
-$SED -i '/<build>/a\<pluginManagement>' ${file}
-$SED -i '/<\/build>/i\<\/pluginManagement>' ${file}
-file=pom.xml
-cp ${file} ${file}.bk
-$SED -i 's/<phase>package<\/phase>/<phase>install<\/phase>/g' ${file}
-./build-thrift.sh
-EOF
-thrift -r -gen java gensrc/StarrocksExternalService.thrift
-if [ ! -d "src/main/java/com/starrocks/thrift" ]; then
-    mkdir -p src/main/java/com/starrocks/thrift
-else
-    rm -rf src/main/java/com/starrocks/thrift/*
-fi
-cp -r gen-java/com/starrocks/thrift/* src/main/java/com/starrocks/thrift
-rm -rf gen-java
-:<<EOF
-出现失败maven-gpg-plugin gpg: no default secret key: No secret key
-安装pgp
-gpg --gen-key
-mvn clean install -DskipTests -Dmaven.test.skip=true -Dgpg.skip -Dmaven.javadoc.skip=true
-EOF
-mvn clean package -DskipTests -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
-mvn install:install-file -DgroupId=com.starrocks -DartifactId=starrocks-thrift-sdk -Dversion=1.0.1 -Dpackaging=jar -Dfile=target/starrocks-thrift-sdk-1.0.1.jar
-cd ..
-#starrrocks flink connector
-mvn clean package -DskipTests -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
-
-
 
 wget -c https://github.com/apache/flink-kubernetes-operator/archive/refs/tags/release-${FLINKOP_VERSION}.tar.gz
 tar xzvf flink-kubernetes-operator-release-${FLINKOP_VERSION}.tar.gz
@@ -144,10 +106,11 @@ EOF
 
 kubectl create ns flink
 
-cd ${PRJ_FLINK_HOME}/flink-kubernetes-operator-release-${FLINKOP_VERSION}/helm/flink-kubernetes-operator
 wget -c https://github.com/jetstack/cert-manager/releases/download/v1.8.2/cert-manager.yaml
 kubectl create -f cert-manager.yaml
 kubectl delete -f cert-manager.yaml
+
+cd ${PRJ_FLINK_HOME}/flink-kubernetes-operator-release-${FLINKOP_VERSION}/helm/flink-kubernetes-operator
 #helm install my -n flink -f values.yaml \
 helm install my -n flink -f values.yaml \
   --set image.repository=harbor.my.org:1080/flink/flink-kubernetes-operator \
@@ -411,11 +374,11 @@ HIVEREV=3.1.2
 #HIVEREV=2.3.6
 mv flink-dist/target/flink-${FLINK_VERSION}-bin/flink-${FLINK_VERSION} ${PRJ_FLINK_HOME}/flink-${FLINK_VERSION}-${TARGET_BUILT}
 cp flink-connectors/flink-sql-connector-hive-${HIVEREV}/target/flink-sql-connector-hive-${HIVEREV}_${SCALA_VERSION}-${FLINK_VERSION}.jar ${PRJ_FLINK_HOME}/flink-${FLINK_VERSION}-${TARGET_BUILT}/lib/
-cp flink-connectors/flink-connector-hive/target/flink-connector-hive_${SCALA_VERSION}-${FLINK_VERSION}.jar ${PRJ_FLINK_HOME}/flink-${FLINK_VERSION}-${TARGET_BUILT}/lib/
+#cp flink-connectors/flink-connector-hive/target/flink-connector-hive_${SCALA_VERSION}-${FLINK_VERSION}.jar ${PRJ_FLINK_HOME}/flink-${FLINK_VERSION}-${TARGET_BUILT}/lib/
 cp flink-connectors/flink-sql-connector-kafka/target/flink-sql-connector-kafka-${FLINK_VERSION}.jar ${PRJ_FLINK_HOME}/flink-${FLINK_VERSION}-${TARGET_BUILT}/lib/
-cp flink-connectors/flink-sql-connector-hive-${HIVEREV}/target/flink-sql-connector-hive-${HIVEREV}_${SCALA_VERSION}-${FLINK_VERSION}.jar ${PRJ_FLINK_HOME}/flinkbk/${TARGET_BUILT}/
-cp flink-connectors/flink-connector-hive/target/flink-connector-hive_${SCALA_VERSION}-${FLINK_VERSION}.jar ${PRJ_FLINK_HOME}/flinkbk/${TARGET_BUILT}/
-cp flink-connectors/flink-sql-connector-kafka/target/flink-sql-connector-kafka-${FLINK_VERSION}.jar ${PRJ_FLINK_HOME}/flinkbk/${TARGET_BUILT}/
+cp flink-connectors/flink-sql-connector-hive-${HIVEREV}/target/flink-sql-connector-hive-${HIVEREV}_${SCALA_VERSION}-${FLINK_VERSION}.jar ${PRJ_FLINK_HOME}/flinkbk/${FLINK_VERSION}/${TARGET_BUILT}/
+cp flink-connectors/flink-connector-hive/target/flink-connector-hive_${SCALA_VERSION}-${FLINK_VERSION}.jar ${PRJ_FLINK_HOME}/flinkbk/${FLINK_VERSION}/${TARGET_BUILT}/
+cp flink-connectors/flink-sql-connector-kafka/target/flink-sql-connector-kafka-${FLINK_VERSION}.jar ${PRJ_FLINK_HOME}/flinkbk/${FLINK_VERSION}/${TARGET_BUILT}/
 cd ..
 mv flink-release-${FLINK_VERSION} ${PRJ_FLINK_HOME}/flink-release-${FLINK_VERSION}-${TARGET_BUILT}
 
@@ -440,6 +403,7 @@ DOCKER_BUILDKIT=1 docker build -f Dockerfile-rebuild ./ --progress=plain\
  --build-arg HADOOP_VERSION="${HADOOP_VERSION}"\
  --build-arg CDC_VERSION="${CDC_VERSION}"\
  --build-arg TARGET_BUILT="${TARGET_BUILT}"\
+ --build-arg STARROCKS_CONNECTOR_VERSION="${STARROCKS_CONNECTOR_VERSION}"\
  -t harbor.my.org:1080/flink/flink-juicefs-${TARGET_BUILT}:${FLINK_VERSION}
 docker push harbor.my.org:1080/flink/flink-juicefs-${TARGET_BUILT}:${FLINK_VERSION}
 
@@ -526,6 +490,25 @@ EOF
 kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- hadoop fs -mkdir -p /flink/checkpoints
 kubectl exec -it -n hadoop `kubectl get pod -n hadoop | grep Running | grep hive-client | awk '{print $1}'` -- hadoop fs -mkdir -p /flink/recovery
 
+kubectl apply -f flink-client.yaml -n flink
+kubectl apply -f flink-historyserver.yaml -n flink
+
+kubectl get pod -n flink
+watch kubectl get pod -n flink
+
+kubectl port-forward -n flink svc/flink-job-history-server-service 8082:8082 &
+kubectl port-forward -n flink `kubectl get pod -n flink |grep history |grep Running |awk '{print $1}'` 8082:8082 &
+
+kubectl logs -n flink `kubectl get pod -n flink | grep history | awk '{print $1}'`
+kubectl logs -f -n flink `kubectl get pod -n flink | grep history | awk '{print $1}'`
+
+kubectl delete -f flink-client.yaml -n flink
+kubectl delete -f flink-historyserver.yaml -n flink
+
+kubectl get pod -n flink |grep -v Running |awk '{print $1}'| xargs kubectl delete pod "$1" -n flink --force --grace-period=0
+
+:<<EOF
+#dinky需要，测试有问题，单个机器固定调度，安装docker 设置-H 以后还是有image无法删除问题，报错少了很多
 #开启harbor等同机器的docker远程访问，一些流作业操作平台要build成镜像push以后再在k8s上application session方式运行
 #运行socat容器：
 docker run -d --name dockerremote --restart always -p 2375:2375 -v /var/run/docker.sock:/var/run/docker.sock alpine/socat TCP4-LISTEN:2375,fork,reuseaddr UNIX-CONNECT:/var/run/docker.sock
@@ -536,4 +519,9 @@ vim .bash_profile
 source .bash_profile
 EOF
 curl localhost:2375/version
+EOF
 
+DOCKER_BUILDKIT=1 docker build -f Dockerfile-all ./ --progress=plain\
+ --build-arg TARGET_BUILT="${TARGET_BUILT}"\
+ -t harbor.my.org:1080/flink/flink-juicefs:${TARGET_BUILT}
+docker push harbor.my.org:1080/flink/flink-juicefs:${TARGET_BUILT}

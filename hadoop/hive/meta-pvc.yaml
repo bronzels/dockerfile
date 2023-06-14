@@ -3,7 +3,8 @@ apiVersion: v1
 metadata:
   name: meta-mysql-claim
   annotations:
-    volume.beta.kubernetes.io/storage-class: "nfs-client"
+    #volume.beta.kubernetes.io/storage-class: "nfs-client"
+    volume.beta.kubernetes.io/storage-class: "local-path"
 spec:
   accessModes:
     - ReadWriteMany

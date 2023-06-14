@@ -44,9 +44,6 @@ CDC_VERSION=2.3.0
 cd ${PRJ_FLINK_HOME}
 
 
-kubectl apply -f flink-client.yaml -n flink
-
-kubectl delete -f flink-client.yaml -n flink
 kubectl delete deployments.apps -n flink cdc-hudi-test-basic
 kubectl get pod -n flink |grep -v Running |awk '{print $1}'| xargs kubectl delete pod "$1" -n flink --force --grace-period=0
 

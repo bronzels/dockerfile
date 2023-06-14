@@ -1,0 +1,12 @@
+apiVersion: v1
+appVersion: 1.18.4
+description: A Helm chart to deploy DataEase
+home: https://dataease.io
+icon: https://dataease.io/images/logo/favicon.ico
+maintainers:
+- email: fanyumin@139.com
+  name: fanyumin
+name: dataease
+sources:
+- https://github.com/mfanoffice/dataease-helm
+version: 1.18.4

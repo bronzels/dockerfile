@@ -52,6 +52,11 @@ kubectl delete -f yaml/mysql-config.yaml -n mysql
 kubectl delete -f yaml/mysql-pvc.yaml -n mysql
 
 kubectl get pod -n mysql |grep -v Running |awk '{print $1}'| xargs kubectl delete pod "$1" -n mysql --force --grace-period=0
+#更改my.cnf配置重启
+kubectl apply -f yaml/mysql-config.yaml -n mysql
+kubectl get pod -n mysql  |awk '{print $1}'| xargs kubectl delete pod "$1" -n mysql --force --grace-period=0
+kubectl get pvc -n mysql | grep mysql | awk '{print $1}' | xargs kubectl delete pvc -n mysql
+kubectl get pv | grep mysql | awk '{print $1}' | xargs kubectl delete pv
 
 kubectl exec -it -n mysql `kubectl get pod -n mysql | grep Running | awk '{print $1}'` -- bash
   echo ${MYSQL_ROOT_PASSWORD}

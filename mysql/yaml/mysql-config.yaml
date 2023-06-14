@@ -5,19 +5,54 @@ metadata:
   name: mysql-config
 data:
   my.cnf: |
-        [client]
-        default-character-set=utf8mb4
-        [mysql]
-        default-character-set=utf8mb4
-        [mysqld] 
-        secure_file_priv=/var/lib/mysql
-        sql_mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
-        #default-time-zone = 'Asia/Shanghai'
-        default-time_zone = '+8:00'
-        interactive_timeout = 1800
-        wait_timeout = 1800
-        max_connections = 8192
-        max_user_connections= 2048
+    [client]
+    default-character-set=utf8mb4
+
+    #dataease
+    [mysql.server]
+    default-character-set=utf8
+
+    [mysql]
+    default-character-set=utf8mb4
+    
+    [mysqld] 
+    secure_file_priv=/var/lib/mysql
+    sql_mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+    #default-time-zone = 'Asia/Shanghai'
+    default-time_zone = '+8:00'
+    interactive_timeout = 1800
+    wait_timeout = 1800
+    max_connections = 8192
+    max_user_connections = 2048
+    #dataease
+    datadir=/var/lib/mysql
+    default-storage-engine=INNODB
+    character_set_server=utf8
+    lower_case_table_names=1
+    table_open_cache=128
+    max_connect_errors=6000
+    innodb_file_per_table=1
+    #innodb_buffer_pool_size=1G
+    max_allowed_packet=64M
+    transaction_isolation=READ-COMMITTED
+    #innodb_flush_method=O_DIRECT
+    innodb_lock_wait_timeout=1800
+    innodb_flush_log_at_trx_commit=0
+    sync_binlog=0
+    group_concat_max_len=1024000
+    skip-name-resolve
+
+    #cube-studio
+    pid-file        = /var/run/mysqld/mysqld.pid
+    socket          = /var/run/mysqld/mysqld.sock
+    symbolic-links=0
+    bind-address    = 0.0.0.0
+    innodb_buffer_pool_size=2G
+    explicit_defaults_for_timestamp = 1
+    init_connect='SET NAMES utf8'
+    skip-grant-tables
+
+
 ---
 apiVersion: v1
 kind: Secret

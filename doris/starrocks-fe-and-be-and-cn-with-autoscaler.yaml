@@ -7,11 +7,13 @@ spec:
   starRocksFeSpec:
     storageVolumes:
       - name: fe-meta
-        storageClassName: juicefs-sc
+        #storageClassName: juicefs-sc
+        storageClassName: local-path
         storageSize: 1Gi
         mountPath: /opt/starrocks/fe/meta
     image: harbor.my.org:1080/doris/starrocks-juicefs-fe:2.5.2
     #image: harbor.my.org:1080/doris/starrocks-juicefs-fe:3.0.0-avro
+    #image: harbor.my.org:1080/doris/starrocks-juicefs-fe:3.0.0-rc01
     replicas: 1
     requests:
       cpu: 2
@@ -19,21 +21,24 @@ spec:
   starRocksBeSpec:
     storageVolumes:
       - name: be-data
-        storageClassName: juicefs-sc
+        #storageClassName: juicefs-sc
+        storageClassName: local-path
         storageSize: 50Gi
         mountPath: /opt/starrocks/be/storage
     image: harbor.my.org:1080/doris/starrocks-juicefs-be:2.5.2
     #image: harbor.my.org:1080/doris/starrocks-juicefs-be:3.0.0-avro
-    replicas: 1
+    #image: harbor.my.org:1080/doris/starrocks-juicefs-be:3.0.0-rc01
+    replicas: 3
     requests:
       cpu: 1
-      memory: 4Gi
+      memory: 18Gi
   starRocksCnSpec:
     image: harbor.my.org:1080/doris/starrocks-juicefs-cn:2.5.2
     #image: harbor.my.org:1080/doris/starrocks-juicefs-cn:3.0.0-avro
+    #image: harbor.my.org:1080/doris/starrocks-juicefs-cn:3.0.0-rc01
     requests:
-      cpu: 2
-      memory: 18Gi
+      cpu: 1
+      memory: 4Gi
       #when you use autoscalingPolicy, it is recommended that replicas removed from manifests.
     autoScalingPolicy:
       maxReplicas: 3

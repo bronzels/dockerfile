@@ -21,7 +21,8 @@ PRJ_DORIS_HOME=${PRJ_HOME}/doris
 #DORIS_REV=1.2.1
 DORIS_REV=1.2.2
 
-STARROCKS_REV=2.5.2
+#STARROCKS_REV=2.5.2
+STARROCKS_REV=3.0.0-rc01
 STARROCKS_OP_REV=1.3
 #STARROCKS_OP_REV=master
 
@@ -114,6 +115,43 @@ rm -rf cn/build_Release/ cn/output/
 
 
 # ### only fe in ubuntu start--------------------------------------------
+2.5.2->3.0.0-rc01
+diff starrocks-2.5.2/docker/dockerfiles/Dockerfile-fe-ubuntu.bk starrocks-3.0.0-rc01/docker/dockerfiles/Dockerfile-fe-ubuntu
+22a23
+> 
+diff starrocks-2.5.2/docker/dockerfiles/Dockerfile_be_centos.bk starrocks-3.0.0-rc01/docker/dockerfiles/Dockerfile_be_centos
+5c5
+< RUN yum install -y tzdata openssl curl vim ca-certificates fontconfig gzip tar mysql java-11-openjdk
+---
+> RUN yum install -y tzdata openssl curl vim ca-certificates fontconfig gzip tar mysql java-11-openjdk less
+8c8
+< Copy docker/bin/be_entrypoint.sh docker/bin/be_prestop.sh /opt/starrocks/
+---
+> Copy docker/dockerfiles/be/be_entrypoint.sh docker/dockerfiles/be/be_prestop.sh /opt/starrocks/
+diff starrocks-2.5.2/docker/dockerfiles/Dockerfile_cn_centos.bk starrocks-3.0.0-rc01/docker/dockerfiles/Dockerfile_cn_centos
+5c5
+< RUN yum install -y tzdata openssl curl vim ca-certificates fontconfig gzip tar mysql java-11-openjdk bc
+---
+> RUN yum install -y tzdata openssl curl vim ca-certificates fontconfig gzip tar mysql java-11-openjdk
+8,9c8,9
+< Copy docker/bin/cn_entrypoint.sh docker/bin/cn_prestop.sh /opt/starrocks/
+< Copy docker/bin/cn_entrypoint.sh docker/bin/cn_prestop.sh /root/
+---
+> Copy docker/dockerfiles/be/cn_entrypoint.sh docker/dockerfiles/be/cn_prestop.sh /opt/starrocks/
+> Copy docker/dockerfiles/be/cn_entrypoint.sh docker/dockerfiles/be/cn_prestop.sh /root/
+oldrev=2.5.2
+newrev=3.0.0-rc01
+cd ${PRJ_DORIS_HOME}/starrocks-src/
+cp starrocks-${newrev}/docker/dockerfiles/Dockerfile-fe-ubuntu starrocks-${newrev}/docker/dockerfiles/Dockerfile-fe-ubuntu.bk
+cp starrocks-${newrev}/docker/dockerfiles/Dockerfile_be_centos starrocks-${newrev}/docker/dockerfiles/Dockerfile_be_centos.bk
+cp starrocks-${newrev}/docker/dockerfiles/Dockerfile_cn_centos starrocks-${newrev}/docker/dockerfiles/Dockerfile_cn_centos.bk
+cp starrocks-${oldrev}/docker/dockerfiles/Dockerfile-fe-ubuntu starrocks-${newrev}/docker/dockerfiles/Dockerfile-fe-ubuntu
+cp starrocks-${oldrev}/docker/dockerfiles/Dockerfile_be_centos starrocks-${newrev}/docker/dockerfiles/Dockerfile_be_centos
+cp starrocks-${oldrev}/docker/dockerfiles/Dockerfile_cn_centos starrocks-${newrev}/docker/dockerfiles/Dockerfile_cn_centos
+$SED -i "s@docker/bin/fe_entrypoint.sh docker/bin/fe_prestop.sh@docker/dockerfiles/fe/fe_entrypoint.sh docker/dockerfiles/fe/fe_prestop.sh@g" starrocks-${newrev}/docker/dockerfiles/Dockerfile-fe-ubuntu
+$SED -i "s@docker/bin/be_entrypoint.sh docker/bin/be_prestop.sh@docker/dockerfiles/be/be_entrypoint.sh docker/dockerfiles/be/be_prestop.sh@g" starrocks-${newrev}/docker/dockerfiles/Dockerfile_be_centos
+$SED -i "s@docker/bin/cn_entrypoint.sh docker/bin/cn_prestop.sh@docker/dockerfiles/be/cn_entrypoint.sh docker/dockerfiles/be/cn_prestop.sh@g" starrocks-${newrev}/docker/dockerfiles/Dockerfile_cn_centos
+
 cd ${PRJ_DORIS_HOME}/starrocks-src
 arr=(Dockerfile-fe-ubuntu Dockerfile_be_centos Dockerfile_cn_centos)
 for dfile in ${arr[*]}
@@ -232,7 +270,7 @@ cp ${PRJ_HOME}/spark/hdfs-site.xml ./
 cp ${PRJ_HOME}/spark/hive-site.xml ./
 mv ${PRJ_DORIS_HOME}/StarRocks-${STARROCKS_REV} ${PRJ_DORIS_HOME}/starrocks-src/starrocks-${STARROCKS_REV}/output
 arr=(Dockerfile_be_centos Dockerfile_cn_centos)
-#arr=(Dockerfile_cn_centos)
+arr=(Dockerfile_be_centos)
 for dfile in ${arr[*]}
 do
   echo "DEBUG >>>>>> dfile:${dfile}"

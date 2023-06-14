@@ -13,8 +13,9 @@ cd /root/Python-3.7.4;./configure prefix=/usr/local/python-3.7.4;make;make insta
 echo "export PATH=\$PATH:/usr/local/python-3/bin" >> /root/.bashrc
 python3 --version
 #安装pip3
+curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 ansible slave -m copy -a"src=get-pip.py dest=/root/"
-mkdir /root/.pip
-ansible slave -m copy -a"src=pip.conf dest=/root/.pip/"
 python3 get-pip.py
 pip3 --version
+mkdir ~/.pip
+ansible slave -m copy -a"src=pip.conf dest=/root/.pip/"
