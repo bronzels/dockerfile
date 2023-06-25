@@ -16,7 +16,8 @@ RUN chmod a+x /usr/local/bin/juicefs
 RUN juicefs
 
 USER hdfs
-COPY --chown=hdfs:root juicefs-hadoop-1.0.2.jar $HADOOP_HOME/share/hadoop/common/lib/
+ARG JUICEFS_VERSION=?
+COPY --chown=hdfs:root juicefs-hadoop-${JUICEFS_VERSION}.jar $HADOOP_HOME/share/hadoop/common/lib/
 COPY --chown=hdfs:root core-site.xml $HADOOP_HOME/etc/hadoop/
 
 WORKDIR $HADOOP_HOME

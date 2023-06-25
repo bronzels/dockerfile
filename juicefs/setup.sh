@@ -14,9 +14,17 @@ else
     bin=/usr/local/bin
 fi
 
-JUICEFS_HOME=${MYHOME}/workspace/dockerfile/juicefs
+JUICEFS_PRJ_HOME=${MYHOME}/workspace/dockerfile/juicefs
 
-JUICEFS_VERSION=1.0.2
+#JUICEFS_VERSION=1.0.2
+#JUICEFS_VERSION=1.0.3
+JUICEFS_VERSION=1.0.4
+
+#csirev=0.17.4
+#csirev=0.17.5
+csirev=0.19.0
+
+cd ${JUICEFS_PRJ_HOME}
 
 wget -c https://github.com/juicedata/juicefs/releases/download/v${JUICEFS_VERSION}/juicefs-${JUICEFS_VERSION}-linux-amd64.tar.gz
 wget -c https://github.com/juicedata/juicefs/releases/download/v${JUICEFS_VERSION}/juicefs-hadoop-${JUICEFS_VERSION}.jar
@@ -44,7 +52,7 @@ wget -c https://github.com/libfuse/libfuse/releases/download/fuse_3_12_0/fuse-3.
 wget -c https://github.com/libfuse/libfuse/releases/download/fuse_2_9_4/fuse-2.9.2.tar.gz
 git clone git@github.com:juicedata/minio.git miniogw
 
-nohup docker build ./ --progress=plain -t harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib > build-Dockerfile-hadoop-ubussh-juicefs.log 2>&1 &
+nohup docker build ./ --progress=plain --build-arg JUICEFS_VERSION="${JUICEFS_VERSION}" -t harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib > build-Dockerfile-hadoop-ubussh-juicefs.log 2>&1 &
 tail -f build-Dockerfile-hadoop-ubussh-juicefs.log
 #docker build ./ --progress=plain -t harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib
 docker push harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib
@@ -63,18 +71,17 @@ yum install -y fuse
 modprobe fuse
 ls /dev/fuse
 
-#kubectl run juicefs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubu-juicefs:3.2.1-nolib --image-pull-policy="Always" --restart=Never --rm -- /bin/bash
-#kubectl run juicefs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib --restart=Never --rm -- /bin/bash
 
-kubectl exec -it distfs-test -- /bin/bash
-  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local 4UFXGHAUY3W02Z2OM247 MCzN5DsK1o8TF5tzQ2TkjQRv39IoLiqc8FaKFEWP
+kubectl run distfs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib --restart=Never --rm -- /bin/bash
+#kubectl exec -it distfs-test -- /bin/bash
+  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local JCTHLDGEMZM03OF5B163 DrTRA1zlIznEY5vY9rVrt68fjUO0z98ZGPCo39ZX
   mc mb minio/jfs
   mc ls minio/jfs
   juicefs format \
       --storage minio \
       --bucket https://minio.minio-tenant-1.svc.cluster.local/jfs?tls-insecure-skip-verify=true \
-      --access-key 4UFXGHAUY3W02Z2OM247 \
-      --secret-key MCzN5DsK1o8TF5tzQ2TkjQRv39IoLiqc8FaKFEWP \
+      --access-key JCTHLDGEMZM03OF5B163 \
+      --secret-key DrTRA1zlIznEY5vY9rVrt68fjUO0z98ZGPCo39ZX \
       "redis://:redis@my-redis-master.redis.svc.cluster.local:6379/1" \
       miniofs
   #mount test use distfs-test image and modprob 1stly
@@ -106,38 +113,82 @@ EOF
 #all k8s node
 ctr -n k8s.io image import juicedata-juicefs-csi-driver-v0.17.4.tar
 ctr -n k8s.io image import juicedata-mount-v${JUICEFS_VERSION}-4.8.3.tar
-#csirev=0.17.4
-csirev=0.17.5
 wget -c https://github.com/juicedata/juicefs-csi-driver/archive/refs/tags/v${csirev}.tar.gz -O juicefs-csi-driver-${csirev}.tar.gz
 tar xzvf juicefs-csi-driver-${csirev}.tar.gz
-ln -s juicefs-csi-driver-${csirev} juicefs-csi-driver
-cd juicefs-csi-driver/deploy
+
+
+cd ${JUICEFS_PRJ_HOME}/juicefs-csi-driver-${csirev}/docker
+tar xzvf ${JUICEFS_PRJ_HOME}/juicefs-${JUICEFS_VERSION}.tar.gz
+mv juicefs-${JUICEFS_VERSION} juicefs
+file=ce.juicefs.Dockerfile
+cp ${file} ${file}.bk
+cp ${JUICEFS_PRJ_HOME}/${file} ${file}
+docker build ./ -f ce.juicefs.Dockerfile --progress=plain -t harbor.my.org:1080/storage/juicedata-mount:ce-v1.0.4
+docker push harbor.my.org:1080/storage/juicedata-mount:ce-v1.0.4
+
+
+#docker
+ansible all -m shell -a"docker images|grep juicedata-mount"
+ansible all -m shell -a"docker images|grep juicedata-mount|awk '{print \$3}'|xargs docker rmi -f"
+#containerd
+ansible all -m shell -a"crictl images|grep juicedata-mount"
+ansible all -m shell -a"crictl images|grep juicedata-mount|awk '{print \$3}'|xargs crictl rmi"
+
+
+cd ${JUICEFS_PRJ_HOME}/juicefs-csi-driver-${csirev}/deploy
 #安装
+file=k8s.yaml
+cp ${file} ${file}.bk
+$SED -i "/        image: juicedata\/juicefs-csi-driver:v0.19.0/i\        - name: JUICEFS_CE_MOUNT_IMAGE\n          value: harbor.my.org:1080\/storage\/juicedata-mount:ce-v1.0.4" ${file}
 kubectl apply -f k8s.yaml
 kubectl -n kube-system get pods -l app.kubernetes.io/name=juicefs-csi-driver
 #升级，参考https://juicefs.com/docs/zh/csi/upgrade-csi-driver
+kubectl delete -f k8s.yaml
 
-kubectl exec -it distfs-test -- /bin/bash
-  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local 4UFXGHAUY3W02Z2OM247 MCzN5DsK1o8TF5tzQ2TkjQRv39IoLiqc8FaKFEWP
+
+kubectl run distfs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib --restart=Never --rm -- /bin/bash
+#kubectl exec -it distfs-test -- /bin/bash
+  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local JCTHLDGEMZM03OF5B163 DrTRA1zlIznEY5vY9rVrt68fjUO0z98ZGPCo39ZX
   mc mb minio/jfspvc
   mc ls minio/jfspvc
   juicefs format \
       --storage minio \
       --bucket https://minio.minio-tenant-1.svc.cluster.local/jfspvc?tls-insecure-skip-verify=true \
-      --access-key 4UFXGHAUY3W02Z2OM247 \
-      --secret-key MCzN5DsK1o8TF5tzQ2TkjQRv39IoLiqc8FaKFEWP \
+      --access-key JCTHLDGEMZM03OF5B163 \
+      --secret-key DrTRA1zlIznEY5vY9rVrt68fjUO0z98ZGPCo39ZX \
       "redis://:redis@my-redis-master.redis.svc.cluster.local:6379/2" \
       miniofspvc
   export MINIO_ROOT_USER=admin
   export MINIO_ROOT_PASSWORD=12345678
   miniogw gateway juicefs --console-address ':42312' redis://:redis@my-redis-master.redis.svc.cluster.local:6379/2 &
 kubectl port-forward distfs-test 42312:42312 &
+
+cd ${JUICEFS_PRJ_HOME}
 kubectl apply -f juicefs-sc-secret.yaml -n kube-system
 kubectl apply -f juicefs-sc.yaml -n kube-system
 :<<EOF
 kubectl delete -f juicefs-sc.yaml -n kube-system
 kubectl delete -f juicefs-sc-secret.yaml -n kube-system
 EOF
+
+kubectl apply -f test/jfs-test-pvc.yaml
+kubectl apply -f test/jfs-test-pod.yaml
+
+kubectl describe pod -n kube-system `kubectl get pod -n kube-system | grep juicefs | grep pvc | awk '{print $1}'`
+kubectl describe pod jfs-test
+
+kubectl describe pod jfs-test
+
+kubectl logs jfs-test
+  success
+kubectl delete pod jfs-test --force --grace-period=0
+kubectl apply -f test/jfs-test-pod.yaml
+kubectl logs jfs-test
+  success
+  success
+
+kubectl delete -f test/jfs-test-pod.yaml
+kubectl delete -f test/jfs-test-pvc.yaml
 
 wget -c https://github.com/juicedata/juicefs/archive/refs/tags/v${JUICEFS_VERSION}.tar.gz -o juicefs-${JUICEFS_VERSION}.tar.gz
 tar xzvf juicefs-${JUICEFS_VERSION}.tar.gz
@@ -229,33 +280,35 @@ E0301 05:23:46.197952       7 reconciler.go:103] Driver check pod juicefs-mdlapu
 (base) [root@dtpct ~]#
 EOF
 
-JUICEFS_VERSION=1.0.3
+#JUICEFS_VERSION=1.0.3
+JUICEFS_VERSION=1.0.4
 docker run -itd --name centos7-netutil-ccplus7-go-jdk --restart unless-stopped -v /Volumes/data/m2:/root/.m2 -v $PWD/juicefs-${JUICEFS_VERSION}:/root/workspace/juicefs -v /Volumes/data/gopath:/root/workspace/gopath harbor.my.org:1080/base/python:3.8-centos7-netutil-ccplus7-go-jdk tail -f /dev/null
 docker exec -it centos7-netutil-ccplus7-go-jdk bash
   java -version
   cd /root/workspace/juicefs/sdk/java
   make
 docker cp centos7-netutil-ccplus7-go-jdk:/root/workspace/juicefs/sdk/java/target/juicefs-hadoop-${JUICEFS_VERSION}.jar ./juicefs-hadoop-${JUICEFS_VERSION}-jdk11-centos7.jar
+docker stop centos7-netutil-ccplus7-go-jdk && docker rm centos7-netutil-ccplus7-go-jdk
 
-JUICEFS_VERSION=1.0.2
+:<<EOF
 docker run -itd --name debian11-ccplus-go-jdk --restart unless-stopped -v /Volumes/data/m2:/root/.m2 -v $PWD/juicefs-${JUICEFS_VERSION}:/root/juicefs -v /Volumes/data/gopath:/root/gopath harbor.my.org:1080/base/debian11:ccplus-go-jdk tail -f /dev/null
 docker exec -it debian11-ccplus-go-jdk bash
   java -version
   cd /root/juicefs/sdk/java
   make
 docker cp debian11-ccplus-go-jdk:/root/juicefs/sdk/java/target/juicefs-hadoop-${JUICEFS_VERSION}.jar ./juicefs-hadoop-${JUICEFS_VERSION}-jdk11-debian11.jar
+EOF
 
-JUICEFS_VERSION=1.0.3
 docker run -itd --name ubuntu22-netutil-ccplus7-go-jdk --restart unless-stopped -v /Volumes/data/m2:/root/.m2 -v $PWD/juicefs-${JUICEFS_VERSION}:/root/juicefs -v /Volumes/data/gopath:/root/gopath harbor.my.org:1080/base/ubuntu22:netutil-ccplus7-go-jdk tail -f /dev/null
 docker exec -it ubuntu22-netutil-ccplus7-go-jdk bash
   java -version
   cd /root/juicefs/sdk/java
   make
 docker cp ubuntu22-netutil-ccplus7-go-jdk:/root/juicefs/sdk/java/target/juicefs-hadoop-${JUICEFS_VERSION}.jar ./juicefs-hadoop-${JUICEFS_VERSION}-jdk8-ubuntu22.jar
+docker stop ubuntu22-netutil-ccplus7-go-jdk && docker rm ubuntu22-netutil-ccplus7-go-jdk
 
-JUICEFS_VERSION=1.0.3
-docker run -itd --name ubuntu22-netutil-ccplus7-go-jdk --restart unless-stopped -v /Volumes/data/m2:/root/.m2 -v $PWD/juicefs-${JUICEFS_VERSION}:/root/juicefs -v /Volumes/data/gopath:/root/gopath harbor.my.org:1080/base/ubuntu22:netutil-ccplus7-go-jdk tail -f /dev/null
-docker exec -it ubuntu22-netutil-ccplus7-go-jdk bash
+docker run -itd --name ubuntu22-netutil-ccplus7-go-jdk-11 --restart unless-stopped -v /Volumes/data/m2:/root/.m2 -v $PWD/juicefs-${JUICEFS_VERSION}:/root/juicefs -v /Volumes/data/gopath:/root/gopath harbor.my.org:1080/base/ubuntu22:netutil-ccplus7-go-jdk tail -f /dev/null
+docker exec -it ubuntu22-netutil-ccplus7-go-jdk-11 bash
   java -version
   PRIORITY_JDK_11=11000
   update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-11-openjdk-amd64/bin/java ${PRIORITY_JDK_11}
@@ -269,15 +322,16 @@ docker exec -it ubuntu22-netutil-ccplus7-go-jdk bash
   java -version
   cd /root/juicefs/sdk/java
   make
-docker cp ubuntu22-netutil-ccplus7-go-jdk:/root/juicefs/sdk/java/target/juicefs-hadoop-${JUICEFS_VERSION}.jar ./juicefs-hadoop-${JUICEFS_VERSION}-jdk11-ubuntu22.jar
+docker cp ubuntu22-netutil-ccplus7-go-jdk-11:/root/juicefs/sdk/java/target/juicefs-hadoop-${JUICEFS_VERSION}.jar ./juicefs-hadoop-${JUICEFS_VERSION}-jdk11-ubuntu22.jar
+docker stop ubuntu22-netutil-ccplus7-go-jdk-11 && docker rm ubuntu22-netutil-ccplus7-go-jdk-11
 
-JUICEFS_VERSION=1.0.3
 docker run -itd --name ubuntu20-netutil-ccplus7-go-jdk --restart unless-stopped -v /Volumes/data/m2:/root/.m2 -v $PWD/juicefs-${JUICEFS_VERSION}:/root/juicefs -v /Volumes/data/gopath:/root/gopath harbor.my.org:1080/base/ubuntu20:netutil-ccplus7-go-jdk tail -f /dev/null
 docker exec -it ubuntu20-netutil-ccplus7-go-jdk bash
   java -version
   cd /root/juicefs/sdk/java
   make
 docker cp ubuntu20-netutil-ccplus7-go-jdk:/root/juicefs/sdk/java/target/juicefs-hadoop-${JUICEFS_VERSION}.jar ./juicefs-hadoop-${JUICEFS_VERSION}-jdk11-ubuntu20.jar
+docker stop ubuntu20-netutil-ccplus7-go-jdk && docker rm ubuntu20-netutil-ccplus7-go-jdk
 
 #juicefs csi除了删除挂载pod以后相应的pvc pod terminating但是不删除以外，还有一些pvc pod在running状态，但是并没有对应的pvc和挂载pvc的应用pod，用csi-doctor.sh可以检查出来，这些pod都需要删除，不然逐渐累计，系统资源就不够了。
 cat << \EOF > remove-running-pvc-pod-without-app.sh
@@ -315,3 +369,33 @@ sudo ssh dtpct
     spark-operator	mysrv-sparksrv-hs-6c7594cddb-2bnd8
   ./csi-doctor.sh get-app juicefs-mdubu-pvc-5c0e0bab-4f77-49cc-a925-3e300267b23d-yapmri
 
+
+JUICEFS_VERSION=1.0.4
+wget -c https://github.com/juicedata/juicefs/releases/download/v${JUICEFS_VERSION}/juicefs-${JUICEFS_VERSION}-linux-amd64.tar.gz
+mkdir juicefs-linux-amd64
+tar xzvf juicefs-${JUICEFS_VERSION}-linux-amd64.tar.gz -C juicefs-linux-amd64
+ansible all -m copy -a"src=juicefs-linux-amd64/juicefs dest=/sbin/mount.juicefs"
+kubectl run distfs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib --restart=Never --rm -- /bin/bash
+#kubectl exec -it distfs-test -- /bin/bash
+  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local JCTHLDGEMZM03OF5B163 DrTRA1zlIznEY5vY9rVrt68fjUO0z98ZGPCo39ZX
+  mc mb minio/jfspvc4cs
+  mc ls minio/jfspvc4cs
+  juicefs format \
+      --storage minio \
+      --bucket https://minio.minio-tenant-1.svc.cluster.local/jfspvc4cs?tls-insecure-skip-verify=true \
+      --access-key JCTHLDGEMZM03OF5B163 \
+      --secret-key DrTRA1zlIznEY5vY9rVrt68fjUO0z98ZGPCo39ZX \
+      "redis://:redis@my-redis-master.redis.svc.cluster.local:6379/4" \
+      miniofspvc4cs
+ansible all -m copy -a"src=juicefs-linux-amd64/juicefs dest=/sbin/mount.juicefs"
+ansible all -m shell -a"mkdir -p /data/k8s"
+#这种方式把k8s服务挂载到裸机，很别扭，放弃
+ansible all -m shell -a"echo 'redis://:redis@my-redis-master.redis.svc.cluster.local:6379/4    /data/k8s       juicefs     _netdev,max-uploads=50,writeback,cache-size=204800     0  0' >> /etc/fstab"
+
+
+#cube-studio workflow专用bucket
+kubectl run distfs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib --restart=Never --rm -- /bin/bash
+#kubectl exec -it distfs-test -- /bin/bash
+  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local JCTHLDGEMZM03OF5B163 DrTRA1zlIznEY5vY9rVrt68fjUO0z98ZGPCo39ZX
+  mc mb minio/cubestudio
+  mc ls minio/cubestudio

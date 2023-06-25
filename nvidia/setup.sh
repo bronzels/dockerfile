@@ -1,3 +1,5 @@
+ansible nvidia -m shell -a""
+
 #参考这篇文章
 #https://blog.csdn.net/shiner_chen/article/details/125857553
 
@@ -18,7 +20,9 @@ yum install nvidia-detect -y
 #检测显卡驱动
 nvidia-detect -v
 #This device requires the current 515.57 NVIDIA driver kmod-nvidia
-drvrev=515.57
+#This device requires the current 525.85.05 NVIDIA driver kmod-nvidia
+#drvrev=515.57
+drvrev=525.85.05
 :<<EOF
 英伟达显卡算力
 CUDA Toolkit	Toolkit Driver Version Linux()
@@ -92,6 +96,7 @@ CUDA 9.0 (9.0.76)	>= 384.81
 EOF
 #https://www.nvidia.cn/Download/index.aspx?lang=cn
 #drvrev=515.76
+drvrev=525.85.05
 chmod a+x NVIDIA-Linux-x86_64-${drvrev}.run
 #ncurses图形界面安装，逐个主机，可以用--ui=none转命令行，用expect自动化
 ./NVIDIA-Linux-x86_64-${drvrev}.run
@@ -143,12 +148,25 @@ v1.1.0   y       y
 EOF
 
 #下载cuda
+https://developer.nvidia.com/cuda-toolkit-archive
 https://developer.nvidia.com/cuda-11-2-2-download-archive
 #下载cudnn
-wget -c https://developer.download.nvidia.com/compute/cuda/11.2.2/local_installers/cuda_11.2.2_460.32.03_linux.run
-chmod a+x cuda_11.2.2_460.32.03_linux.run
+#wget -c https://developer.download.nvidia.com/compute/cuda/11.2.2/local_installers/cuda_11.2.2_460.32.03_linux.run
+#wget -c https://developer.download.nvidia.com/compute/cuda/11.3.1/local_installers/cuda_11.3.1_465.19.01_linux.run 
+wget -c https://developer.download.nvidia.com/compute/cuda/11.6.2/local_installers/cuda_11.6.2_510.47.03_linux.run
+#训练pytorch的LSTM是，提示但是下载不到cu113对应的8.3.2的cudnn，升级到cu116后不再提示错误，RuntimeError: cuDNN version incompatibility: PyTorch was compiled against (8, 3, 2) but linked against (8, 2, 1)
+#chmod a+x cuda_11.2.2_460.32.03_linux.run
+#chmod a+x cuda_11.3.1_465.19.01_linux.run
+chmod a+x cuda_11.6.2_510.47.03_linux.run
+#卸载旧版本
+#ncurses图形界面卸载，逐个主机
+cd /usr/local/cuda
+bin/cuda-uninstaller 
+cd
 #ncurses图形界面安装，逐个主机
-sh cuda_11.2.2_460.32.03_linux.run
+#sh cuda_11.2.2_460.32.03_linux.run
+#sh cuda_11.3.1_465.19.01_linux.run
+sh cuda_11.6.2_510.47.03_linux.run
 #会安装460.32.03版驱动覆盖原来驱动，要取消
 :<<EOF
  CUDA Installer                                                               │
@@ -171,8 +189,8 @@ To uninstall the CUDA Toolkit, run cuda-uninstaller in /usr/local/cuda-11.2/bin
 To uninstall the NVIDIA Driver, run nvidia-uninstall
 Logfile is /var/log/cuda-installer.log
 EOF
-echo "export PATH=\$PATH:/usr/local/cuda-11.2/bin" >> /root/.bashrc
-echo "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/usr/local/cuda-11.2/lib64" >> /root/.bashrc
+echo "export PATH=\$PATH:/usr/local/cuda/bin" >> /root/.bashrc
+echo "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/usr/local/cuda/lib64" >> /root/.bashrc
 tail -4 /root/.bashrc
 head -5 /usr/local/cuda/version.json
 #重新登陆终端
@@ -182,16 +200,105 @@ nvidia-smi
 #如果无显示，重新安装driver
 nvidia-smi
 cudapath=/usr/local/cuda
+ls -l /usr/local
+cd /usr/local/cuda
+#卸载一起安装的driver
+#./nvidia-uninstall
 #卸载cuda
-nvidia-uninstall
-cuda-uninstaller
+./cuda-uninstaller
+#下载cudnn
+#https://developer.nvidia.com/rdp/cudnn-archive
+#选择cuDNN Libarary for Linux(x86_64)版本
+#wget -c https://developer.nvidia.com/compute/machine-learning/cudnn/secure/8.2.1.32/11.3_06072021/cudnn-11.3-linux-x64-v8.2.1.32.tgz
+#Download cuDNN v8.6.0 (October 3rd, 2022), for CUDA 11.x
 #安装cudnn
-tar -xzvf cudnn-11.2-linux-x64-v8.1.1.33.tgz
-cp -r /usr/local/cuda/include /usr/local/cuda/include.bk4-cudnn-setup
+#tar -xzvf cudnn-11.2-linux-x64-v8.1.1.33.tgz
+#tar -xzvf cudnn-11.3-linux-x64-v8.2.1.32.tgz
+xz -d cudnn-linux-x86_64-8.6.0.163_cuda11-archive.tar.xz
+tar -xvf cudnn-linux-x86_64-8.6.0.163_cuda11-archive.tar
+ln -s cudnn-linux-x86_64-8.6.0.163_cuda11-archive cuda
+mv cuda/lib cuda/lib64
+#cp -r /usr/local/cuda/include /usr/local/cuda/include.bk4-cudnn-setup
 cp cuda/include/cudnn*.h /usr/local/cuda/include
-cp -r /usr/local/cuda/lib64 /usr/local/cuda/lib64.bk4-cudnn-setup
+#cp -r /usr/local/cuda/lib64 /usr/local/cuda/lib64.bk4-cudnn-setup
 cp -P cuda/lib64/libcudnn* /usr/local/cuda/lib64
 chmod a+r /usr/local/cuda/include/cudnn*.h /usr/local/cuda/lib64/libcudnn*
+
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID) && \
+curl -s -L https://nvidia.github.io/nvidia-container-runtime/$distribution/nvidia-container-runtime.repo | \
+ tee /etc/yum.repos.d/nvidia-container-runtime.repo
+yum -y install nvidia-container-runtime
+which nvidia-container-runtime
+    /bin/nvidia-container-runtime
+:<<EOF
+curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.repo | \
+ tee /etc/yum.repos.d/nvidia-docker.repo
+yum -y install nvidia-container-toolkit --nogpgcheck
+EOF
+which nvidia-container-toolkit
+
+#https://github.com/NVIDIA/k8s-device-plugin/blob/main/nvidia-device-plugin.yml
+cat << \EOF > nvidia-device-plugin.yml
+# Copyright (c) 2019, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-device-plugin-daemonset
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      name: nvidia-device-plugin-ds
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: nvidia-device-plugin-ds
+    spec:
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      # Mark this pod as a critical add-on; when enabled, the critical add-on
+      # scheduler reserves resources for critical add-on pods so that they can
+      # be rescheduled after a failure.
+      # See https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/
+      priorityClassName: "system-node-critical"
+      containers:
+      - image: nvcr.io/nvidia/k8s-device-plugin:v0.14.0
+        name: nvidia-device-plugin-ctr
+        env:
+          - name: FAIL_ON_INIT_ERROR
+            value: "false"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: device-plugin
+          mountPath: /var/lib/kubelet/device-plugins
+      volumes:
+      - name: device-plugin
+        hostPath:
+          path: /var/lib/kubelet/device-plugins
+EOF
+kubectl apply -f nvidia-device-plugin.yml
+
+kubectl delete -f nvidia-device-plugin.yml
 
 #安装python 3.7
 

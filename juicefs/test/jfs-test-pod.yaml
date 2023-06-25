@@ -1,0 +1,21 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: jfs-test
+spec:
+  containers:
+  - name: test-pod
+    image: busybox:1.24
+    command:
+      - "/bin/sh"
+    args:
+      - "-c"
+      - "echo 'success' >> /mnt/SUCCESS && cat /mnt/SUCCESS && exit 0 || exit 1"
+    volumeMounts:
+      - name: jfs-pvc
+        mountPath: "/mnt"
+  restartPolicy: "Never"
+  volumes:
+    - name: jfs-pvc
+      persistentVolumeClaim:
+        claimName: jfs-test-claim

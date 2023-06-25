@@ -1,16 +1,26 @@
 helm repo add bitnami https://charts.bitnami.com/bitnami
 helm repo update
 kubectl create ns redis
+#  --set global.storageClass=nfs-client \
+#  --version 16.5.5 \
+#  --set image.registry=registry.cn-shanghai.aliyuncs.com \
+#  --set image.repository=wanfei/redis \
+#  --set architecture=replication \
 helm install my bitnami/redis \
-  --set global.storageClass=nfs-client \
+  --set global.storageClass=local-path \
   --set global.redis.password=redis \
-  --set image.registry=registry.cn-shanghai.aliyuncs.com \
-  --set image.repository=wanfei/redis \
   --set architecture=standalone \
-  --version 16.5.5 \
+  --version 17.9.4 \
   -n redis
+
+kubectl get all -n redis
+watch kubectl get all -n redis
+
 helm uninstall my -n redis
+kubectl get pod -n redis | grep -v Running awk '{print $1}' | xargs kubectl delete pod -n redis --force --grace-period=0
 kubectl get pvc -n redis | grep redis | awk '{print $1}' | xargs kubectl delete pvc -n redis
+kubectl get pv | grep redis | awk '{print $1}' | xargs kubectl delete pv
+
 :<<EOF
 NAME: my
 LAST DEPLOYED: Sun Dec 11 18:43:04 2022
@@ -58,6 +68,11 @@ watch kubectl get all -n redis
 
 #kubectl port-forward -n redis svc/my-redis-ha 6379:6379 &
 kubectl port-forward -n redis svc/my-redis-master 6379:6379 &
+#db
+  #0, misc test
+  #1, juicefs miniofs
+  #2, juicefs pvc 4 CSI spark&cube-studio etc
+  #3, dataease
 
 #redis无法启动
 kubectl edit statefulsets.apps my-redis-master -n redis

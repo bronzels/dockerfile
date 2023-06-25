@@ -8,3 +8,5 @@ parameters:
   csi.storage.k8s.io/provisioner-secret-namespace: kube-system
   csi.storage.k8s.io/node-publish-secret-name: juicefs-sc-secret
   csi.storage.k8s.io/node-publish-secret-namespace: kube-system
+  #juicefs/mount-image: juicedata/mount:ce-v1.0.4
+  juicefs/mount-image: harbor.my.org:1080/storage/juicedata-mount:ce-v1.0.4
