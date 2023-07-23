@@ -300,6 +300,16 @@ kubectl apply -f nvidia-device-plugin.yml
 
 kubectl delete -f nvidia-device-plugin.yml
 
+#安装tensorRT
+#https://developer.nvidia.com/nvidia-tensorrt-8x-download
+#https://developer.nvidia.com/nvidia-tensorrt-8x-download#:~:text=TensorRT%208.6%20GA%20for%20Linux%20x86_64%20and%20CUDA%2011.0%2C%2011.1%2C%2011.2%2C%2011.3%2C%2011.4%2C%2011.5%2C%2011.6%2C%2011.7%20and%2011.8%20TAR%20Package
+TensorRT-8.6.1.6.Linux.x86_64-gnu.cuda-11.8.tar.gz
+#cp to nvidia cp
+tar xzvf TensorRT-8.6.1.6.Linux.x86_64-gnu.cuda-11.8.tar.gz
+rm -f /root/TensorRT-8.6.1.6.Linux.x86_64-gnu.cuda-11.8.tar.gz
+echo 'export TENSORRT_DIR=/root/TensorRT-8.6.1.6' >> /root/.bashrc
+echo 'export LD_LIBRARY_PATH=\$TENSORRT_DIR/lib:\$LD_LIBRARY_PATH' >> /root/.bashrc
+
 #安装python 3.7
 
 #miniconda

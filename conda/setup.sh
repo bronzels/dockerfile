@@ -96,3 +96,7 @@ c.NotebookApp.allow_root = True
 #step 6
 在远程图形界面浏览器上输入http://dtpct:8890
 EOF
+
+
+pip install /root/TensorRT-8.6.1.6/python/tensorrt-8.6.1-cp39-none-linux_x86_64.whl
+python -c "import tensorrt;print(tensorrt.__version__)"
