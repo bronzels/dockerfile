@@ -310,6 +310,20 @@ ln -s TensorRT-8.6.1.6 trt
 rm -f /root/TensorRT-8.6.1.6.Linux.x86_64-gnu.cuda-11.8.tar.gz
 echo 'export TENSORRT_DIR=/root/trt' >> /root/.bashrc
 echo 'export LD_LIBRARY_PATH=\$TENSORRT_DIR/lib:\$LD_LIBRARY_PATH' >> /root/.bashrc
+#安装tensorRT c++编译环境
+yum install -y devtoolset-10
+scl enable devtoolset-10 bash
+echo "source scl_source enable devtoolset-10" >> /root/.bashrc
+python setup.py develop
+#https://cmake.org/files
+unzip cmake-3.24.4.zip
+cd cmake-3.24.4
+yum install -y openssl openssl-devel
+./bootstrap --prefix=/usr/local --datadir=share/cmake --docdir=doc/cmake && make && make install
+echo 'export PATH=/usr/local/bin:$PATH' >> /root/.bashrc
+cmake --version
+yum install -y rsync
+
 
 #安装python 3.7
 
