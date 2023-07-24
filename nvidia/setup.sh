@@ -306,8 +306,9 @@ kubectl delete -f nvidia-device-plugin.yml
 TensorRT-8.6.1.6.Linux.x86_64-gnu.cuda-11.8.tar.gz
 #cp to nvidia cp
 tar xzvf TensorRT-8.6.1.6.Linux.x86_64-gnu.cuda-11.8.tar.gz
+ln -s TensorRT-8.6.1.6 trt
 rm -f /root/TensorRT-8.6.1.6.Linux.x86_64-gnu.cuda-11.8.tar.gz
-echo 'export TENSORRT_DIR=/root/TensorRT-8.6.1.6' >> /root/.bashrc
+echo 'export TENSORRT_DIR=/root/trt' >> /root/.bashrc
 echo 'export LD_LIBRARY_PATH=\$TENSORRT_DIR/lib:\$LD_LIBRARY_PATH' >> /root/.bashrc
 
 #安装python 3.7
