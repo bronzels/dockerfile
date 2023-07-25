@@ -64,8 +64,8 @@ wget -c https://download.pytorch.org/whl/torchtext-0.13.0-cp39-cp39-linux_x86_64
 pip install torchtext-0.13.0-cp39-cp39-linux_x86_64.whl
 
 pip uninstall protobuf -y
-#pytorch依赖
-pip install protobuf==3.19.0
+#tensorflow import出错，版本要低于3.20.x，但是pytorch必须高于3.20.x
+pip install protobuf==3.20.2
 
 pip install d2l==0.17.6
 
