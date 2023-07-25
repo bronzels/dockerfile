@@ -99,4 +99,5 @@ EOF
 
 
 pip install /root/TensorRT-8.6.1.6/python/tensorrt-8.6.1-cp39-none-linux_x86_64.whl
+pip install /root/trt/uff/uff-0.6.9-py2.py3-none-any.whl
 python -c "import tensorrt;print(tensorrt.__version__)"
