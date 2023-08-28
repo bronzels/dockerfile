@@ -43,7 +43,8 @@ EOF
 
 #nvidia节点
 mkdir /data0/envs
-conda create -n diveintodl python=3.9
+conda create -n diveintodl python=3.9 -y
+#conda remove -n diveintodl --all -y
 ls /data0/envs/diveintodl
 
 pip install tensorflow==2.8.0
