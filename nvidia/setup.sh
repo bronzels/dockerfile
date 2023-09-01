@@ -106,6 +106,7 @@ nvidia-smi
 #卸载nvidia驱动
 sh NVIDIA-Linux-x86_64-515.76.run --uninstall
 
+
 #！！！
 #cuda/cudnn版本关键看tf的版本配套，pytorch自带cuda包，不需要手工安装的cuda一致，只需要nvidia驱动能够向上兼容pytorch要求的cuda版本
 #安装cuda
@@ -167,7 +168,7 @@ cd
 #sh cuda_11.2.2_460.32.03_linux.run
 #sh cuda_11.3.1_465.19.01_linux.run
 sh cuda_11.6.2_510.47.03_linux.run
-#会安装460.32.03版驱动覆盖原来驱动，要取消
+#会安装460.32.03版驱动覆盖原来驱动，要取消，其他都保持选择尤其是Toolkit/Samples，CUDA编程需要
 :<<EOF
  CUDA Installer                                                               │
 │ - [ ] Driver                                                                 │
@@ -219,10 +220,60 @@ tar -xvf cudnn-linux-x86_64-8.6.0.163_cuda11-archive.tar
 ln -s cudnn-linux-x86_64-8.6.0.163_cuda11-archive cuda
 mv cuda/lib cuda/lib64
 #cp -r /usr/local/cuda/include /usr/local/cuda/include.bk4-cudnn-setup
-cp cuda/include/cudnn*.h /usr/local/cuda/include
+\cp cuda/include/cudnn*.h /usr/local/cuda/include
 #cp -r /usr/local/cuda/lib64 /usr/local/cuda/lib64.bk4-cudnn-setup
-cp -P cuda/lib64/libcudnn* /usr/local/cuda/lib64
+\cp -P cuda/lib64/libcudnn* /usr/local/cuda/lib64
 chmod a+r /usr/local/cuda/include/cudnn*.h /usr/local/cuda/lib64/libcudnn*
+#occupancy计算器
+sudo scp dtpct:/usr/local/cuda/tools/CUDA_Occupancy_Calculator.xls ./
+sudo chown apple:wheel CUDA_Occupancy_Calculator.xls
+
+#11.6版本之前的CUDA安装时会附带安装CUDA Samples
+#11.6版本之后安装脚本选了samples也不会安装
+cd /usr/local/cuda/samples
+:<<EOF
+git clone https://github.com/nvidia/cuda-samples
+#最新版本无法直接编译
+cp -r cuda-samples cuda-samples.bk
+find . -name "Makefile"|xargs grep " 89 90"
+find . -name "Makefile"|xargs sed -i 's/ 89 90//g'
+find . -name "Makefile"|xargs grep " 89 90"
+#helper头文件可以使用，但是最新版本samples无法在11.6上编译
+EOF
+wget -c https://github.com/nvidia/release/download/cuda-samples-11.6.tar.gz
+tar xzvf cuda-samples-11.6.tar.gz
+cd cuda-samples
+make
+
+yum install perl-Env -y
+sh NsightSystems-linux-public-2023.3.1.92-3314722.run
+ln -s /opt/nvidia/nsight-systems/2023.3.1 /opt/nvidia/nsight-systems/systems
+#/opt/nvidia/nsight-systems/2023.3.1
+#/opt/nvidia/nsight-systems/systems
+echo "export PATH=/opt/nvidia/nsight-systems/systems/bin:\$PATH" >> ~/.bashrc
+echo "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/nvidia/nsight-systems/systems/target-linux-x64" >> ~/.bashrc
+sh nsight-compute-linux-2023.2.1.3-33050884.run
+#/usr/local/NVIDIA-Nsight-Compute-2023.2
+#/usr/local/NVIDIA-Nsight-Compute
+echo "export PATH=/usr/local/NVIDIA-Nsight-Compute:\$PATH" >> ~/.bashrc
+echo "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/usr/local/NVIDIA-Nsight-Compute/target/linux-desktop-glibc_2_11_3-x64" >> ~/.bashrc
+#for tensorflow
+pip install nvtx-plugins
+:<<EOF
+      /opt/rh/devtoolset-10/root/usr/bin/gcc -Wno-unused-result -Wsign-compare -O2 -Wall -fPIC -O2 -isystem /data0/envs/deepspeed/include -I/data0/envs/deepspeed/include -fPIC -O2 -isystem /data0/envs/deepspeed/include -fPIC -DHAVE_CUDA=1 -UNDEBUG -I/usr/local/cuda/include -I/data0/envs/deepspeed/include/python3.9 -c nvtx_plugins/cc/nvtx_kernels.cc -o build/temp.linux-x86_64-cpython-39/nvtx_plugins/cc/nvtx_kernels.o -std=c++11 -fPIC -O2 -Wall -I/data0/envs/deepspeed/lib/python3.9/site-packages/tensorflow/include -D_GLIBCXX_USE_CXX11_ABI=0 -DEIGEN_MAX_ALIGN_BYTES=64 -lnvToolsExt
+      In file included from /data0/envs/deepspeed/lib/python3.9/site-packages/tensorflow/include/tensorflow/core/framework/tensor.h:25,
+                       from /data0/envs/deepspeed/lib/python3.9/site-packages/tensorflow/include/tensorflow/core/framework/device_base.h:26,
+                       from /data0/envs/deepspeed/lib/python3.9/site-packages/tensorflow/include/tensorflow/core/framework/op_kernel.h:29,
+                       from nvtx_plugins/cc/nvtx_kernels.cc:19:
+      /data0/envs/deepspeed/lib/python3.9/site-packages/tensorflow/include/tensorflow/core/framework/tensor_types.h: In member function ‘void tensorflow::internal::MaybeWith32BitIndexingImpl<Eigen::GpuDevice>::operator()(Func, Args&& ...) const’:
+      /data0/envs/deepspeed/lib/python3.9/site-packages/tensorflow/include/tensorflow/core/framework/tensor_types.h:176:25: error: use of ‘auto’ in lambda parameter declaration only available with ‘-std=c++14’ or ‘-std=gnu++14’
+...      
+       distutils.errors.CompileError: command '/opt/rh/devtoolset-10/root/usr/bin/gcc' failed with exit code 1
+EOF
+#/data0/shouxiecuda
+nsys profile --stats=true master_warp_divergency.out
+#/data0/examples/mnist
+nsys profile -t cuda,osrt,nvtx -o baseline -w true python main.py
 
 distribution=$(. /etc/os-release;echo $ID$VERSION_ID) && \
 curl -s -L https://nvidia.github.io/nvidia-container-runtime/$distribution/nvidia-container-runtime.repo | \

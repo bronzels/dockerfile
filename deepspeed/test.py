@@ -89,7 +89,7 @@ model_engine, optimzer, trainloader, _ = deepspeed.initialize(
 
 criterion = nn.CrossEntropyLoss()
 
-for epoch in range(4):
+for epoch in range(2):
     running_loss = 0.0
     for i, data in enumerate(trainloader):
         inputs, labels = data[0].to(model_engine.local_rank), data[1].to(model_engine.local_rank)
