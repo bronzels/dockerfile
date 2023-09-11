@@ -227,6 +227,18 @@ chmod a+r /usr/local/cuda/include/cudnn*.h /usr/local/cuda/lib64/libcudnn*
 #occupancy计算器
 sudo scp dtpct:/usr/local/cuda/tools/CUDA_Occupancy_Calculator.xls ./
 sudo chown apple:wheel CUDA_Occupancy_Calculator.xls
+#java应该mac不给运行
+sudo spctl --master-disable
+#sudo spctl --master-enable
+#mac上运行nvvp.dmp安装包，把nvvp目录拉或者copy到安装位置
+wget -c https://cdn.azul.com/zulu/bin/zulu8.23.0.3-jdk8.0.144-macosx_x64.zip
+#/Volumes/data/nvvp/bin/nvvp -vm /Library/Java/JavaVirtualMachines/jdk1.8.0_351.jdk/Contents/Home/bin/java
+#oracle dmg安装的vm，nvvp启动图形界面没法点击都是灰的
+cd /Volumes/data/
+unzip ~/dl/zulu8.23.0.3-jdk8.0.144-macosx_x64.zip
+ln -s zulu8.23.0.3-jdk8.0.144-macosx_x64 zulu8
+/Volumes/data/nvvp/bin/nvvp -vm /Volumes/data/zulu8/bin/java
+#arch 8.0以上不支持，只能用nsight system/compute
 
 #11.6版本之前的CUDA安装时会附带安装CUDA Samples
 #11.6版本之后安装脚本选了samples也不会安装
