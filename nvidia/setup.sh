@@ -290,6 +290,14 @@ nsys profile -t cuda,osrt,nvtx -o baseline -w true python main.py
 #cuda自带opencv的c++开发以来opengl
 yum install mesa-libGL-devel mesa-libGLU-devel freeglut-devel
 
+#openacc
+wget -c https://developer.download.nvidia.com/hpc-sdk/23.7/nvhpc_2023_237_Linux_x86_64_cuda_multi.tar.gz
+tar xpzf nvhpc_2023_237_Linux_x86_64_cuda_multi.tar.gz
+nvhpc_2023_237_Linux_x86_64_cuda_multi/install
+echo "export PATH=/opt/nvidia/hpc_sdk/Linux_x86_64/23.7/compilers/bin:/opt/nvidia/hpc_sdk/Linux_x86_64/23.7/comm_libs/mpi/bin:\$PATH" >> ~/.bashrc
+echo "export MANPATH=\$MANPATH:/opt/nvidia/hpc_sdk/Linux_x86_64/23.7/comm_libs/mpi/man" >> ~/.bashrc
+
+
 distribution=$(. /etc/os-release;echo $ID$VERSION_ID) && \
 curl -s -L https://nvidia.github.io/nvidia-container-runtime/$distribution/nvidia-container-runtime.repo | \
  tee /etc/yum.repos.d/nvidia-container-runtime.repo
