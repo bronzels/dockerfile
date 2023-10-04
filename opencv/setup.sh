@@ -91,6 +91,7 @@ yum install -y ccache
 yum install -y http://repo.okay.com.mx/centos/7/x86_64/release/okay-release-1-1.noarch.rpm
 yum install -y glog
 
+:<<EOF
 gflags_version=2.2.2
 wget -c https://github.com/gflags/gflags/archive/v${gflags_version}.tar.gz -O gflags-${gflags_version}.tar.gz  #下载源码
 tar xzvf gflags-${gflags_version}.tar.gz
@@ -99,6 +100,8 @@ mkdir build && cd build  #建立编译文件夹，用于存放临时文件
 cmake .. -DCMAKE_CXX_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX=/usr  #使用 cmake 进行动态编译生成 Makefile 文件，安装路径为/usr
 make # make 编译
 make install # 安装库
+EOF
+#不需要安装gflags，安装后python import cv2会提示flags.cc重复链接，可能glog已经链接了一样的静态库。
 
 glog_version=0.6.0
 wget -c https://github.com/google/glog/archive/refs/tags/v${glog_version}.zip glog-${glog_version}.zip
@@ -277,7 +280,6 @@ tar xzvf opencv_contrib-${opencv_version}.tar.gz
 
 mkdir opencv-${opencv_version}/build && cd opencv-${opencv_version}/build
 
-
 #opencv_version=4.8.0
 #opencv_version=4.7.0
 opencv_version=4.6.0
@@ -288,31 +290,44 @@ cmake \
 -D CMAKE_INSTALL_PREFIX=/usr/local \
 -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib-${opencv_version}/modules \
 -D WITH_CUDA=ON \
+-D WITH_CUDNN=ON \
+-D OPENCV_DNN_CUDA=ON \
+-D ENABLE_FAST_MATH=1 \
+-D CUDA_FAST_MATH=1 \
+-D CUDA_ARCH_BIN=8.6 \
+-D WITH_CUBLAS=1 \
+-D OPENCV_GENERATE_PKGCONFIG=YES \
+-D BUILD_EXAMPLES=ON \
 -D WITH_TBB=ON \
 -D BUILD_PYTHON_SUPPORT=ON \
 -D BUILD_NEW_PYTHON_SUPPORT=ON \
--D BUILD_OPENCV_PYTHON3=ON  \
--D BUILD_opencv_python2=OFF  \
--D PYTHON_EXECUTABLE=/data0/envs/deepspeed/bin/python3  \
+-D HAVE_opencv_python3=ON \
+-D PYTHON3_EXECUTABLE=/data0/envs/deepspeed/bin/python3  \
 -D PYTHON_DEFAULT_EXECUTABLE=/data0/envs/deepspeed/bin/python3  \
--D PYTHON_INCLUDE_DIRS=/data0/envs/deepspeed/include  \
--D PYTHON_LIBRARIES=/data0/envs/deepspeed/lib/libpython3.9.so  \
--D PYTHON3_NUMPY_INCLUDE_DIRS=/usr/lib/python3/dist-packages/numpy/core/include  \
+-D BUILD_opencv_python3=ON \
+-D BUILD_opencv_python2=OFF \
+-D PYTHON3_INCLUDE_DIR=/data0/envs/deepspeed/include/python3.9  \
+-D PYTHON3_LIBRARY=/usr/local/miniconda3/pkgs/python-3.9.17-h955ad1f_0/lib  \
+-D PYTHON3_NUMPY_INCLUDE_DIRS=/data0/envs/deepspeed/lib/python3.9/site-packages/numpy/core/include  \
+-D PYTHON3_PACKAGES_PATH=/data0/envs/deepspeed/lib/python3.9/site-packages \
+-D PYTHON3_EXECUTABLE=/data0/envs/deepspeed/bin/python3 \
+-D PYTHON_EXECUTABLE=/data0/envs/deepspeed/bin/python3 \
 -D OPENCV_GENERATE_PKGCONFIG=YES \
--D WITH_CUDNN=ON \
 -D WITH_V4L=ON  \
--D ENABLE_FAST_MATH=1   \
--D CUDA_FAST_MATH=1   \
 -D CUDA_NVCC_FLAGS="-D_FORCE_INLINES"   \
--D WITH_CUBLAS=1   .. 
+.. 
 make -j12
 pip uninstall opencv-python -y
+ccmake ..
+#确认python2被关闭，python3被正确配置
 make test
 make install
 ln -s /usr/local/lib64/pkgconfig/opencv4.pc /usr/share/pkgconfig/
 ldconfig
 pkg-config --modversion opencv4
+pip install opencv-python==4.5.5.64
 python -c "import cv2; print(cv2.__version__)"
+python -c "from cv2 import cuda; cuda.printCudaDeviceInfo(0)"
 
 #yum install opencv opencv-devel opencv-python -y
 #2.4.5
