@@ -91,17 +91,18 @@ yum install -y ccache
 yum install -y http://repo.okay.com.mx/centos/7/x86_64/release/okay-release-1-1.noarch.rpm
 yum install -y glog
 
-:<<EOF
 gflags_version=2.2.2
 wget -c https://github.com/gflags/gflags/archive/v${gflags_version}.tar.gz -O gflags-${gflags_version}.tar.gz  #下载源码
 tar xzvf gflags-${gflags_version}.tar.gz
 cd gflags-${gflags_version}
 mkdir build && cd build  #建立编译文件夹，用于存放临时文件
-cmake .. -DCMAKE_CXX_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX=/usr  #使用 cmake 进行动态编译生成 Makefile 文件，安装路径为/usr
+cmake .. -DCMAKE_CXX_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_SHARED_LIBS=ON -DGFLAGS_NAMESPACE=google -G "Unix Makefiles"  #使用 cmake 进行动态编译生成 Makefile 文件，安装路径为/usr
 make # make 编译
 make install # 安装库
-EOF
-#不需要安装gflags，安装后python import cv2会提示flags.cc重复链接，可能glog已经链接了一样的静态库。
+#直接安装gflags，安装后python import cv2会提示flags.cc重复链接，可能glog已经链接了一样的静态库。
+#如果不安装python里import cv2时提示ImportError: libopencv_sfm.so.405: cannot open shared object file: No such file or directory
+#cmake提示找不到gflags，opencv_sfm不会被编译，-- Module opencv_sfm disabled because the following dependencies are not found: Glog/Gflags
+#增加-DBUILD_SHARED_LIBS=ON解决以上2个问题
 
 glog_version=0.6.0
 wget -c https://github.com/google/glog/archive/refs/tags/v${glog_version}.zip glog-${glog_version}.zip
@@ -316,7 +317,7 @@ cmake \
 -D WITH_V4L=ON  \
 -D CUDA_NVCC_FLAGS="-D_FORCE_INLINES"   \
 .. 
-make -j12
+make -j24
 pip uninstall opencv-python -y
 ccmake ..
 #确认python2被关闭，python3被正确配置
@@ -325,7 +326,9 @@ make install
 ln -s /usr/local/lib64/pkgconfig/opencv4.pc /usr/share/pkgconfig/
 ldconfig
 pkg-config --modversion opencv4
-pip install opencv-python==4.5.5.64
+echo "LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/usr/local/lib64" >> ~/.bashrc
+#pip install opencv-python==4.5.5.64
+#pip安装的不能调用cuda
 python -c "import cv2; print(cv2.__version__)"
 python -c "from cv2 import cuda; cuda.printCudaDeviceInfo(0)"
 
