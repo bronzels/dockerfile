@@ -281,6 +281,8 @@ tar xzvf opencv_contrib-${opencv_version}.tar.gz
 
 mkdir opencv-${opencv_version}/build && cd opencv-${opencv_version}/build
 
+#-D CMAKE_INSTALL_PREFIX=/usr/local \
+
 #opencv_version=4.8.0
 #opencv_version=4.7.0
 opencv_version=4.6.0
@@ -288,8 +290,9 @@ opencv_version=4.5.5
 cmake \
 -D GLOG_INCLUDE_DIR=/usr/include/glog \
 -D CMAKE_BUILD_TYPE=RELEASE \
--D CMAKE_INSTALL_PREFIX=/usr/local \
+-D CMAKE_INSTALL_PREFIX=/usr/local/opencv \
 -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib-${opencv_version}/modules \
+-D OPENCV_ENABLE_NONFREE=ON \
 -D WITH_CUDA=ON \
 -D WITH_CUDNN=ON \
 -D OPENCV_DNN_CUDA=ON \
@@ -323,12 +326,14 @@ ccmake ..
 #确认python2被关闭，python3被正确配置
 make test
 make install
-ln -s /usr/local/lib64/pkgconfig/opencv4.pc /usr/share/pkgconfig/
+rm -f /usr/share/pkgconfig/opencv4.pc
+ln -s /usr/local/opencv/lib64/pkgconfig/opencv4.pc /usr/share/pkgconfig/
 ldconfig
 pkg-config --modversion opencv4
-echo "LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/usr/local/lib64" >> ~/.bashrc
+echo "LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/usr/local/opencv/lib64" >> ~/.bashrc
 #pip install opencv-python==4.5.5.64
 #pip安装的不能调用cuda
+find /usr/local/opencv -name "nonfree*"
 python -c "import cv2; print(cv2.__version__)"
 python -c "from cv2 import cuda; cuda.printCudaDeviceInfo(0)"
 
