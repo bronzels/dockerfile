@@ -386,6 +386,13 @@ echo 'export TENSORRT_DIR=/root/trt' >> /root/.bashrc
 echo 'export PATH=\$PATH:\$TENSORRT_DIR/bin' >> /root/.bashrc
 echo 'export LD_LIBRARY_PATH=\$TENSORRT_DIR/lib:\$LD_LIBRARY_PATH' >> /root/.bashrc
 pip3 install /data0/TensorRT-8.6.1.6/python/tensorrt-8.6.1-cp39-none-linux_x86_64.whl
+pip install datasets
+pip install evaluate
+pip install colored polygraphy --extra-index-url https://pypi.ngc.nvidia.com
+pip install calibrator --extra-index-url https://pypi.ngc.nvidia.com
+pip install nvidia-pyindex
+pip install onnx-graphsurgeon
+pip install pytorch-quantization 
 #安装tensorRT c++编译环境
 yum install -y epel-release centos-release-scl scl-utils
 yum install -y devtoolset-10
@@ -400,6 +407,212 @@ yum install -y openssl openssl-devel
 echo 'export PATH=/usr/local/bin:$PATH' >> /root/.bashrc
 cmake --version
 yum install -y rsync
+
+
+#在centos上编译失败，因为re2和absl的版本配套关系（re2似乎是Protobuf需要）总是失败，这2个都调整到2023年初的版本后解决
+#triton
+#git clone https://github.com/Microsoft/vcpkg.git
+#cd vcpkg
+#./bootstrap-vcpkg.sh
+#echo "export PATH=\$PATH:/data0/vcpkg" >> ~/.bashrc
+#./vcpkg integrate install
+#vcpkg install rapidjson
+git clone https://github.com/Tencent/rapidjson.git
+cd rapidjson
+mkdir build
+cd build
+cmake ..
+make install
+boost_version=1.83.0
+boost_version_file=1_83_0
+wget -c https://boostorg.jfrog.io/artifactory/main/release/${boost_version}/source/boost_${boost_version_file}.tar.gz
+tar xzvf boost_${boost_version_file}.tar.gz
+cd boost_${boost_version_file}
+./bootstrap
+./b2
+./b2 install  
+absl_version=20230125.3
+wget -c https://github.com/abseil/abseil-cpp/archive/refs/tags/${absl_version}.tar.gz
+tar xzvf abseil-cpp-${absl_version}.tar.gz
+cd abseil-cpp-${absl_version}
+mkdir build
+cd build
+cmake ..
+make install
+:<<EOF
+rm -f /usr/local/lib64/pkgconfig/libabsl_*
+rm -f /usr/local/lib64/pkgconfig/absl_*
+rm -rf /usr/local/include/absl
+rm -rf /usr/local/lib64/cmake/absl
+EOF
+re2_version=2023-02-01
+https://github.com/google/re2/archive/refs/tags/${re2_version}.tar.gz
+tar xzvf re2-${re2_version}.tar.gz
+cd re2-${re2_version}
+mkdir build
+cd build
+cmake ..
+make install
+:<<EOF
+rm -f /usr/local/lib64/libre2.a
+rm -f /usr/local/lib64/pkgconfig/re2.pc
+rm -rf /usr/local/include/re2
+rm -rf /usr/local/lib64/cmake/re2
+EOF
+#yum install re2-devel
+#只有.so没有.a，还是没法编译triton
+dnf install dnf-plugin-config-manager -y
+dnf config-manager \
+    --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo
+dnf clean expire-cache \
+    && dnf install -y datacenter-gpu-manager
+yum install numactl-devel*x86_64 -y
+git clone https://github.com/BuLogics/libb64.git
+cd libb64
+cp -r include/b64 /usr/local/include/
+cd src
+make
+cp libb64.a /usr/local/lib/
+:<<EOF
+rm -f /usr/local/lib/libb64.a
+rm -rf /usr/local/include/b64
+EOF
+triton_version=2.39.0
+wget -c https://github.com/triton-inference-server/server/archive/refs/tags/v${triton_version}.tar.gz
+tar xzvf server-${triton_version}.tar.gz
+cd server-${triton_version}
+#git clone --recursive https://github.com/triton-inference-server/server.git
+#cd server
+#mkdir build
+#cd build
+#cmake -DCMAKE_INSTALL_PREFIX:PATH=/data0/triton ..
+#cmake -DCMAKE_INSTALL_PREFIX:PATH=`pwd`/install -DRapidJSON_DIR=/data0/rapidjson ..
+#make install
+./build.py -v --no-container-build --build-dir=/data0/triton --enable-all
+#
+
+git clone --recursive https://github.com/triton-inference-server/backends.git
+cd backends
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX:PATH=/data0/triton ..
+make install
+cd examples/backends
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX:PATH=/data0/triton ..
+make install
+#
+
+git clone --recursive https://github.com/triton-inference-server/client.git
+cd client
+mkdir build
+cd build
+file=/data0/client/src/c++/perf_analyzer/client_backend/torchserve/../../client_backend/client_backend.h
+cp ${file} ${file}.bk
+sed -i "/#include <vector>/a\#include <unordered_map>" ${file}
+file=/data0/client/src/c++/CMakeLists.txt
+cp ${file} ${file}.bk
+sed -i '/project(cc-clients LANGUAGES C CXX)/a\set(CMAKE_CXX_STANDARD 17)' ${file}
+pip install grpcio
+pip install grpcio-tools
+echo "export PATH=\$PATH:/data0/maven/bin" >> ~/.bashrc
+make cc-clients python-clients java-clients
+#
+
+yum install libarchive-devel -y
+onnxruntime_version=1.16.1
+wget -c https://github.com/microsoft/onnxruntime/releases/download/v${onnxruntime_version}/onnxruntime-linux-x64-gpu-${onnxruntime_version}.tgz
+tar xzvf onnxruntime-linux-x64-gpu-${onnxruntime_version}.tgz
+ln -s onnxruntime-linux-x64-gpu-${onnxruntime_version} onnxruntime
+arr=(python pytorch tensorrt onnxruntime openvino tensorflow stateful)
+for be in ${arr[*]}
+do
+  echo "DEBUG >>>>>> be:${be}"
+  bename=${be}_backend
+  echo "DEBUG >>>>>> bename:${bename}"
+  git clone --recursive https://github.com/triton-inference-server/${bename}.git
+  cd ${bename}
+  mkdir build
+  cd build
+  if [[ "${be}" == "python" ]]; then
+    cmake -DTRITON_ENABLE_GPU=ON \
+    -DTRITON_BACKEND_REPO_TAG=r23.10 \
+    -DTRITON_COMMON_REPO_TAG=r23.10 \
+    -DTRITON_CORE_REPO_TAG=r23.10 \
+    -DCMAKE_INSTALL_PREFIX:PATH=/data/triton \
+     ..
+  fi
+  #done
+
+  if [[ "${be}" == "pytorch" ]]; then
+    yum install -y patchelf
+    file=../CMakeLists.txt
+    cp ${file} ${file}.bk
+    sed -i "s/cxx_std_11/cxx_std_17/g" ${file}
+    cmake -DCMAKE_INSTALL_PREFIX:PATH=/data0/triton -DTRITON_PYTORCH_DOCKER_IMAGE="nvcr.io/nvidia/pytorch:23.10-py3" ..
+    #cmake -DCMAKE_INSTALL_PREFIX:PATH=/data0/triton -DTRITON_PYTORCH_INCLUDE_PATHS="<PATH_PREFIX>/torch;<PATH_PREFIX>/torch/torch/csrc/api/include;<PATH_PREFIX>/torchvision" -DTRITON_PYTORCH_LIB_PATHS="<LIB_PATH_PREFIX>" ..
+  fi
+  #done
+
+  if [[ "${be}" == "tensorrt" ]]; then
+    file=../CMakeLists.txt
+    cp ${file} ${file}.bk
+    #sed -i "s/c++11/c++17/g" ${file}
+    sed -i "s/ -Werror//g" ${file}
+    cmake -DCMAKE_INSTALL_PREFIX:PATH=/data0/triton -DTRITON_ENABLE_CC_HTTP=ON -DTRITON_ENABLE_CC_GRPC=ON -DTRITON_ENABLE_PERF_ANALYZER=ON -DTRITON_ENABLE_PERF_ANALYZER_C_API=ON -DTRITON_ENABLE_PERF_ANALYZER_TFS=ON -DTRITON_ENABLE_PERF_ANALYZER_TS=ON -DTRITON_ENABLE_PYTHON_HTTP=ON -DTRITON_ENABLE_PYTHON_GRPC=ON -DTRITON_ENABLE_JAVA_HTTP=ON -DTRITON_ENABLE_GPU=ON -DTRITON_ENABLE_EXAMPLES=ON -DTRITON_ENABLE_TESTS=ON \
+    -DTRITON_TENSORRT_LIB_PATHS=/data0/trt/lib \
+    -DTRITON_TENSORRT_INCLUDE_PATHS=/data0/trt/include \
+    -DNVINFER_LIBRARY=/data0/trt/lib/libnvinfer_static.a \
+    -DNVINFER_PLUGIN_LIBRARY=/data0/trt/lib/libnvinfer_plugin_static.a \
+    ..
+  fi
+  #done
+
+  if [[ "${be}" == "onnxruntime" ]]; then
+    cmake -DCMAKE_INSTALL_PREFIX:PATH=/data0/triton -DTRITON_ENABLE_ONNXRUNTIME_TENSORRT=ON -DTRITON_ENABLE_ONNXRUNTIME_OPENVINO=ON \
+    -DTRITON_BUILD_ONNXRUNTIME_VERSION=1.16.0 \
+    -DTRITON_BUILD_CONTAINER_VERSION=23.10 \
+    -DTRITON_BUILD_ONNXRUNTIME_OPENVINO_VERSION=2023.0.0 \
+    -DCUDA_SDK_ROOT_DIR=/usr/local/cuda \
+    -DTRITON_ONNXRUNTIME_INCLUDE_PATHS=/data0/onnxruntime/include \
+    -DTRITON_ONNXRUNTIME_LIB_PATHS=/data0/onnxruntime/lib \
+    -DOV_LIBRARY=/data0/openvino/runtime/lib/intel64 \
+    -DTRITON_BUILD_CONTAINER=OFF \
+    ..
+  fi
+  #done
+
+  if [[ "${be}" == "openvino" ]]; then
+    cmake -DCMAKE_INSTALL_PREFIX:PATH=/data0/triton \
+    -DTRITON_BUILD_CONTAINER_VERSION=23.10 \
+    -DTRITON_BUILD_OPENVINO_VERSION=2023.0.0 \
+    ..
+  fi
+  #make install
+
+  if [[ "${be}" == "tensorflow" ]]; then
+    cmake -DCMAKE_INSTALL_PREFIX:PATH=/data0/triton -DTRITON_TENSORFLOW_DOCKER_IMAGE="nvcr.io/nvidia/tensorflow:23.10-tf2-py3" ..
+  fi
+  #done
+
+  if [[ "${be}" == "stateful" ]]; then
+    cd ..
+    file=NGC_VERSION
+    cp ${file} ${file}.bk
+    echo "23.10" > ${file}
+    python3 ./build.py
+  fi
+  #
+
+  if [[ "${be}" != "stateful" ]]; then
+    make install
+    cd ../../
+  fi
+done
+ln -s /data0/triton /opt/triton
+echo "export PATH=\$PATH:/opt/triton/bin" >> ~/.bashrc
+echo "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/triton/lib64" >> ~/.bashrc
 
 
 #安装python 3.7
