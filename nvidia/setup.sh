@@ -511,6 +511,13 @@ cd build
 file=/data0/client/src/c++/perf_analyzer/client_backend/torchserve/../../client_backend/client_backend.h
 cp ${file} ${file}.bk
 sed -i "/#include <vector>/a\#include <unordered_map>" ${file}
+#sourceforge/github上下载的libb64都是需要手工copy的include/b64和libb64.a，编译时会提示BUFFERSIZE常量未定义错误
+wget -c http://www6.atomicorp.com/channels/atomic/centos/7/x86_64/RPMS/libb64-libs-1.2.1-2.1.el7.art.x86_64.rpm
+rpm -Uvh libb64-libs-1.2.1-2.1.el7.art.x86_64.rpm
+wget -c http://www6.atomicorp.com/channels/atomic/centos/7/x86_64/RPMS/libb64-1.2.1-2.1.el7.art.x86_64.rpm
+rpm -Uvh libb64-1.2.1-2.1.el7.art.x86_64.rpm
+wget -c http://www6.atomicorp.com/channels/atomic/centos/7/x86_64/RPMS/libb64-devel-1.2.1-2.1.el7.art.x86_64.rpm
+rpm -Uvh libb64-devel-1.2.1-2.1.el7.art.x86_64.rpm
 file=/data0/client/src/c++/CMakeLists.txt
 cp ${file} ${file}.bk
 sed -i '/project(cc-clients LANGUAGES C CXX)/a\set(CMAKE_CXX_STANDARD 17)' ${file}
