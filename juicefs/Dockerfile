@@ -5,13 +5,20 @@ USER root
 COPY mc /usr/local/bin/
 RUN chmod a+x /usr/local/bin/mc
 
+#COPY gopath /usr/local/gopath
+#ENV GOPATH /usr/local/gopath
+#ENV GOPROXY https://goproxy.cn
+
 COPY miniogw /miniogw
 WORKDIR /miniogw
-RUN make build
+RUN make build -j 12
 RUN cp /miniogw/minio /usr/local/bin/miniogw
 RUN chmod a+x /usr/local/bin/miniogw
 
-COPY juicefs /usr/local/bin/
+#RUN rm -rf /usr/local/gopath
+RUN rm -rf /miniogw
+
+COPY juicefs-linux-amd64/juicefs /usr/local/bin/
 RUN chmod a+x /usr/local/bin/juicefs
 RUN juicefs
 

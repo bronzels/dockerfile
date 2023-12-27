@@ -11,3 +11,5 @@ RUN make all install
 RUN mpirun || :
 RUN mpicc || :
 ENV MPI_CC=mpicc
+#ENV OMPI_ALLOW_RUN_AS_ROOT=1
+#ENV OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1

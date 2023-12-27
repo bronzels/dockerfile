@@ -17,17 +17,18 @@ fi
 PRJ_HOME=${MYHOME}/workspace/dockerfile
 CUBESTUDIO_PRJ_HOME=${PRJ_HOME}/cubestudio
 
-CUBESTUDIO_VERSION=2023.04.01
+#CUBESTUDIO_VERSION=2023.04.01
+CUBESTUDIO_VERSION=2023.12.01
 
 export PATH=$PATH:${PRJ_HOME}
 
-wget -c https://github.com/tencentmusic/cube-studio/archive/refs/tags/v${CUBESTUDIO_VERSION}.tar.gz
+wget -c https://github.com/tencentmusic/cube-studio/archive/refs/tags/v${CUBESTUDIO_VERSION}.tar.gz -O cube-studio-${CUBESTUDIO_VERSION}.tar.gz
 tar xzvf cube-studio-${CUBESTUDIO_VERSION}.tar.gz 
 
 cd ${CUBESTUDIO_PRJ_HOME}/cube-studio-${CUBESTUDIO_VERSION}
 cp ~/.kube/config install/kubernetes/config
 
-kubectl patch storageclass juicefs-sc -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+#kubectl patch storageclass juicefs-sc -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
 kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
 
 cd install/kubernetes
@@ -254,6 +255,7 @@ cp ${CUBESTUDIO_PRJ_HOME}/stop.sh ./
 cp ${CUBESTUDIO_PRJ_HOME}/remove_ns_secret.sh ./
 
 sh stop.sh 192.168.3.14,192.168.3.6,192.168.3.103
+#中间停住不动的地方，多数是删除pvc时，按ctrl+c
 remove_abnormal_pods.sh
 kubectl get pods -A
 kubectl proxy --port=8009 &

@@ -95,7 +95,7 @@ gflags_version=2.2.2
 wget -c https://github.com/gflags/gflags/archive/v${gflags_version}.tar.gz -O gflags-${gflags_version}.tar.gz  #下载源码
 tar xzvf gflags-${gflags_version}.tar.gz
 cd gflags-${gflags_version}
-mkdir build && cd build  #建立编译文件夹，用于存放临时文件
+mkdir build-opencv && cd build-opencv  #建立编译文件夹，用于存放临时文件
 cmake .. -DCMAKE_CXX_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_SHARED_LIBS=ON -DGFLAGS_NAMESPACE=google -G "Unix Makefiles"  #使用 cmake 进行动态编译生成 Makefile 文件，安装路径为/usr
 make # make 编译
 make install # 安装库
@@ -272,7 +272,7 @@ make install
 
 #opencv_version=4.8.0
 #opencv_version=4.7.0
-opencv_version=4.6.0
+#opencv_version=4.6.0
 opencv_version=4.5.5
 wget -c https://github.com/opencv/opencv/archive/refs/tags/${opencv_version}.tar.gz -O opencv-${opencv_version}.tar.gz
 wget -c https://github.com/opencv/opencv_contrib/archive/refs/tags/${opencv_version}.tar.gz -O opencv_contrib-${opencv_version}.tar.gz
@@ -285,7 +285,7 @@ mkdir opencv-${opencv_version}/build && cd opencv-${opencv_version}/build
 
 #opencv_version=4.8.0
 #opencv_version=4.7.0
-opencv_version=4.6.0
+#opencv_version=4.6.0
 opencv_version=4.5.5
 cmake \
 -D GLOG_INCLUDE_DIR=/usr/include/glog \
@@ -299,7 +299,7 @@ cmake \
 -D ENABLE_FAST_MATH=1 \
 -D CUDA_FAST_MATH=1 \
 -D CUDA_ARCH_BIN=8.6 \
--D WITH_CUBLAS=1 \821
+-D WITH_CUBLAS=1 \
 -D OPENCV_GENERATE_PKGCONFIG=YES \
 -D BUILD_EXAMPLES=ON \
 -D WITH_TBB=ON \
@@ -321,11 +321,15 @@ cmake \
 -D CUDA_NVCC_FLAGS="-D_FORCE_INLINES"   \
 .. 
 make -j24
-pip uninstall opencv-python -y
+#pip uninstall opencv-python -y #make uninstall会卸载python包
 ccmake ..
 #确认python2被关闭，python3被正确配置
 make test
-make install
+#失败比较多，但似乎不影响使用
+make uninstall
+rm -rf /usr/local/opencv
+#出现过切换cuda，opencv没删除，编译使用Opencv的c++客户端程序find_package(OpenCV提示还在用就版本
+make install -j24
 rm -f /usr/share/pkgconfig/opencv4.pc
 ln -s /usr/local/opencv/lib64/pkgconfig/opencv4.pc /usr/share/pkgconfig/
 ldconfig

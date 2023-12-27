@@ -9,5 +9,6 @@ WORKDIR /mpich-3.2
 RUN ./configure
 RUN make
 RUN make install
+RUN mpirun || :
 RUN mpicc || :
 ENV MPI_CC=mpicc

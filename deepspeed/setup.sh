@@ -20,6 +20,8 @@ cat << \EOF >> /root/.bashrc
 conda activate deepspeed
 EOF
 
+conda remove -n deepspeed --all -y
+
 CUDA_VISIBLE_DEVICES=0 python -c "import torch; print(torch.cuda.get_device_capability())"
 #(8, 6)
 tar xzvf DeepSpeed-0.10.0.tar.zip

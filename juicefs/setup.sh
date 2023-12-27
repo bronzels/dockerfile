@@ -18,19 +18,27 @@ JUICEFS_PRJ_HOME=${MYHOME}/workspace/dockerfile/juicefs
 
 #JUICEFS_VERSION=1.0.2
 #JUICEFS_VERSION=1.0.3
-JUICEFS_VERSION=1.0.4
+#JUICEFS_VERSION=1.0.4
+JUICEFS_VERSION=1.1.1
 
 #csirev=0.17.4
 #csirev=0.17.5
-csirev=0.19.0
+#csirev=0.19.0
+csirev=0.23.1
+
+go_path=${MYHOME}/workspace/gopath
 
 cd ${JUICEFS_PRJ_HOME}
 
+wget -c https://github.com/juicedata/juicefs/archive/refs/tags/v${JUICEFS_VERSION}.tar.gz -O juicefs-${JUICEFS_VERSION}.tar.gz
 wget -c https://github.com/juicedata/juicefs/releases/download/v${JUICEFS_VERSION}/juicefs-${JUICEFS_VERSION}-linux-amd64.tar.gz
 wget -c https://github.com/juicedata/juicefs/releases/download/v${JUICEFS_VERSION}/juicefs-hadoop-${JUICEFS_VERSION}.jar
 tar xzvf juicefs-${JUICEFS_VERSION}-linux-amd64.tar.gz
 docker run --privileged --name juicefs-hadoop-client -d -v /Volumes/data/workspace:/root/workspace harbor.my.org:1080/chenseanxy/hadoop-ubussh:3.2.1-nolib tail -f /dev/null
 #检查/dev/fuse确认支持fuse
+docker exec -it juicefs-hadoop-client /bin/bash
+  ls /dev/fuse
+docker stop juicefs-hadoop-client && docker rm juicefs-hadoop-client
 
 :<<EOF
 #client
@@ -52,8 +60,19 @@ wget -c https://github.com/libfuse/libfuse/releases/download/fuse_3_12_0/fuse-3.
 wget -c https://github.com/libfuse/libfuse/releases/download/fuse_2_9_4/fuse-2.9.2.tar.gz
 git clone git@github.com:juicedata/minio.git miniogw
 
-nohup docker build ./ --progress=plain --build-arg JUICEFS_VERSION="${JUICEFS_VERSION}" -t harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib > build-Dockerfile-hadoop-ubussh-juicefs.log 2>&1 &
-tail -f build-Dockerfile-hadoop-ubussh-juicefs.log
+#source ~/proxy.sh
+#mv ${go_path} ./
+#docker build ./ --progress=plain --build-arg HTTP_PROXY=${HTTP_PROXY} --build-arg HTTPS_PROXY=${HTTPS_PROXY} --build-arg NO_PROXY=${NO_PROXY} --build-arg JUICEFS_VERSION="${JUICEFS_VERSION}" -t harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib
+#nohup docker build ./ --progress=plain --build-arg HTTP_PROXY=${HTTP_PROXY} --build-arg HTTPS_PROXY=${HTTPS_PROXY} --build-arg NO_PROXY=${NO_PROXY} --build-arg JUICEFS_VERSION="${JUICEFS_VERSION}" -t harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib > build-Dockerfile-hadoop-ubussh-juicefs.log 2>&1 &
+#tail -f build-Dockerfile-hadoop-ubussh-juicefs.log
+docker build ./ --progress=plain --build-arg JUICEFS_VERSION="${JUICEFS_VERSION}" -t harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib
+:<<EOF
+RUN make build -j 12
+go: downloading k8s.io/kube-openapi
+这一步很慢，要耐心等，用fq proxy好像没有帮助，还不如继续用GOPROXY
+EOF
+#mv gopath ${MYHOME}/workspace
+
 #docker build ./ --progress=plain -t harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib
 docker push harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib
 
@@ -71,21 +90,29 @@ yum install -y fuse
 modprobe fuse
 ls /dev/fuse
 
+  Username: 8UO66W6IHMOVQ3377AVN 
+  Password: RtiK0qLDMjzLHKhMIk3NHqsblQjMijF23AKDUltw 
 
 kubectl run distfs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib --restart=Never --rm -- /bin/bash
 #kubectl exec -it distfs-test -- /bin/bash
-  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local JCTHLDGEMZM03OF5B163 DrTRA1zlIznEY5vY9rVrt68fjUO0z98ZGPCo39ZX
+  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local 8UO66W6IHMOVQ3377AVN RtiK0qLDMjzLHKhMIk3NHqsblQjMijF23AKDUltw
   mc mb minio/jfs
   mc ls minio/jfs
   juicefs format \
       --storage minio \
       --bucket https://minio.minio-tenant-1.svc.cluster.local/jfs?tls-insecure-skip-verify=true \
-      --access-key JCTHLDGEMZM03OF5B163 \
-      --secret-key DrTRA1zlIznEY5vY9rVrt68fjUO0z98ZGPCo39ZX \
+      --access-key 8UO66W6IHMOVQ3377AVN \
+      --secret-key RtiK0qLDMjzLHKhMIk3NHqsblQjMijF23AKDUltw \
       "redis://:redis@my-redis-master.redis.svc.cluster.local:6379/1" \
       miniofs
   #mount test use distfs-test image and modprob 1stly
   #unnecessary if only for hdfs
+  #
+  su
+    root
+    apt-get install kmod fuse -y
+    mkdir -p /lib/modules/`uname -r` && depmod -a
+    modprobe fuse
   mkdir jfsmnt
   juicefs mount "redis://:redis@my-redis-master.redis.svc.cluster.local:6379/1" jfsmnt
   export MINIO_ROOT_USER=admin
@@ -123,8 +150,8 @@ mv juicefs-${JUICEFS_VERSION} juicefs
 file=ce.juicefs.Dockerfile
 cp ${file} ${file}.bk
 cp ${JUICEFS_PRJ_HOME}/${file} ${file}
-docker build ./ -f ce.juicefs.Dockerfile --progress=plain -t harbor.my.org:1080/storage/juicedata-mount:ce-v1.0.4
-docker push harbor.my.org:1080/storage/juicedata-mount:ce-v1.0.4
+docker build ./ -f ce.juicefs.Dockerfile --progress=plain -t harbor.my.org:1080/storage/juicedata-mount:ce-v${JUICEFS_VERSION}
+docker push harbor.my.org:1080/storage/juicedata-mount:ce-v${JUICEFS_VERSION}
 
 
 #docker
@@ -141,6 +168,7 @@ file=k8s.yaml
 cp ${file} ${file}.bk
 $SED -i "/        image: juicedata\/juicefs-csi-driver:v0.19.0/i\        - name: JUICEFS_CE_MOUNT_IMAGE\n          value: harbor.my.org:1080\/storage\/juicedata-mount:ce-v1.0.4" ${file}
 kubectl apply -f k8s.yaml
+kubectl patch storageclass juicefs-sc -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 kubectl -n kube-system get pods -l app.kubernetes.io/name=juicefs-csi-driver
 #升级，参考https://juicefs.com/docs/zh/csi/upgrade-csi-driver
 kubectl delete -f k8s.yaml

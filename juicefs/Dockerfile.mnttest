@@ -13,5 +13,3 @@ RUN python3 -m pytest test/
 RUN ninja install
 RUN ln -s /usr/bin/fusermount3 /usr/bin/fusermount
 RUN ln -s /usr/sbin/mount.fuse3 /usr/sbin/mount.fuse
-
-

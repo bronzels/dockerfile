@@ -17,7 +17,8 @@ fi
 PRJ_HOME=${MYHOME}/workspace/dockerfile
 KUBEFLOW_PRJ_HOME=${PRJ_HOME}/kubeflow
 #MANIFEST_VERSION=1.6.1
-MANIFEST_VERSION=1.7.0
+#MANIFEST_VERSION=1.7.0
+MANIFEST_VERSION=1.8.0
 
 #KUSTOMIZE_VERSION=3.2.0
 KUSTOMIZE_VERSION=5.0.1
@@ -43,7 +44,7 @@ kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storagec
 
 wget -c https://github.com/kubeflow/manifests/archive/refs/tags/v${MANIFEST_VERSION}.tar.gz
 tar xzvf manifests-${MANIFEST_VERSION}.tar.gz
-cd manifests-${MANIFEST_VERSION}
+cd ${KUBEFLOW_PRJ_HOME}/manifests-${MANIFEST_VERSION}
 find ./ -type file|xargs grep "imagePullPolicy: Always"
 find ./ -type file|xargs grep "imagePullPolicy: 'Always'"
 find ./ -type file|xargs grep "imagePullPolicy: \"Always\""
@@ -358,6 +359,89 @@ ansible all -m shell -a"ctr -n k8s.io i tag harbor.my.org:1080/kubeflow/ml-pipel
     #workflow-controller这个程序找不到
     #Error: failed to create containerd task: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: exec: "workflow-controller": executable file not found in $PATH: unknown
 
+#1.8.0
+:<<EOF
+busybox:1.28
+docker.io/istio/pilot:1.17.5
+docker.io/istio/proxyv2:1.17.5
+docker.io/kubeflowkatib/earlystopping-medianstop:v0.16.0
+docker.io/kubeflowkatib/enas-cnn-cifar10-cpu:v0.16.0
+docker.io/kubeflowkatib/file-metrics-collector:v0.16.0
+docker.io/kubeflowkatib/katib-controller:v0.16.0
+docker.io/kubeflowkatib/katib-db-manager:v0.16.0
+docker.io/kubeflowkatib/katib-ui:v0.16.0
+docker.io/kubeflowkatib/mxnet-mnist:v0.16.0
+docker.io/kubeflowkatib/pytorch-mnist-cpu:v0.16.0
+docker.io/kubeflowkatib/suggestion-darts:v0.16.0
+docker.io/kubeflowkatib/suggestion-enas:v0.16.0
+docker.io/kubeflowkatib/suggestion-goptuna:v0.16.0
+docker.io/kubeflowkatib/suggestion-hyperband:v0.16.0
+docker.io/kubeflowkatib/suggestion-hyperopt:v0.16.0
+docker.io/kubeflowkatib/suggestion-optuna:v0.16.0
+docker.io/kubeflowkatib/suggestion-pbt:v0.16.0
+docker.io/kubeflowkatib/suggestion-skopt:v0.16.0
+docker.io/kubeflowkatib/tfevent-metrics-collector:v0.16.0
+docker.io/kubeflowmanifestswg/oidc-authservice:e236439
+docker.io/kubeflownotebookswg/centraldashboard:v1.8.0
+docker.io/kubeflownotebookswg/jupyter-web-app:v1.8.0
+docker.io/kubeflownotebookswg/kfam:v1.8.0
+docker.io/kubeflownotebookswg/notebook-controller:v1.8.0
+docker.io/kubeflownotebookswg/poddefaults-webhook:v1.8.0
+docker.io/kubeflownotebookswg/profile-controller:v1.8.0
+docker.io/kubeflownotebookswg/pvcviewer-controller:v1.8.0
+docker.io/kubeflownotebookswg/tensorboard-controller:v1.8.0
+docker.io/kubeflownotebookswg/tensorboards-web-app:v1.8.0
+docker.io/kubeflownotebookswg/volumes-web-app:v1.8.0
+docker.io/metacontrollerio/metacontroller:v2.0.4
+docker.io/seldonio/mlserver:1.3.2
+gcr.io/knative-releases/knative.dev/eventing/cmd/controller@sha256:92967bab4ad8f7d55ce3a77ba8868f3f2ce173c010958c28b9a690964ad6ee9b
+gcr.io/knative-releases/knative.dev/eventing/cmd/mtping@sha256:6d35cc98baa098fc0c5b4290859e363a8350a9dadc31d1191b0b5c9796958223
+gcr.io/knative-releases/knative.dev/eventing/cmd/webhook@sha256:ebf93652f0254ac56600bedf4a7d81611b3e1e7f6526c6998da5dd24cdc67ee1
+gcr.io/knative-releases/knative.dev/net-istio/cmd/controller@sha256:421aa67057240fa0c56ebf2c6e5b482a12842005805c46e067129402d1751220
+gcr.io/knative-releases/knative.dev/net-istio/cmd/webhook@sha256:bfa1dfea77aff6dfa7959f4822d8e61c4f7933053874cd3f27352323e6ecd985
+gcr.io/knative-releases/knative.dev/serving/cmd/activator@sha256:c2994c2b6c2c7f38ad1b85c71789bf1753cc8979926423c83231e62258837cb9
+gcr.io/knative-releases/knative.dev/serving/cmd/autoscaler@sha256:8319aa662b4912e8175018bd7cc90c63838562a27515197b803bdcd5634c7007
+gcr.io/knative-releases/knative.dev/serving/cmd/controller@sha256:98a2cc7fd62ee95e137116504e7166c32c65efef42c3d1454630780410abf943
+gcr.io/knative-releases/knative.dev/serving/cmd/domain-mapping-webhook@sha256:7368aaddf2be8d8784dc7195f5bc272ecfe49d429697f48de0ddc44f278167aa
+gcr.io/knative-releases/knative.dev/serving/cmd/domain-mapping@sha256:f66c41ad7a73f5d4f4bdfec4294d5459c477f09f3ce52934d1a215e32316b59b
+gcr.io/knative-releases/knative.dev/serving/cmd/queue@sha256:dabaecec38860ca4c972e6821d5dc825549faf50c6feb8feb4c04802f2338b8a
+gcr.io/knative-releases/knative.dev/serving/cmd/webhook@sha256:4305209ce498caf783f39c8f3e85dfa635ece6947033bf50b0b627983fd65953
+gcr.io/kubebuilder/kube-rbac-proxy:v0.13.1
+gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
+gcr.io/ml-pipeline/api-server:2.0.3
+gcr.io/ml-pipeline/cache-server:2.0.3
+gcr.io/ml-pipeline/frontend
+gcr.io/ml-pipeline/frontend:2.0.3
+gcr.io/ml-pipeline/metadata-writer:2.0.3
+gcr.io/ml-pipeline/minio:RELEASE.2019-08-14T20-37-41Z-license-compliance
+gcr.io/ml-pipeline/mysql:8.0.26
+gcr.io/ml-pipeline/persistenceagent:2.0.3
+gcr.io/ml-pipeline/scheduledworkflow:2.0.3
+gcr.io/ml-pipeline/viewer-crd-controller:2.0.3
+gcr.io/ml-pipeline/visualization-server
+gcr.io/ml-pipeline/workflow-controller:v3.3.10-license-compliance
+gcr.io/tfx-oss-public/ml_metadata_store_server:1.14.0
+ghcr.io/dexidp/dex:v2.36.0
+image:
+kserve/kserve-controller:v0.11.1
+kserve/lgbserver:v0.11.1
+kserve/models-web-app:v0.10.0
+kserve/paddleserver:v0.11.1
+kserve/pmmlserver:v0.11.1
+kserve/sklearnserver:v0.11.1
+kserve/xgbserver:v0.11.1
+kubeflow/training-operator:v1-855e096
+mysql:8.0.29
+nvcr.io/nvidia/tritonserver:23.05-py3
+python:3.7
+pytorch/torchserve-kfs:0.8.2
+quay.io/jetstack/cert-manager-cainjector:v1.12.2
+quay.io/jetstack/cert-manager-controller:v1.12.2
+quay.io/jetstack/cert-manager-webhook:v1.12.2
+tensorflow/serving:2.6.2
+EOF
+
+
 #1.6.1
 #k8s 1.25
 kubectl describe pod -n kubeflow workflow-controller-56cc57796-h89dl
@@ -434,6 +518,10 @@ kustomize build common/cert-manager/cert-manager/base | kubectl apply -f -
 kubectl wait --for=condition=ready pod -l 'app in (cert-manager,webhook)' --timeout=180s -n cert-manager
 kustomize build common/cert-manager/kubeflow-issuer/base | kubectl apply -f -
 while ! kustomize build example | awk '!/well-defined/' | kubectl apply -f -; do echo "Retrying to apply resources"; sleep 10; done
+
+#留意相应sc有无pvc创建失败的日志
+kubectl logs -f -n local-path-storage `kubectl get pod -n local-path-storage | grep Running | awk '{print $1}'`
+
 kustomize build example | awk '!/well-defined/' > output.yaml
 while !  kubectl apply -f output.yaml; do echo "Retrying to apply resources"; sleep 10; done
 #1.7.0
@@ -474,6 +562,8 @@ find ./ -type file|xargs grep "autoscaling/v2"
 
 
 while ! kustomize build example | awk '!/well-defined/' | kubectl delete -f -; do echo "Retrying to delete resources"; sleep 10; done
+kustomize build common/cert-manager/kubeflow-issuer/base | kubectl delete -f -
+kustomize build common/cert-manager/cert-manager/base | kubectl delete -f -
 
 kubectl proxy --port=8009 &
 remove_abnormal_pods.sh
@@ -483,8 +573,12 @@ kubectl get service -n kubeflow-user-example-com | awk '{print $1}' | xargs kube
 kubectl get pod -n kubeflow-user-example-com | awk '{print $1}' | xargs kubectl delete pod $1 -n kubeflow-user-example-com --force --grace-period=0
 kubectl delete ns kubeflow-user-example-com
 kubectl get pods -A
-remove_terminating_nses.sh
+sudo ssh dtpct kubectl proxy --port=8009 &
+sudo ssh dtpct remove_terminating_nses.sh
 kubectl get ns | grep Terminating
+
+kubectl get pvc -A
+kubectl get pv
 
 #1.6.1
 # Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
@@ -1793,3 +1887,777 @@ Error from server (InternalError): error when creating "STDIN": Internal error o
 Error from server (InternalError): error when creating "STDIN": Internal error occurred: failed calling webhook "webhook.cert-manager.io": failed to call webhook: Post "https://cert-manager-webhook.cert-manager.svc:443/mutate?timeout=10s": x509: certificate signed by unknown authority
 Error from server (InternalError): error when creating "STDIN": Internal error occurred: failed calling webhook "webhook.cert-manager.io": failed to call webhook: Post "https://cert-manager-webhook.cert-manager.svc:443/mutate?timeout=10s": x509: certificate signed by unknown authority
 
+#1.8.0
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'vars' is deprecated. Please use 'replacements' instead. [EXPERIMENTAL] Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'vars' is deprecated. Please use 'replacements' instead. [EXPERIMENTAL] Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'bases' is deprecated. Please use 'resources' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'bases' is deprecated. Please use 'resources' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'bases' is deprecated. Please use 'resources' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'vars' is deprecated. Please use 'replacements' instead. [EXPERIMENTAL] Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'bases' is deprecated. Please use 'resources' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'bases' is deprecated. Please use 'resources' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesJson6902' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'bases' is deprecated. Please use 'resources' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'vars' is deprecated. Please use 'replacements' instead. [EXPERIMENTAL] Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'vars' is deprecated. Please use 'replacements' instead. [EXPERIMENTAL] Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'vars' is deprecated. Please use 'replacements' instead. [EXPERIMENTAL] Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'bases' is deprecated. Please use 'resources' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'vars' is deprecated. Please use 'replacements' instead. [EXPERIMENTAL] Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'vars' is deprecated. Please use 'replacements' instead. [EXPERIMENTAL] Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'vars' is deprecated. Please use 'replacements' instead. [EXPERIMENTAL] Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'bases' is deprecated. Please use 'resources' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'vars' is deprecated. Please use 'replacements' instead. [EXPERIMENTAL] Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'bases' is deprecated. Please use 'resources' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'vars' is deprecated. Please use 'replacements' instead. [EXPERIMENTAL] Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'vars' is deprecated. Please use 'replacements' instead. [EXPERIMENTAL] Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'bases' is deprecated. Please use 'resources' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'vars' is deprecated. Please use 'replacements' instead. [EXPERIMENTAL] Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'vars' is deprecated. Please use 'replacements' instead. [EXPERIMENTAL] Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'bases' is deprecated. Please use 'resources' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesJson6902' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
+2023/12/21 10:00:56 well-defined vars that were never replaced: kfp-app-name,kfp-app-version
+namespace/auth created
+namespace/cert-manager unchanged
+namespace/istio-system created
+namespace/knative-eventing created
+namespace/knative-serving created
+namespace/kubeflow created
+customresourcedefinition.apiextensions.k8s.io/apiserversources.sources.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/authcodes.dex.coreos.com created
+customresourcedefinition.apiextensions.k8s.io/authorizationpolicies.security.istio.io created
+customresourcedefinition.apiextensions.k8s.io/brokers.eventing.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/certificaterequests.cert-manager.io unchanged
+customresourcedefinition.apiextensions.k8s.io/certificates.cert-manager.io unchanged
+customresourcedefinition.apiextensions.k8s.io/certificates.networking.internal.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/challenges.acme.cert-manager.io unchanged
+customresourcedefinition.apiextensions.k8s.io/channels.messaging.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/clusterdomainclaims.networking.internal.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/clusterissuers.cert-manager.io unchanged
+customresourcedefinition.apiextensions.k8s.io/clusterservingruntimes.serving.kserve.io created
+customresourcedefinition.apiextensions.k8s.io/clusterstoragecontainers.serving.kserve.io created
+customresourcedefinition.apiextensions.k8s.io/clusterworkflowtemplates.argoproj.io created
+customresourcedefinition.apiextensions.k8s.io/compositecontrollers.metacontroller.k8s.io created
+customresourcedefinition.apiextensions.k8s.io/configurations.serving.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/containersources.sources.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/controllerrevisions.metacontroller.k8s.io created
+customresourcedefinition.apiextensions.k8s.io/cronworkflows.argoproj.io created
+customresourcedefinition.apiextensions.k8s.io/decoratorcontrollers.metacontroller.k8s.io created
+customresourcedefinition.apiextensions.k8s.io/destinationrules.networking.istio.io created
+customresourcedefinition.apiextensions.k8s.io/domainmappings.serving.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/envoyfilters.networking.istio.io created
+customresourcedefinition.apiextensions.k8s.io/eventtypes.eventing.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/experiments.kubeflow.org created
+customresourcedefinition.apiextensions.k8s.io/gateways.networking.istio.io created
+customresourcedefinition.apiextensions.k8s.io/images.caching.internal.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/inferencegraphs.serving.kserve.io created
+customresourcedefinition.apiextensions.k8s.io/inferenceservices.serving.kserve.io created
+customresourcedefinition.apiextensions.k8s.io/ingresses.networking.internal.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/issuers.cert-manager.io unchanged
+customresourcedefinition.apiextensions.k8s.io/istiooperators.install.istio.io created
+customresourcedefinition.apiextensions.k8s.io/metrics.autoscaling.internal.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/mpijobs.kubeflow.org created
+customresourcedefinition.apiextensions.k8s.io/mxjobs.kubeflow.org created
+customresourcedefinition.apiextensions.k8s.io/notebooks.kubeflow.org created
+customresourcedefinition.apiextensions.k8s.io/orders.acme.cert-manager.io unchanged
+customresourcedefinition.apiextensions.k8s.io/paddlejobs.kubeflow.org created
+customresourcedefinition.apiextensions.k8s.io/parallels.flows.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/peerauthentications.security.istio.io created
+customresourcedefinition.apiextensions.k8s.io/pingsources.sources.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/podautoscalers.autoscaling.internal.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/poddefaults.kubeflow.org created
+customresourcedefinition.apiextensions.k8s.io/profiles.kubeflow.org created
+customresourcedefinition.apiextensions.k8s.io/proxyconfigs.networking.istio.io created
+customresourcedefinition.apiextensions.k8s.io/pvcviewers.kubeflow.org created
+customresourcedefinition.apiextensions.k8s.io/pytorchjobs.kubeflow.org created
+customresourcedefinition.apiextensions.k8s.io/requestauthentications.security.istio.io created
+customresourcedefinition.apiextensions.k8s.io/revisions.serving.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/routes.serving.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/scheduledworkflows.kubeflow.org created
+customresourcedefinition.apiextensions.k8s.io/sequences.flows.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/serverlessservices.networking.internal.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/serviceentries.networking.istio.io created
+customresourcedefinition.apiextensions.k8s.io/services.serving.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/servingruntimes.serving.kserve.io created
+customresourcedefinition.apiextensions.k8s.io/sidecars.networking.istio.io created
+customresourcedefinition.apiextensions.k8s.io/sinkbindings.sources.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/subscriptions.messaging.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/suggestions.kubeflow.org created
+customresourcedefinition.apiextensions.k8s.io/telemetries.telemetry.istio.io created
+customresourcedefinition.apiextensions.k8s.io/tensorboards.tensorboard.kubeflow.org created
+customresourcedefinition.apiextensions.k8s.io/tfjobs.kubeflow.org created
+customresourcedefinition.apiextensions.k8s.io/trainedmodels.serving.kserve.io created
+customresourcedefinition.apiextensions.k8s.io/trials.kubeflow.org created
+customresourcedefinition.apiextensions.k8s.io/triggers.eventing.knative.dev created
+customresourcedefinition.apiextensions.k8s.io/viewers.kubeflow.org created
+customresourcedefinition.apiextensions.k8s.io/virtualservices.networking.istio.io created
+customresourcedefinition.apiextensions.k8s.io/wasmplugins.extensions.istio.io created
+customresourcedefinition.apiextensions.k8s.io/workfloweventbindings.argoproj.io created
+customresourcedefinition.apiextensions.k8s.io/workflows.argoproj.io created
+customresourcedefinition.apiextensions.k8s.io/workflowtaskresults.argoproj.io created
+customresourcedefinition.apiextensions.k8s.io/workflowtasksets.argoproj.io created
+customresourcedefinition.apiextensions.k8s.io/workflowtemplates.argoproj.io created
+customresourcedefinition.apiextensions.k8s.io/workloadentries.networking.istio.io created
+customresourcedefinition.apiextensions.k8s.io/workloadgroups.networking.istio.io created
+customresourcedefinition.apiextensions.k8s.io/xgboostjobs.kubeflow.org created
+mutatingwebhookconfiguration.admissionregistration.k8s.io/admission-webhook-mutating-webhook-configuration created
+mutatingwebhookconfiguration.admissionregistration.k8s.io/cache-webhook-kubeflow created
+mutatingwebhookconfiguration.admissionregistration.k8s.io/cert-manager-webhook configured
+mutatingwebhookconfiguration.admissionregistration.k8s.io/inferenceservice.serving.kserve.io created
+mutatingwebhookconfiguration.admissionregistration.k8s.io/istio-sidecar-injector created
+mutatingwebhookconfiguration.admissionregistration.k8s.io/katib.kubeflow.org created
+mutatingwebhookconfiguration.admissionregistration.k8s.io/pvcviewer-mutating-webhook-configuration created
+mutatingwebhookconfiguration.admissionregistration.k8s.io/sinkbindings.webhook.sources.knative.dev created
+mutatingwebhookconfiguration.admissionregistration.k8s.io/webhook.domainmapping.serving.knative.dev created
+mutatingwebhookconfiguration.admissionregistration.k8s.io/webhook.eventing.knative.dev created
+mutatingwebhookconfiguration.admissionregistration.k8s.io/webhook.istio.networking.internal.knative.dev created
+mutatingwebhookconfiguration.admissionregistration.k8s.io/webhook.serving.knative.dev created
+serviceaccount/dex created
+serviceaccount/cert-manager unchanged
+serviceaccount/cert-manager-cainjector unchanged
+serviceaccount/cert-manager-webhook unchanged
+serviceaccount/authservice created
+serviceaccount/cluster-local-gateway-service-account created
+serviceaccount/istio-ingressgateway-service-account created
+serviceaccount/istio-reader-service-account created
+serviceaccount/istiod created
+serviceaccount/istiod-service-account created
+serviceaccount/eventing-controller created
+serviceaccount/eventing-webhook created
+serviceaccount/pingsource-mt-adapter created
+serviceaccount/controller created
+serviceaccount/admission-webhook-service-account created
+serviceaccount/argo created
+serviceaccount/centraldashboard created
+serviceaccount/jupyter-web-app-service-account created
+serviceaccount/katib-controller created
+serviceaccount/katib-ui created
+serviceaccount/kserve-controller-manager created
+serviceaccount/kserve-models-web-app created
+serviceaccount/kubeflow-pipelines-cache created
+serviceaccount/kubeflow-pipelines-container-builder created
+serviceaccount/kubeflow-pipelines-metadata-writer created
+serviceaccount/kubeflow-pipelines-viewer created
+serviceaccount/meta-controller-service created
+serviceaccount/metadata-grpc-server created
+serviceaccount/ml-pipeline created
+serviceaccount/ml-pipeline-persistenceagent created
+serviceaccount/ml-pipeline-scheduledworkflow created
+serviceaccount/ml-pipeline-ui created
+serviceaccount/ml-pipeline-viewer-crd-service-account created
+serviceaccount/ml-pipeline-visualizationserver created
+serviceaccount/mysql created
+serviceaccount/notebook-controller-service-account created
+serviceaccount/pipeline-runner created
+serviceaccount/profiles-controller-service-account created
+serviceaccount/pvcviewer-controller-manager created
+serviceaccount/tensorboard-controller-controller-manager created
+serviceaccount/tensorboards-web-app-service-account created
+serviceaccount/training-operator created
+serviceaccount/volumes-web-app-service-account created
+role.rbac.authorization.k8s.io/cert-manager-webhook:dynamic-serving unchanged
+role.rbac.authorization.k8s.io/cluster-local-gateway-sds created
+role.rbac.authorization.k8s.io/istio-ingressgateway-sds created
+role.rbac.authorization.k8s.io/istiod created
+role.rbac.authorization.k8s.io/istiod-istio-system created
+role.rbac.authorization.k8s.io/knative-eventing-webhook created
+role.rbac.authorization.k8s.io/cert-manager-cainjector:leaderelection unchanged
+role.rbac.authorization.k8s.io/cert-manager:leaderelection unchanged
+role.rbac.authorization.k8s.io/argo-role created
+role.rbac.authorization.k8s.io/centraldashboard created
+role.rbac.authorization.k8s.io/jupyter-web-app-jupyter-notebook-role created
+role.rbac.authorization.k8s.io/kserve-leader-election-role created
+role.rbac.authorization.k8s.io/kubeflow-pipelines-cache-role created
+role.rbac.authorization.k8s.io/kubeflow-pipelines-metadata-writer-role created
+role.rbac.authorization.k8s.io/ml-pipeline created
+role.rbac.authorization.k8s.io/ml-pipeline-persistenceagent-role created
+role.rbac.authorization.k8s.io/ml-pipeline-scheduledworkflow-role created
+role.rbac.authorization.k8s.io/ml-pipeline-ui created
+role.rbac.authorization.k8s.io/ml-pipeline-viewer-controller-role created
+role.rbac.authorization.k8s.io/notebook-controller-leader-election-role created
+role.rbac.authorization.k8s.io/pipeline-runner created
+role.rbac.authorization.k8s.io/profiles-leader-election-role created
+role.rbac.authorization.k8s.io/pvcviewer-leader-election-role created
+role.rbac.authorization.k8s.io/tensorboard-controller-leader-election-role created
+clusterrole.rbac.authorization.k8s.io/addressable-resolver created
+clusterrole.rbac.authorization.k8s.io/admission-webhook-cluster-role created
+clusterrole.rbac.authorization.k8s.io/admission-webhook-kubeflow-poddefaults-admin created
+clusterrole.rbac.authorization.k8s.io/admission-webhook-kubeflow-poddefaults-edit created
+clusterrole.rbac.authorization.k8s.io/admission-webhook-kubeflow-poddefaults-view created
+clusterrole.rbac.authorization.k8s.io/aggregate-to-kubeflow-pipelines-edit created
+clusterrole.rbac.authorization.k8s.io/aggregate-to-kubeflow-pipelines-view created
+clusterrole.rbac.authorization.k8s.io/argo-aggregate-to-admin created
+clusterrole.rbac.authorization.k8s.io/argo-aggregate-to-edit created
+clusterrole.rbac.authorization.k8s.io/argo-aggregate-to-view created
+clusterrole.rbac.authorization.k8s.io/argo-cluster-role created
+clusterrole.rbac.authorization.k8s.io/authn-delegator created
+clusterrole.rbac.authorization.k8s.io/broker-addressable-resolver created
+clusterrole.rbac.authorization.k8s.io/builtin-podspecable-binding created
+clusterrole.rbac.authorization.k8s.io/centraldashboard created
+clusterrole.rbac.authorization.k8s.io/cert-manager-cainjector unchanged
+clusterrole.rbac.authorization.k8s.io/cert-manager-controller-approve:cert-manager-io unchanged
+clusterrole.rbac.authorization.k8s.io/cert-manager-controller-certificates unchanged
+clusterrole.rbac.authorization.k8s.io/cert-manager-controller-certificatesigningrequests unchanged
+clusterrole.rbac.authorization.k8s.io/cert-manager-controller-challenges unchanged
+clusterrole.rbac.authorization.k8s.io/cert-manager-controller-clusterissuers unchanged
+clusterrole.rbac.authorization.k8s.io/cert-manager-controller-ingress-shim unchanged
+clusterrole.rbac.authorization.k8s.io/cert-manager-controller-issuers unchanged
+clusterrole.rbac.authorization.k8s.io/cert-manager-controller-orders unchanged
+clusterrole.rbac.authorization.k8s.io/cert-manager-edit unchanged
+clusterrole.rbac.authorization.k8s.io/cert-manager-view unchanged
+clusterrole.rbac.authorization.k8s.io/cert-manager-webhook:subjectaccessreviews unchanged
+clusterrole.rbac.authorization.k8s.io/channel-addressable-resolver created
+clusterrole.rbac.authorization.k8s.io/channelable-manipulator created
+clusterrole.rbac.authorization.k8s.io/dex created
+clusterrole.rbac.authorization.k8s.io/eventing-broker-filter created
+clusterrole.rbac.authorization.k8s.io/eventing-broker-ingress created
+clusterrole.rbac.authorization.k8s.io/eventing-config-reader created
+clusterrole.rbac.authorization.k8s.io/eventing-sources-source-observer created
+clusterrole.rbac.authorization.k8s.io/flows-addressable-resolver created
+clusterrole.rbac.authorization.k8s.io/istio-reader-clusterrole-istio-system created
+clusterrole.rbac.authorization.k8s.io/istio-reader-istio-system created
+clusterrole.rbac.authorization.k8s.io/istiod-clusterrole-istio-system created
+clusterrole.rbac.authorization.k8s.io/istiod-gateway-controller-istio-system created
+clusterrole.rbac.authorization.k8s.io/istiod-istio-system created
+clusterrole.rbac.authorization.k8s.io/jupyter-web-app-cluster-role created
+clusterrole.rbac.authorization.k8s.io/jupyter-web-app-kubeflow-notebook-ui-admin created
+clusterrole.rbac.authorization.k8s.io/jupyter-web-app-kubeflow-notebook-ui-edit created
+clusterrole.rbac.authorization.k8s.io/jupyter-web-app-kubeflow-notebook-ui-view created
+clusterrole.rbac.authorization.k8s.io/katib-controller created
+clusterrole.rbac.authorization.k8s.io/katib-ui created
+clusterrole.rbac.authorization.k8s.io/knative-bindings-namespaced-admin created
+clusterrole.rbac.authorization.k8s.io/knative-eventing-controller created
+clusterrole.rbac.authorization.k8s.io/knative-eventing-namespaced-admin created
+clusterrole.rbac.authorization.k8s.io/knative-eventing-namespaced-edit created
+clusterrole.rbac.authorization.k8s.io/knative-eventing-namespaced-view created
+clusterrole.rbac.authorization.k8s.io/knative-eventing-pingsource-mt-adapter created
+clusterrole.rbac.authorization.k8s.io/knative-eventing-sources-controller created
+clusterrole.rbac.authorization.k8s.io/knative-eventing-webhook created
+clusterrole.rbac.authorization.k8s.io/knative-flows-namespaced-admin created
+clusterrole.rbac.authorization.k8s.io/knative-messaging-namespaced-admin created
+clusterrole.rbac.authorization.k8s.io/knative-serving-addressable-resolver created
+clusterrole.rbac.authorization.k8s.io/knative-serving-admin created
+clusterrole.rbac.authorization.k8s.io/knative-serving-aggregated-addressable-resolver created
+clusterrole.rbac.authorization.k8s.io/knative-serving-core created
+clusterrole.rbac.authorization.k8s.io/knative-serving-istio created
+clusterrole.rbac.authorization.k8s.io/knative-serving-namespaced-admin created
+clusterrole.rbac.authorization.k8s.io/knative-serving-namespaced-edit created
+clusterrole.rbac.authorization.k8s.io/knative-serving-namespaced-view created
+clusterrole.rbac.authorization.k8s.io/knative-serving-podspecable-binding created
+clusterrole.rbac.authorization.k8s.io/knative-sources-namespaced-admin created
+clusterrole.rbac.authorization.k8s.io/kserve-manager-role created
+clusterrole.rbac.authorization.k8s.io/kserve-models-web-app-cluster-role created
+clusterrole.rbac.authorization.k8s.io/kserve-proxy-role created
+clusterrole.rbac.authorization.k8s.io/kubeflow-admin created
+clusterrole.rbac.authorization.k8s.io/kubeflow-edit created
+clusterrole.rbac.authorization.k8s.io/kubeflow-istio-admin created
+clusterrole.rbac.authorization.k8s.io/kubeflow-istio-edit created
+clusterrole.rbac.authorization.k8s.io/kubeflow-istio-view created
+clusterrole.rbac.authorization.k8s.io/kubeflow-katib-admin created
+clusterrole.rbac.authorization.k8s.io/kubeflow-katib-edit created
+clusterrole.rbac.authorization.k8s.io/kubeflow-katib-view created
+clusterrole.rbac.authorization.k8s.io/kubeflow-kserve-admin created
+clusterrole.rbac.authorization.k8s.io/kubeflow-kserve-edit created
+clusterrole.rbac.authorization.k8s.io/kubeflow-kserve-view created
+clusterrole.rbac.authorization.k8s.io/kubeflow-kubernetes-admin created
+clusterrole.rbac.authorization.k8s.io/kubeflow-kubernetes-edit created
+clusterrole.rbac.authorization.k8s.io/kubeflow-kubernetes-view created
+clusterrole.rbac.authorization.k8s.io/kubeflow-pipelines-cache-role created
+clusterrole.rbac.authorization.k8s.io/kubeflow-pipelines-edit created
+clusterrole.rbac.authorization.k8s.io/kubeflow-pipelines-metadata-writer-role created
+clusterrole.rbac.authorization.k8s.io/kubeflow-pipelines-view created
+clusterrole.rbac.authorization.k8s.io/kubeflow-training-admin created
+clusterrole.rbac.authorization.k8s.io/kubeflow-training-edit created
+clusterrole.rbac.authorization.k8s.io/kubeflow-training-view created
+clusterrole.rbac.authorization.k8s.io/kubeflow-view created
+clusterrole.rbac.authorization.k8s.io/meta-channelable-manipulator created
+clusterrole.rbac.authorization.k8s.io/ml-pipeline created
+clusterrole.rbac.authorization.k8s.io/ml-pipeline-persistenceagent-role created
+clusterrole.rbac.authorization.k8s.io/ml-pipeline-scheduledworkflow-role created
+clusterrole.rbac.authorization.k8s.io/ml-pipeline-ui created
+clusterrole.rbac.authorization.k8s.io/ml-pipeline-viewer-controller-role created
+clusterrole.rbac.authorization.k8s.io/notebook-controller-kubeflow-notebooks-admin created
+clusterrole.rbac.authorization.k8s.io/notebook-controller-kubeflow-notebooks-edit created
+clusterrole.rbac.authorization.k8s.io/notebook-controller-kubeflow-notebooks-view created
+clusterrole.rbac.authorization.k8s.io/notebook-controller-role created
+clusterrole.rbac.authorization.k8s.io/podspecable-binding created
+clusterrole.rbac.authorization.k8s.io/pvcviewer-metrics-reader created
+clusterrole.rbac.authorization.k8s.io/pvcviewer-proxy-role created
+clusterrole.rbac.authorization.k8s.io/pvcviewer-role created
+clusterrole.rbac.authorization.k8s.io/service-addressable-resolver created
+clusterrole.rbac.authorization.k8s.io/serving-addressable-resolver created
+clusterrole.rbac.authorization.k8s.io/source-observer created
+clusterrole.rbac.authorization.k8s.io/tensorboard-controller-manager-role created
+clusterrole.rbac.authorization.k8s.io/tensorboard-controller-metrics-reader created
+clusterrole.rbac.authorization.k8s.io/tensorboard-controller-proxy-role created
+clusterrole.rbac.authorization.k8s.io/tensorboards-web-app-cluster-role created
+clusterrole.rbac.authorization.k8s.io/tensorboards-web-app-kubeflow-tensorboard-ui-admin created
+clusterrole.rbac.authorization.k8s.io/tensorboards-web-app-kubeflow-tensorboard-ui-edit created
+clusterrole.rbac.authorization.k8s.io/tensorboards-web-app-kubeflow-tensorboard-ui-view created
+clusterrole.rbac.authorization.k8s.io/training-operator created
+clusterrole.rbac.authorization.k8s.io/volumes-web-app-cluster-role created
+clusterrole.rbac.authorization.k8s.io/volumes-web-app-kubeflow-volume-ui-admin created
+clusterrole.rbac.authorization.k8s.io/volumes-web-app-kubeflow-volume-ui-edit created
+clusterrole.rbac.authorization.k8s.io/volumes-web-app-kubeflow-volume-ui-view created
+rolebinding.rbac.authorization.k8s.io/cert-manager-webhook:dynamic-serving configured
+rolebinding.rbac.authorization.k8s.io/cluster-local-gateway-sds created
+rolebinding.rbac.authorization.k8s.io/istio-ingressgateway-sds created
+rolebinding.rbac.authorization.k8s.io/istiod created
+rolebinding.rbac.authorization.k8s.io/istiod-istio-system created
+rolebinding.rbac.authorization.k8s.io/eventing-webhook created
+rolebinding.rbac.authorization.k8s.io/cert-manager-cainjector:leaderelection unchanged
+rolebinding.rbac.authorization.k8s.io/cert-manager:leaderelection configured
+rolebinding.rbac.authorization.k8s.io/argo-binding created
+rolebinding.rbac.authorization.k8s.io/centraldashboard created
+rolebinding.rbac.authorization.k8s.io/jupyter-web-app-jupyter-notebook-role-binding created
+rolebinding.rbac.authorization.k8s.io/kserve-leader-election-rolebinding created
+rolebinding.rbac.authorization.k8s.io/kubeflow-pipelines-cache-binding created
+rolebinding.rbac.authorization.k8s.io/kubeflow-pipelines-metadata-writer-binding created
+rolebinding.rbac.authorization.k8s.io/ml-pipeline created
+rolebinding.rbac.authorization.k8s.io/ml-pipeline-persistenceagent-binding created
+rolebinding.rbac.authorization.k8s.io/ml-pipeline-scheduledworkflow-binding created
+rolebinding.rbac.authorization.k8s.io/ml-pipeline-ui created
+rolebinding.rbac.authorization.k8s.io/ml-pipeline-viewer-crd-binding created
+rolebinding.rbac.authorization.k8s.io/notebook-controller-leader-election-rolebinding created
+rolebinding.rbac.authorization.k8s.io/pipeline-runner-binding created
+rolebinding.rbac.authorization.k8s.io/profiles-leader-election-rolebinding created
+rolebinding.rbac.authorization.k8s.io/pvcviewer-leader-election-rolebinding created
+rolebinding.rbac.authorization.k8s.io/tensorboard-controller-leader-election-rolebinding created
+clusterrolebinding.rbac.authorization.k8s.io/admission-webhook-cluster-role-binding created
+clusterrolebinding.rbac.authorization.k8s.io/argo-binding created
+clusterrolebinding.rbac.authorization.k8s.io/authn-delegators created
+clusterrolebinding.rbac.authorization.k8s.io/centraldashboard created
+clusterrolebinding.rbac.authorization.k8s.io/cert-manager-cainjector unchanged
+clusterrolebinding.rbac.authorization.k8s.io/cert-manager-controller-approve:cert-manager-io unchanged
+clusterrolebinding.rbac.authorization.k8s.io/cert-manager-controller-certificates unchanged
+clusterrolebinding.rbac.authorization.k8s.io/cert-manager-controller-certificatesigningrequests unchanged
+clusterrolebinding.rbac.authorization.k8s.io/cert-manager-controller-challenges unchanged
+clusterrolebinding.rbac.authorization.k8s.io/cert-manager-controller-clusterissuers unchanged
+clusterrolebinding.rbac.authorization.k8s.io/cert-manager-controller-ingress-shim unchanged
+clusterrolebinding.rbac.authorization.k8s.io/cert-manager-controller-issuers unchanged
+clusterrolebinding.rbac.authorization.k8s.io/cert-manager-controller-orders unchanged
+clusterrolebinding.rbac.authorization.k8s.io/cert-manager-webhook:subjectaccessreviews configured
+clusterrolebinding.rbac.authorization.k8s.io/dex created
+clusterrolebinding.rbac.authorization.k8s.io/eventing-controller created
+clusterrolebinding.rbac.authorization.k8s.io/eventing-controller-manipulator created
+clusterrolebinding.rbac.authorization.k8s.io/eventing-controller-resolver created
+clusterrolebinding.rbac.authorization.k8s.io/eventing-controller-source-observer created
+clusterrolebinding.rbac.authorization.k8s.io/eventing-controller-sources-controller created
+clusterrolebinding.rbac.authorization.k8s.io/eventing-webhook created
+clusterrolebinding.rbac.authorization.k8s.io/eventing-webhook-podspecable-binding created
+clusterrolebinding.rbac.authorization.k8s.io/eventing-webhook-resolver created
+clusterrolebinding.rbac.authorization.k8s.io/istio-reader-clusterrole-istio-system created
+clusterrolebinding.rbac.authorization.k8s.io/istio-reader-istio-system created
+clusterrolebinding.rbac.authorization.k8s.io/istiod-clusterrole-istio-system created
+clusterrolebinding.rbac.authorization.k8s.io/istiod-gateway-controller-istio-system created
+clusterrolebinding.rbac.authorization.k8s.io/istiod-istio-system created
+clusterrolebinding.rbac.authorization.k8s.io/jupyter-web-app-cluster-role-binding created
+clusterrolebinding.rbac.authorization.k8s.io/katib-controller created
+clusterrolebinding.rbac.authorization.k8s.io/katib-ui created
+clusterrolebinding.rbac.authorization.k8s.io/knative-eventing-pingsource-mt-adapter created
+clusterrolebinding.rbac.authorization.k8s.io/knative-serving-controller-addressable-resolver created
+clusterrolebinding.rbac.authorization.k8s.io/knative-serving-controller-admin created
+clusterrolebinding.rbac.authorization.k8s.io/kserve-manager-rolebinding created
+clusterrolebinding.rbac.authorization.k8s.io/kserve-models-web-app-binding created
+clusterrolebinding.rbac.authorization.k8s.io/kserve-proxy-rolebinding created
+clusterrolebinding.rbac.authorization.k8s.io/kubeflow-pipelines-cache-binding created
+clusterrolebinding.rbac.authorization.k8s.io/kubeflow-pipelines-metadata-writer-binding created
+clusterrolebinding.rbac.authorization.k8s.io/meta-controller-cluster-role-binding created
+clusterrolebinding.rbac.authorization.k8s.io/ml-pipeline created
+clusterrolebinding.rbac.authorization.k8s.io/ml-pipeline-persistenceagent-binding created
+clusterrolebinding.rbac.authorization.k8s.io/ml-pipeline-scheduledworkflow-binding created
+clusterrolebinding.rbac.authorization.k8s.io/ml-pipeline-ui created
+clusterrolebinding.rbac.authorization.k8s.io/ml-pipeline-viewer-crd-binding created
+clusterrolebinding.rbac.authorization.k8s.io/notebook-controller-role-binding created
+clusterrolebinding.rbac.authorization.k8s.io/profiles-cluster-rolebinding created
+clusterrolebinding.rbac.authorization.k8s.io/pvcviewer-manager-rolebinding created
+clusterrolebinding.rbac.authorization.k8s.io/pvcviewer-proxy-rolebinding created
+clusterrolebinding.rbac.authorization.k8s.io/tensorboard-controller-manager-rolebinding created
+clusterrolebinding.rbac.authorization.k8s.io/tensorboard-controller-proxy-rolebinding created
+clusterrolebinding.rbac.authorization.k8s.io/tensorboards-web-app-cluster-role-binding created
+clusterrolebinding.rbac.authorization.k8s.io/training-operator created
+clusterrolebinding.rbac.authorization.k8s.io/volumes-web-app-cluster-role-binding created
+configmap/dex created
+configmap/cert-manager-webhook configured
+configmap/istio created
+configmap/istio-sidecar-injector created
+configmap/oidc-authservice-parameters created
+configmap/config-br-default-channel created
+configmap/config-br-defaults created
+configmap/config-features created
+configmap/config-kreference-mapping created
+configmap/config-leader-election created
+configmap/config-logging created
+configmap/config-observability created
+configmap/config-ping-defaults created
+configmap/config-sugar created
+configmap/config-tracing created
+configmap/default-ch-webhook created
+configmap/config-autoscaler created
+configmap/config-defaults created
+configmap/config-deployment created
+configmap/config-domain created
+configmap/config-features created
+configmap/config-gc created
+configmap/config-istio created
+configmap/config-leader-election created
+configmap/config-logging created
+configmap/config-network created
+configmap/config-observability created
+configmap/config-tracing created
+configmap/centraldashboard-config created
+configmap/centraldashboard-parameters created
+configmap/inferenceservice-config created
+configmap/jupyter-web-app-config-7tkbmh828d created
+configmap/jupyter-web-app-logos created
+configmap/jupyter-web-app-parameters-42k97gcbmb created
+configmap/katib-config created
+configmap/kfp-launcher created
+configmap/kserve-models-web-app-config created
+configmap/kubeflow-pipelines-profile-controller-code-hdk828hd6c created
+configmap/kubeflow-pipelines-profile-controller-env-5252m69c4c created
+configmap/metadata-grpc-configmap created
+configmap/ml-pipeline-ui-configmap created
+configmap/namespace-labels-data-4df5t8mdgf created
+configmap/notebook-controller-config-dm5b6dd458 created
+configmap/pipeline-api-server-config-dc9hkg52h6 created
+configmap/pipeline-install-config created
+configmap/profiles-config-5h9m86f79f created
+configmap/tensorboard-controller-config-b98cb9gk9k created
+configmap/tensorboards-web-app-parameters-642bbg7t66 created
+configmap/trial-templates created
+configmap/volumes-web-app-parameters-57h65c44mg created
+configmap/volumes-web-app-viewer-spec-gm954c98h6 created
+configmap/workflow-controller-configmap created
+configmap/default-install-config-9h2h2b6hbk created
+secret/dex-oidc-client created
+secret/oidc-authservice-client created
+secret/eventing-webhook-certs created
+secret/control-serving-certs created
+secret/domainmapping-webhook-certs created
+secret/knative-serving-certs created
+secret/net-istio-webhook-certs created
+secret/routing-serving-certs created
+secret/serving-certs-ctrl-ca created
+secret/webhook-certs created
+secret/katib-mysql-secrets created
+secret/kserve-webhook-server-secret created
+secret/mlpipeline-minio-artifact created
+secret/mysql-secret created
+service/dex created
+service/cert-manager unchanged
+service/cert-manager-webhook unchanged
+service/authservice created
+service/cluster-local-gateway created
+service/istio-ingressgateway created
+service/istiod created
+service/knative-local-gateway created
+service/eventing-webhook created
+service/activator-service created
+service/autoscaler created
+service/controller created
+service/domainmapping-webhook created
+service/net-istio-webhook created
+service/webhook created
+service/admission-webhook-service created
+service/cache-server created
+service/centraldashboard created
+service/jupyter-web-app-service created
+service/katib-controller created
+service/katib-db-manager created
+service/katib-mysql created
+service/katib-ui created
+service/kserve-controller-manager-metrics-service created
+service/kserve-controller-manager-service created
+service/kserve-models-web-app created
+service/kserve-webhook-server-service created
+service/kubeflow-pipelines-profile-controller created
+service/metadata-envoy-service created
+service/metadata-grpc-service created
+service/minio-service created
+service/ml-pipeline created
+service/ml-pipeline-ui created
+service/ml-pipeline-visualizationserver created
+service/mysql created
+service/notebook-controller-service created
+service/profiles-kfam created
+service/pvcviewer-controller-manager-metrics-service created
+service/pvcviewer-webhook-service created
+service/tensorboard-controller-controller-manager-metrics-service created
+service/tensorboards-web-app-service created
+service/training-operator created
+service/volumes-web-app-service created
+service/workflow-controller-metrics created
+priorityclass.scheduling.k8s.io/workflow-controller created
+persistentvolumeclaim/authservice-pvc created
+persistentvolumeclaim/katib-mysql created
+persistentvolumeclaim/minio-pvc created
+persistentvolumeclaim/mysql-pv-claim created
+deployment.apps/dex created
+deployment.apps/cert-manager unchanged
+deployment.apps/cert-manager-cainjector unchanged
+deployment.apps/cert-manager-webhook unchanged
+deployment.apps/cluster-local-gateway created
+deployment.apps/istio-ingressgateway created
+deployment.apps/istiod created
+deployment.apps/eventing-controller created
+deployment.apps/eventing-webhook created
+deployment.apps/pingsource-mt-adapter created
+deployment.apps/activator created
+deployment.apps/autoscaler created
+deployment.apps/controller created
+deployment.apps/domain-mapping created
+deployment.apps/domainmapping-webhook created
+deployment.apps/net-istio-controller created
+deployment.apps/net-istio-webhook created
+deployment.apps/webhook created
+deployment.apps/admission-webhook-deployment created
+deployment.apps/cache-server created
+deployment.apps/centraldashboard created
+deployment.apps/jupyter-web-app-deployment created
+deployment.apps/katib-controller created
+deployment.apps/katib-db-manager created
+deployment.apps/katib-mysql created
+deployment.apps/katib-ui created
+deployment.apps/kserve-controller-manager created
+deployment.apps/kserve-models-web-app created
+deployment.apps/kubeflow-pipelines-profile-controller created
+deployment.apps/metadata-envoy-deployment created
+deployment.apps/metadata-grpc-deployment created
+deployment.apps/metadata-writer created
+deployment.apps/minio created
+deployment.apps/ml-pipeline created
+deployment.apps/ml-pipeline-persistenceagent created
+deployment.apps/ml-pipeline-scheduledworkflow created
+deployment.apps/ml-pipeline-ui created
+deployment.apps/ml-pipeline-viewer-crd created
+deployment.apps/ml-pipeline-visualizationserver created
+deployment.apps/mysql created
+deployment.apps/notebook-controller-deployment created
+deployment.apps/profiles-deployment created
+deployment.apps/pvcviewer-controller-manager created
+deployment.apps/tensorboard-controller-deployment created
+deployment.apps/tensorboards-web-app-deployment created
+deployment.apps/training-operator created
+deployment.apps/volumes-web-app-deployment created
+deployment.apps/workflow-controller created
+statefulset.apps/oidc-authservice created
+statefulset.apps/metacontroller created
+poddisruptionbudget.policy/eventing-webhook created
+poddisruptionbudget.policy/activator-pdb created
+poddisruptionbudget.policy/webhook-pdb created
+horizontalpodautoscaler.autoscaling/cluster-local-gateway created
+horizontalpodautoscaler.autoscaling/istio-ingressgateway created
+horizontalpodautoscaler.autoscaling/istiod created
+horizontalpodautoscaler.autoscaling/eventing-webhook created
+horizontalpodautoscaler.autoscaling/activator created
+horizontalpodautoscaler.autoscaling/webhook created
+certificate.cert-manager.io/admission-webhook-cert created
+certificate.cert-manager.io/katib-webhook-cert created
+certificate.cert-manager.io/kfp-cache-cert created
+certificate.cert-manager.io/pvcviewer-serving-cert created
+certificate.cert-manager.io/serving-cert created
+clusterissuer.cert-manager.io/kubeflow-self-signing-issuer unchanged
+issuer.cert-manager.io/admission-webhook-selfsigned-issuer created
+issuer.cert-manager.io/katib-selfsigned-issuer created
+issuer.cert-manager.io/kfp-cache-selfsigned-issuer created
+issuer.cert-manager.io/pvcviewer-selfsigned-issuer created
+issuer.cert-manager.io/selfsigned-issuer created
+validatingwebhookconfiguration.admissionregistration.k8s.io/cert-manager-webhook configured
+validatingwebhookconfiguration.admissionregistration.k8s.io/clusterservingruntime.serving.kserve.io created
+validatingwebhookconfiguration.admissionregistration.k8s.io/config.webhook.eventing.knative.dev created
+validatingwebhookconfiguration.admissionregistration.k8s.io/config.webhook.istio.networking.internal.knative.dev created
+validatingwebhookconfiguration.admissionregistration.k8s.io/config.webhook.serving.knative.dev created
+validatingwebhookconfiguration.admissionregistration.k8s.io/inferencegraph.serving.kserve.io created
+validatingwebhookconfiguration.admissionregistration.k8s.io/inferenceservice.serving.kserve.io created
+validatingwebhookconfiguration.admissionregistration.k8s.io/istio-validator-istio-system created
+validatingwebhookconfiguration.admissionregistration.k8s.io/katib.kubeflow.org created
+validatingwebhookconfiguration.admissionregistration.k8s.io/pvcviewer-validating-webhook-configuration created
+validatingwebhookconfiguration.admissionregistration.k8s.io/servingruntime.serving.kserve.io created
+validatingwebhookconfiguration.admissionregistration.k8s.io/trainedmodel.serving.kserve.io created
+validatingwebhookconfiguration.admissionregistration.k8s.io/validation.webhook.domainmapping.serving.knative.dev created
+validatingwebhookconfiguration.admissionregistration.k8s.io/validation.webhook.eventing.knative.dev created
+validatingwebhookconfiguration.admissionregistration.k8s.io/validation.webhook.serving.knative.dev created
+resource mapping not found for name: "queue-proxy" namespace: "knative-serving" from "STDIN": no matches for kind "Image" in version "caching.internal.knative.dev/v1alpha1"
+ensure CRDs are installed first
+resource mapping not found for name: "kubeflow-user-example-com" namespace: "" from "STDIN": no matches for kind "Profile" in version "kubeflow.org/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "kubeflow-pipelines-profile-controller" namespace: "kubeflow" from "STDIN": no matches for kind "CompositeController" in version "metacontroller.k8s.io/v1alpha1"
+ensure CRDs are installed first
+resource mapping not found for name: "knative" namespace: "knative-serving" from "STDIN": no matches for kind "DestinationRule" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "jupyter-web-app" namespace: "kubeflow" from "STDIN": no matches for kind "DestinationRule" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "metadata-grpc-service" namespace: "kubeflow" from "STDIN": no matches for kind "DestinationRule" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "ml-pipeline" namespace: "kubeflow" from "STDIN": no matches for kind "DestinationRule" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "ml-pipeline-minio" namespace: "kubeflow" from "STDIN": no matches for kind "DestinationRule" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "ml-pipeline-mysql" namespace: "kubeflow" from "STDIN": no matches for kind "DestinationRule" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "ml-pipeline-ui" namespace: "kubeflow" from "STDIN": no matches for kind "DestinationRule" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "ml-pipeline-visualizationserver" namespace: "kubeflow" from "STDIN": no matches for kind "DestinationRule" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "tensorboards-web-app" namespace: "kubeflow" from "STDIN": no matches for kind "DestinationRule" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "volumes-web-app" namespace: "kubeflow" from "STDIN": no matches for kind "DestinationRule" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "authn-filter" namespace: "istio-system" from "STDIN": no matches for kind "EnvoyFilter" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "stats-filter-1.13" namespace: "istio-system" from "STDIN": no matches for kind "EnvoyFilter" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "stats-filter-1.14" namespace: "istio-system" from "STDIN": no matches for kind "EnvoyFilter" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "stats-filter-1.15" namespace: "istio-system" from "STDIN": no matches for kind "EnvoyFilter" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "stats-filter-1.16" namespace: "istio-system" from "STDIN": no matches for kind "EnvoyFilter" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "stats-filter-1.17" namespace: "istio-system" from "STDIN": no matches for kind "EnvoyFilter" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "tcp-stats-filter-1.13" namespace: "istio-system" from "STDIN": no matches for kind "EnvoyFilter" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "tcp-stats-filter-1.14" namespace: "istio-system" from "STDIN": no matches for kind "EnvoyFilter" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "tcp-stats-filter-1.15" namespace: "istio-system" from "STDIN": no matches for kind "EnvoyFilter" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "tcp-stats-filter-1.16" namespace: "istio-system" from "STDIN": no matches for kind "EnvoyFilter" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "tcp-stats-filter-1.17" namespace: "istio-system" from "STDIN": no matches for kind "EnvoyFilter" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "x-forwarded-host" namespace: "istio-system" from "STDIN": no matches for kind "EnvoyFilter" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "cluster-local-gateway" namespace: "istio-system" from "STDIN": no matches for kind "Gateway" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "istio-ingressgateway" namespace: "istio-system" from "STDIN": no matches for kind "Gateway" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "kubeflow-gateway" namespace: "kubeflow" from "STDIN": no matches for kind "Gateway" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "dex" namespace: "auth" from "STDIN": no matches for kind "VirtualService" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "centraldashboard" namespace: "kubeflow" from "STDIN": no matches for kind "VirtualService" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "jupyter-web-app-jupyter-web-app" namespace: "kubeflow" from "STDIN": no matches for kind "VirtualService" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "katib-ui" namespace: "kubeflow" from "STDIN": no matches for kind "VirtualService" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "metadata-grpc" namespace: "kubeflow" from "STDIN": no matches for kind "VirtualService" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "ml-pipeline-ui" namespace: "kubeflow" from "STDIN": no matches for kind "VirtualService" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "profiles-kfam" namespace: "kubeflow" from "STDIN": no matches for kind "VirtualService" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "tensorboards-web-app-tensorboards-web-app" namespace: "kubeflow" from "STDIN": no matches for kind "VirtualService" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "volumes-web-app-volumes-web-app" namespace: "kubeflow" from "STDIN": no matches for kind "VirtualService" in version "networking.istio.io/v1alpha3"
+ensure CRDs are installed first
+resource mapping not found for name: "knative-local-gateway" namespace: "knative-serving" from "STDIN": no matches for kind "Gateway" in version "networking.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "kserve-models-web-app" namespace: "kubeflow" from "STDIN": no matches for kind "VirtualService" in version "networking.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "cluster-local-gateway" namespace: "istio-system" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "global-deny-all" namespace: "istio-system" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "istio-ingressgateway" namespace: "istio-system" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "activator-service" namespace: "knative-serving" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "autoscaler" namespace: "knative-serving" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "controller" namespace: "knative-serving" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "istio-webhook" namespace: "knative-serving" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "webhook" namespace: "knative-serving" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "central-dashboard" namespace: "kubeflow" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "jupyter-web-app" namespace: "kubeflow" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "katib-ui" namespace: "kubeflow" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "kserve-models-web-app" namespace: "kubeflow" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "metadata-grpc-service" namespace: "kubeflow" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "minio-service" namespace: "kubeflow" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "ml-pipeline" namespace: "kubeflow" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "ml-pipeline-ui" namespace: "kubeflow" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "ml-pipeline-visualizationserver" namespace: "kubeflow" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "mysql" namespace: "kubeflow" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "profiles-kfam" namespace: "kubeflow" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "service-cache-server" namespace: "kubeflow" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "tensorboards-web-app" namespace: "kubeflow" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "volumes-web-app" namespace: "kubeflow" from "STDIN": no matches for kind "AuthorizationPolicy" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "domainmapping-webhook" namespace: "knative-serving" from "STDIN": no matches for kind "PeerAuthentication" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "net-istio-webhook" namespace: "knative-serving" from "STDIN": no matches for kind "PeerAuthentication" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "webhook" namespace: "knative-serving" from "STDIN": no matches for kind "PeerAuthentication" in version "security.istio.io/v1beta1"
+ensure CRDs are installed first
+resource mapping not found for name: "kserve-lgbserver" namespace: "" from "STDIN": no matches for kind "ClusterServingRuntime" in version "serving.kserve.io/v1alpha1"
+ensure CRDs are installed first
+resource mapping not found for name: "kserve-mlserver" namespace: "" from "STDIN": no matches for kind "ClusterServingRuntime" in version "serving.kserve.io/v1alpha1"
+ensure CRDs are installed first
+resource mapping not found for name: "kserve-paddleserver" namespace: "" from "STDIN": no matches for kind "ClusterServingRuntime" in version "serving.kserve.io/v1alpha1"
+ensure CRDs are installed first
+resource mapping not found for name: "kserve-pmmlserver" namespace: "" from "STDIN": no matches for kind "ClusterServingRuntime" in version "serving.kserve.io/v1alpha1"
+ensure CRDs are installed first
+resource mapping not found for name: "kserve-sklearnserver" namespace: "" from "STDIN": no matches for kind "ClusterServingRuntime" in version "serving.kserve.io/v1alpha1"
+ensure CRDs are installed first
+resource mapping not found for name: "kserve-tensorflow-serving" namespace: "" from "STDIN": no matches for kind "ClusterServingRuntime" in version "serving.kserve.io/v1alpha1"
+ensure CRDs are installed first
+resource mapping not found for name: "kserve-torchserve" namespace: "" from "STDIN": no matches for kind "ClusterServingRuntime" in version "serving.kserve.io/v1alpha1"
+ensure CRDs are installed first
+resource mapping not found for name: "kserve-tritonserver" namespace: "" from "STDIN": no matches for kind "ClusterServingRuntime" in version "serving.kserve.io/v1alpha1"
+ensure CRDs are installed first
+resource mapping not found for name: "kserve-xgbserver" namespace: "" from "STDIN": no matches for kind "ClusterServingRuntime" in version "serving.kserve.io/v1alpha1"
+ensure CRDs are installed first
+Retrying to apply resources
+
+
+
+kubectl port-forward --address 0.0.0.0 svc/istio-ingressgateway -n istio-system 8080:80
+    user@exmaple.com
+    12341234
+
+kubectl port-forward -n kubeflow svc/minio-service 9000:9000
+
+kubectl get secret mlpipeline-minio-artifact -n kubeflow -o jsonpath="{.data.accesskey}" | base64 --decode
+accesskey:minio
+kubectl get secret mlpipeline-minio-artifact -n kubeflow -o jsonpath="{.data.secretkey}" | base64 --decode
+secretkey:minio123
+bucket:mlpipeline
