@@ -18,14 +18,15 @@ PRJ_HOME=${MYHOME}/workspace/dockerfile
 CUBESTUDIO_PRJ_HOME=${PRJ_HOME}/cubestudio
 
 #CUBESTUDIO_VERSION=2023.04.01
-CUBESTUDIO_VERSION=2023.12.01
+#CUBESTUDIO_VERSION=2023.12.01
+CUBESTUDIO_VERSION=2024.01.06
 
 export PATH=$PATH:${PRJ_HOME}
-
+cd ${CUBESTUDIO_PRJ_HOME}
 wget -c https://github.com/tencentmusic/cube-studio/archive/refs/tags/v${CUBESTUDIO_VERSION}.tar.gz -O cube-studio-${CUBESTUDIO_VERSION}.tar.gz
 tar xzvf cube-studio-${CUBESTUDIO_VERSION}.tar.gz 
 
-cd ${CUBESTUDIO_PRJ_HOME}/cube-studio-${CUBESTUDIO_VERSION}
+cd cube-studio-${CUBESTUDIO_VERSION}
 cp ~/.kube/config install/kubernetes/config
 
 #kubectl patch storageclass juicefs-sc -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
@@ -39,7 +40,7 @@ cp -r cube-pv-pvc-with-juicefs cube-pv-pvc-with-juicefs.bk
 cd cube-pv-pvc-with-juicefs
 ls | xargs $SED -i 's/500Gi/50Gi/g'
 ls | xargs $SED -i 's/100Gi/10Gi/g'
-cd ..
+cd ../..
 
 file=pull_image_kubeflow.sh
 cp ${file} ${file}.bk

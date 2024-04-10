@@ -67,6 +67,10 @@ nohup docker build ./ --progress=plain -f Dockerfile-ubuntu22-openjdk8 -t harbor
 tail -f build-Dockerfile-ubuntu22-openjdk8.log
 docker push harbor.my.org:1080/base/ubuntu22-openjdk8
 
+nohup docker build ./ --progress=plain -f Dockerfile-centos7-py38-netutil-ccplus7 -t harbor.my.org:1080/base/python:3.8-centos7-netutil-ccplus7 > build-Dockerfile-centos7-py38-netutil-ccplus7.log 2>&1 &
+tail -f build-Dockerfile-centos7-py38-netutil-ccplus7.log
+docker push harbor.my.org:1080/base/python:3.8-centos7-netutil-ccplus7
+
 nohup docker build ./ --progress=plain -f Dockerfile-centos7-py38-netutil-ccplus7-go -t harbor.my.org:1080/base/python:3.8-centos7-netutil-ccplus7-go > build-Dockerfile-centos7-py38-netutil-ccplus7-go.log 2>&1 &
 tail -f build-Dockerfile-centos7-py38-netutil-ccplus7-go.log
 docker push harbor.my.org:1080/base/python:3.8-centos7-netutil-ccplus7-go

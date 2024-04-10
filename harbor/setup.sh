@@ -13,10 +13,9 @@ else
 fi
 HARBORDATA=${DATAHOME}/harbor
 
-#https://github.com/goharbor/harbor/releases/tag/v2.1.2
-#https://github.com/goharbor/harbor/releases/download/v2.6.2/harbor-offline-installer-v2.6.2.tgz
 rev=2.1.2
 #rev=2.6.2
+wget -c https://github.com/goharbor/harbor/releases/download/v${rev}/harbor-offline-installer-v${rev}.tgz
 tar xzvf harbor-offline-installer-v$rev.tgz
 cd harbor
 cp harbor.yml.tmpl harbor.yml
