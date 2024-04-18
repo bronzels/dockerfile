@@ -40,22 +40,6 @@ docker exec -it juicefs-hadoop-client /bin/bash
   ls /dev/fuse
 docker stop juicefs-hadoop-client && docker rm juicefs-hadoop-client
 
-:<<EOF
-#client
-#mac
-#下载安装osxfuse
-brew tap juicedata/homebrew-tap
-brew install juicefs
-#local mnt test
-juicefs format \
-    --storage minio \
-    --bucket https://localhost:1443/rtc \
-    --access-key BCRG2IUBDWMKLQD76NWZ \
-    --secret-key KRKbToTPOaZtBEceFicW1Iako5YXpZaquVqzKdBC \
-    "redis://localhost:6379/1" \
-    miniofs
-EOF
-
 wget -c https://github.com/libfuse/libfuse/releases/download/fuse_3_12_0/fuse-3.12.0.tar.gz
 wget -c https://github.com/libfuse/libfuse/releases/download/fuse_2_9_4/fuse-2.9.2.tar.gz
 git clone git@github.com:juicedata/minio.git miniogw
@@ -90,19 +74,19 @@ yum install -y fuse
 modprobe fuse
 ls /dev/fuse
 
-  Username: 8UO66W6IHMOVQ3377AVN 
-  Password: RtiK0qLDMjzLHKhMIk3NHqsblQjMijF23AKDUltw 
+  accessKey: "0SQOVOSRXO76MGE00P9H"
+  secretKey: "36ySAfqCBr799YL57x4VoNjC11ik85aFbdbzqoSJ"
 
 kubectl run distfs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib --restart=Never --rm -- /bin/bash
 #kubectl exec -it distfs-test -- /bin/bash
-  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local 8UO66W6IHMOVQ3377AVN RtiK0qLDMjzLHKhMIk3NHqsblQjMijF23AKDUltw
+  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local 0SQOVOSRXO76MGE00P9H 36ySAfqCBr799YL57x4VoNjC11ik85aFbdbzqoSJ
   mc mb minio/jfs
   mc ls minio/jfs
   juicefs format \
       --storage minio \
       --bucket https://minio.minio-tenant-1.svc.cluster.local/jfs?tls-insecure-skip-verify=true \
-      --access-key 8UO66W6IHMOVQ3377AVN \
-      --secret-key RtiK0qLDMjzLHKhMIk3NHqsblQjMijF23AKDUltw \
+      --access-key 0SQOVOSRXO76MGE00P9H \
+      --secret-key 36ySAfqCBr799YL57x4VoNjC11ik85aFbdbzqoSJ \
       "redis://:redis@my-redis-master.redis.svc.cluster.local:6379/1" \
       miniofs
   #mount test use distfs-test image and modprob 1stly
@@ -166,7 +150,7 @@ cd ${JUICEFS_PRJ_HOME}/juicefs-csi-driver-${csirev}/deploy
 #安装
 file=k8s.yaml
 cp ${file} ${file}.bk
-$SED -i "/        image: juicedata\/juicefs-csi-driver:v0.19.0/i\        - name: JUICEFS_CE_MOUNT_IMAGE\n          value: harbor.my.org:1080\/storage\/juicedata-mount:ce-v1.0.4" ${file}
+$SED -i "/        image: juicedata\/juicefs-csi-driver:v${csirev}/i\        - name: JUICEFS_CE_MOUNT_IMAGE\n          value: harbor.my.org:1080\/storage\/juicedata-mount:ce-v1.0.4" ${file}
 kubectl apply -f k8s.yaml
 kubectl patch storageclass juicefs-sc -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 kubectl -n kube-system get pods -l app.kubernetes.io/name=juicefs-csi-driver
@@ -182,8 +166,8 @@ kubectl run distfs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubussh-
   juicefs format \
       --storage minio \
       --bucket https://minio.minio-tenant-1.svc.cluster.local/jfspvc?tls-insecure-skip-verify=true \
-      --access-key JCTHLDGEMZM03OF5B163 \
-      --secret-key DrTRA1zlIznEY5vY9rVrt68fjUO0z98ZGPCo39ZX \
+      --access-key 0SQOVOSRXO76MGE00P9H \
+      --secret-key 36ySAfqCBr799YL57x4VoNjC11ik85aFbdbzqoSJ \
       "redis://:redis@my-redis-master.redis.svc.cluster.local:6379/2" \
       miniofspvc
   export MINIO_ROOT_USER=admin

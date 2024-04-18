@@ -15,7 +15,7 @@ else
 fi
 
 MYDOLPHINSCH_HOME=${MYHOME}/workspace/dockerfile/dolphinsch
-DOLPHINSCH_REV=3.1.3
+DOLPHINSCH_REV=3.2.1
 SPARK_VERSION=3.3.1
 
 cd ${MYDOLPHINSCH_HOME}
@@ -155,11 +155,11 @@ EOF
   fi
 
   if [[ "${prj}" =~ "worker" ]]; then
-cat << \EOF > p4
+cat << EOF > p4
 EXPOSE 1235
 EOF
   elif [[ "${prj}" =~ "master" ]]; then
-cat << \EOF > p4
+cat << EOF > p4
 EXPOSE 12345
 EOF
   elif [[ "${prj}" =~ "api" ]]; then

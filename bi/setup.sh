@@ -19,15 +19,14 @@ PRJ_HOME=${WORK_HOME}/dockerfile
 
 BI_PRJ_HOME=${PRJ_HOME}/bi
 
-DATAEASE_REV=1.18.5
-
-DATART_REV=master
+#DATAEASE_REV=1.18.5
+DATAEASE_REV=2.5.0
 
 export PATH=$PATH:${BI_PRJ_HOME}
 
 cd ${BI_PRJ_HOME}
 
-kubectl create ns integrate
+kubectl create ns bi
 
 # dataease start--------------------------------------------
 wget -c https://github.com/dataease/dataease/archive/refs/tags/v${DATAEASE_REV}.tar.gz
@@ -52,7 +51,7 @@ echo 'RGF0YUVhc2VAMTIzNDU2'|base64 --decode
 git clone git@github.com:mfanoffice/dataease-helm.git
 cd dataease-helm
 #删除doris/mysql/redis相关内容，复用已经安装好的组件
-helm install myde -n integrate -f values.yaml \
+helm install myde -n bi -f values.yaml \
   --set ingress.enabled=false \
   --set common.storageClass=local-path \
   --set DataEase.imageTag=v${DATAEASE_REV} \
@@ -63,8 +62,8 @@ helm install myde -n integrate -f values.yaml \
   ./
 :<<EOF
 NAME: myde
-LAST DEPLOYED: Thu Apr  6 08:38:31 2023
-NAMESPACE: integrate
+LAST DEPLOYED: Fri Apr 12 20:57:00 2024
+NAMESPACE: bi
 STATUS: deployed
 REVISION: 1
 TEST SUITE: None
@@ -73,9 +72,10 @@ Thanks for installing the DataEase.
 
 Default username/password for DataEase is admin/dataease
 EOF
-helm uninstall myde -n integrate
-kubectl get pod -n integrate | grep dataease | grep -v Running |awk '{print $1}'| xargs kubectl delete pod "$1" -n integrate --force --grace-period=0
-kubectl get pvc -n integrate | grep dataease | awk '{print $1}' | xargs kubectl delete pvc -n integrate
+helm uninstall myde -n bi
+kubectl get all -n bi
+kubectl get pod -n bi | grep dataease | grep -v Running |awk '{print $1}'| xargs kubectl delete pod "$1" -n bi --force --grace-period=0
+kubectl get pvc -n bi | grep dataease | awk '{print $1}' | xargs kubectl delete pvc -n bi
 kubectl exec -it -n mysql `kubectl get pod -n mysql | grep Running | awk '{print $1}'` -- mysql -h127.0.0.1 -uroot -p123456 -e"DROP DATABASE dataease"
 kubectl exec -it -n mysql `kubectl get pod -n mysql | grep Running | awk '{print $1}'` -- mysql -h127.0.0.1 -uroot -p123456 -e"DROP USER dataease"
 kubectl exec -it -n mysql `kubectl get pod -n mysql | grep Running | awk '{print $1}'` -- mysql -h127.0.0.1 -uroot -p123456 -e"SHOW DATABASES"
@@ -83,17 +83,17 @@ kubectl exec -it -n mysql `kubectl get pod -n mysql | grep Running | awk '{print
 kubectl exec -it -n redis `kubectl get pod -n redis | grep Running | awk '{print $1}'` -- bash
   REDISCLI_AUTH=redis redis-cli -n 3 del check_ds::hide_custom_ds
 
-kubectl get all -n integrate
-watch kubectl get all -n integrate
+kubectl get all -n bi
+watch kubectl get all -n bi
 
-kubectl describe pod -n integrate `kubectl get pod -n integrate |grep dataease |awk '{print $1}'`
+kubectl describe pod -n bi `kubectl get pod -n bi |grep dataease |awk '{print $1}'`
 
-kubectl logs -n integrate `kubectl get pod -n integrate |grep dataease |awk '{print $1}'` init-database
-kubectl logs -f -n integrate `kubectl get pod -n integrate |grep dataease |awk '{print $1}'` init-database
-kubectl logs -n integrate `kubectl get pod -n integrate |grep dataease |awk '{print $1}'` dataease
-kubectl logs -f -n integrate `kubectl get pod -n integrate |grep dataease |awk '{print $1}'` dataease
+kubectl logs -n bi `kubectl get pod -n bi |grep dataease |awk '{print $1}'` init-database
+kubectl logs -f -n bi `kubectl get pod -n bi |grep dataease |awk '{print $1}'` init-database
+kubectl logs -n bi `kubectl get pod -n bi |grep dataease |awk '{print $1}'` dataease
+kubectl logs -f -n bi `kubectl get pod -n bi |grep dataease |awk '{print $1}'` dataease
 
-kubectl exec -it -n flink `kubectl get pod -n integrate |grep dataease | grep Running | awk '{print $1}'` -c dataease -- bash
+kubectl exec -it -n flink `kubectl get pod -n bi |grep dataease | grep Running | awk '{print $1}'` -c dataease -- bash
 
 kubectl exec -it -n mysql `kubectl get pod -n mysql | grep Running | awk '{print $1}'` -- mysql -h127.0.0.1 -udataease -pdataease@1234 -e"SHOW DATABASES"
 kubectl exec -it -n mysql `kubectl get pod -n mysql | grep Running | awk '{print $1}'` -- mysql -h127.0.0.1 -udataease -pdataease@1234 -e"USE dataease;SHOW TABLES"

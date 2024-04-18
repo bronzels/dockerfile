@@ -43,7 +43,7 @@ ansible all -m shell -a"mkdir -p /data0/minio/pv1"
 ansible all -m shell -a"mkdir -p /data0/minio/pv2"
 ansible all -m shell -a"mkdir -p /data0/minio/pv3"
 ansible all -m shell -a"mkdir -p /data0/minio/pv4"
-cat << \EOF > minio-pv-template.yaml
+cat << EOF > minio-pv-template.yaml
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -88,7 +88,7 @@ done
 #log不知道怎么删除，会空间远超数据目录，引起节点disk pressure被evicted
 sudo ssh dtpct mkdir -p /data0/minio/pv5g1
 sudo ssh dtpct mkdir -p /data0/minio/pv5g2
-cat << \EOF > minio-pv5g-template.yaml
+cat << EOF > minio-pv5g-template.yaml
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -147,8 +147,8 @@ W0414 10:48:58.168858   15937 warnings.go:70] unknown field "spec.pools[0].volum
 
 Tenant 'minio-tenant-1' created in 'minio-tenant-1' Namespace
 
-  Username: 8UO66W6IHMOVQ3377AVN 
-  Password: RtiK0qLDMjzLHKhMIk3NHqsblQjMijF23AKDUltw 
+  Username: 0SQOVOSRXO76MGE00P9H 
+  Password: 36ySAfqCBr799YL57x4VoNjC11ik85aFbdbzqoSJ 
   Note: Copy the credentials to a secure location. MinIO will not display these again.
 
 APPLICATION	SERVICE NAME          	NAMESPACE     	SERVICE TYPE	SERVICE PORT 
@@ -174,4 +174,26 @@ kubectl get pv | grep minio | awk '{print $1}' | xargs kubectl delete pv
 kubectl delete ns minio-tenant-1
 
 #test
+
+cat << EOF > minio-sc.yaml
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: minio-sc
+provisioner: minio.min.io
+parameters:
+  serverEndpoint: "http://my-minio-0.my-minio.minio-operator.svc.cluster.local:9000"
+  accessKey: "0SQOVOSRXO76MGE00P9H"
+  secretKey: "36ySAfqCBr799YL57x4VoNjC11ik85aFbdbzqoSJ"
+  bucket: "scstorage"
+  region: "us-east-1"
+EOF
+
+kubectl apply -f minio-sc.yaml
+
+kubectl run distfs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib --restart=Never --rm -- /bin/bash
+#kubectl exec -it distfs-test -- /bin/bash
+  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local 8UO66W6IHMOVQ3377AVN RtiK0qLDMjzLHKhMIk3NHqsblQjMijF23AKDUltw
+  mc mb minio/scstorage
+  mc ls minio/scstorage
 

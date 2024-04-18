@@ -18,25 +18,28 @@ WORK_HOME=${MYHOME}/workspace
 PRJ_HOME=${WORK_HOME}/dockerfile
 PRJ_PRESTO_HOME=${PRJ_HOME}/presto
 
-TRINO_VERSION=406
-TRINO_HELM_VERSION=0.9.0
+#TRINO_VERSION=406
+#TRINO_HELM_VERSION=0.9.0
+TRINO_VERSION=432
+TRINO_HELM_VERSION=0.19.0
 
 PRESTO_VERSION=0.279
 
 #JUICEFS_VERSION=1.0.2
-JUICEFS_VERSION=1.0.3
+#JUICEFS_VERSION=1.0.3
+JUICEFS_VERSION=1.1.1
 
-maven_version=3.8.6
+maven_version=3.9.6
 
-maven_home=${MYHOME}/apache-maven-${maven_version}
-m2_home=${MYHOME}/m2
+maven_home=${WORK_HOME}/apache-maven-${maven_version}
+m2_home=${WORK_HOME}/m2
 go_path=${MYHOME}/gopath
 
 cd ${PRJ_PRESTO_HOME}
 
 # trino start--------------------------------------------
-wget -c https://github.com/trinodb/trino/archive/refs/tags/406.zip
-gunzip -x trino-${TRINO_VERSION}.zip
+wget -c https://github.com/trinodb/trino/archive/refs/tags/${TRINO_VERSION}.zip -o trino-${TRINO_VERSION}.zip
+unzip -X trino-${TRINO_VERSION}.zip
 
 cd trino-${TRINO_VERSION}
 
