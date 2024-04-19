@@ -1,0 +1,11 @@
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: minio-sc
+provisioner: minio.min.io
+parameters:
+  serverEndpoint: "http://my-minio-0.my-minio.minio-operator.svc.cluster.local:9000"
+  accessKey: "0SQOVOSRXO76MGE00P9H"
+  secretKey: "36ySAfqCBr799YL57x4VoNjC11ik85aFbdbzqoSJ"
+  bucket: "scstorage"
+  region: "us-east-1"

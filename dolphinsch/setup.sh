@@ -22,31 +22,28 @@ cd ${MYDOLPHINSCH_HOME}
 
 kubectl create ns dophinsch
 
+:<<EOF
 wget -c https://www.apache.org/dyn/closer.lua/dolphinscheduler/${DOLPHINSCH_REV}/apache-dolphinscheduler-${DOLPHINSCH_REV}-src.tar.gz
 tar -zxvf apache-dolphinscheduler-${DOLPHINSCH_REV}-src.tar.gz
 
 cd ${MYDOLPHINSCH_HOME}/apache-dolphinscheduler-${DOLPHINSCH_REV}-src
-:<<EOF
-file=mvnw
-chmod a+x ${file}
-cp ${file} ${file}.bk
-$SED -i 's@darwin=false;@darwin=true;@g' ${file}
-export M2_HOME=/Volumes/data/m2
-./mvnw clean install -Prelease
 
-wget -c https://gitee.com/link?target=https%3A%2F%2Frepo1.maven.org%2Fmaven2%2Fcom%2Fgoogle%2Ferrorprone%2Fjavac-shaded%2F9%2B181-r4173-1%2Fjavac-shaded-9%2B181-r4173-1.jar
-mvn install:install-file -DgroupId=com.google.errorprone -DartifactId=javac-shaded -Dversion=9+181-r4173-1 -Dpackaging=jar -Dfile=javac-shaded-9+181-r4173-1.jar
-EOF
 file=pom.xml
 cp ${file} ${file}.bk
-:<<EOF
+
 禁用这个代码风格修正插件
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
-EOF
 
 mvn install clean -Prelease -DskipTests
 #package没法编译
+cd ${MYDOLPHINSCH_HOME}/apache-dolphinscheduler-${DOLPHINSCH_REV}-src
+cd deploy/docker
+tar xzvf ${MYDOLPHINSCH_HOME}/apache-dolphinscheduler-${DOLPHINSCH_REV}-src/dolphinscheduler-dist/target/apache-dolphinscheduler-${DOLPHINSCH_REV}-bin.tar.gz
+
+EOF
+
+wget -c https://mirrors.aliyun.com/apache/dolphinscheduler/${DOLPHINSCH_REV}/apache-dolphinscheduler-${DOLPHINSCH_REV}-bin.tar.gz
 
 #docker
 ansible all -m shell -a"docker images|grep dolphinscheduler"
@@ -54,10 +51,6 @@ ansible all -m shell -a"docker images|grep dolphinscheduler|awk '{print \$3}'|xa
 #containerd
 ansible all -m shell -a"crictl images|grep dolphinscheduler"
 ansible all -m shell -a"crictl images|grep dolphinscheduler |awk '{print \$3}'|xargs crictl rmi"
-
-cd ${MYDOLPHINSCH_HOME}/apache-dolphinscheduler-${DOLPHINSCH_REV}-src
-cd deploy/docker
-tar xzvf ${MYDOLPHINSCH_HOME}/apache-dolphinscheduler-${DOLPHINSCH_REV}-src/dolphinscheduler-dist/target/apache-dolphinscheduler-${DOLPHINSCH_REV}-bin.tar.gz
 
 
 cat << \EOF > p1.2

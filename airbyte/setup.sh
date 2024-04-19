@@ -98,3 +98,5 @@ kubectl get pvc -n airbyte
 #kubectl exec -it  `kubectl get pod -n airbyte |grep Running |grep airbyte-server- |awk '{print $1}'` -n airbyte -- /bin/bash
 #kubectl exec -it  `kubectl get pod -n airbyte |grep Running |grep airbyte-airbyte-api-server |awk '{print $1}'` -n airbyte -- /bin/bash
 #kubectl exec -it  `kubectl get pod -n airbyte |grep Running |grep airbyte-worker- |awk '{print $1}'` -n airbyte -- /bin/bash
+
+

@@ -26,6 +26,13 @@ EOF
 while ! helm pull starrocks-community/kube-starrocks; do sleep 2 ; done ; echo succeed
 tar xzvf kube-starrocks-1.9.4.tgz
 cd kube-starrocks
-helm install starrocks ./ -n starrocks
+helm install starrocks ./ -n starrocks \
+    --set starrocks.initPassword.enabled=true \
+    --set starrocks.initPassword.password=root
 
 helm uninstall starrocks -n starrocks
+kubectl get pod -n starrocks |grep -v Running |awk '{print $1}'| xargs kubectl delete -n starrocks pod "$1" --force --grace-period=0
+
+kubectl exec -it -n starrocks `kubectl get pod -n starrocks | grep kube-starrocks-fe-0 | grep Running | awk '{print $1}'` -- /bin/bash
+
+kubectl exec -it -n mysql `kubectl get pod -n mysql | grep Running | awk '{print $1}'` -- mysql -h kube-starrocks-fe-service.starrocks -P 9030 -uroot -proot -e"SHOW DATABASES"

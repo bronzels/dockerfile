@@ -98,35 +98,6 @@ ansible all -m shell -a"docker rmi harbor.my.org:1080/integrate/seatunnel:${SEAT
 kubectl create cm -n flink seatunnel-config --from-file=seatunnel-config
 kubectl delete cm -n flink seatunnel-config
 
-kubectl apply -n flink -f jfs-pvcs.yaml
-kubectl delete -n flink -f jfs-pvcs.yaml
-kubectl get pvc -n flink
-
-:<<EOF
-docker run --rm --name flink-test flink:${FLINK_SHORT_VERSION} cat /opt/flink/conf/flink-conf.yaml > flink-conf-${FLINK_SHORT_VERSION}.yaml
-docker run --rm --name flink-test flink:${FLINK_SHORT_VERSION} ls /opt/flink/examples/streaming/StateMachineExample.jar
-file=flink-conf-${FLINK_SHORT_VERSION}.yaml
-cp ${file} ${file}.bk
-$SED -i 's@# state.checkpoints.dir: hdfs://namenode-host:port/flink-checkpoints@state.checkpoints.dir: file:///opt/flink/checkpoints@g' ${file}
-$SED -i 's@# state.savepoints.dir: hdfs://namenode-host:port/flink-savepoints@state.savepoints.dir: file:///opt/flink/savepoints@g' ${file}
-EOF
-
-kubectl apply -n flink -f flink-user-pod.yaml
-kubectl delete -n flink -f flink-user-pod.yaml
-
-kubectl exec -n flink `kubectl get pod -n flink |grep flink-user |grep Running |awk '{print $1}'` -- mkdir -p /opt/flink/user/wordcount/trino_wordcount
-kubectl exec -n flink `kubectl get pod -n flink |grep flink-user |grep Running |awk '{print $1}'` -- chmod 777 /opt/flink/user/wordcount
-kubectl exec -n flink `kubectl get pod -n flink |grep flink-user |grep Running |awk '{print $1}'` -- chmod 777 /opt/flink/user/wordcount/trino_wordcount
-kubectl cp trino.txt -n flink `kubectl get pod -n flink |grep flink-user |grep Running |awk '{print $1}'`:/opt/flink/user/wordcount/
-
-kubectl apply -n flink -f flink-wordcount.yaml
-kubectl delete -n flink -f flink-wordcount.yaml
-kubectl exec -n flink `kubectl get pod -n flink |grep flink-wordcount |grep Running |awk '{print $1}'` -- cat /opt/flink/user/trino.txt
-kubectl exec -n flink `kubectl get pod -n flink |grep flink-wordcount |grep Running |awk '{print $1}'` -- cat /opt/flink/conf/flink-conf.yaml
-kubectl exec -n flink `kubectl get pod -n flink |grep flink-user |grep Running |awk '{print $1}'` -- ls /opt/flink/state
-kubectl exec -n flink `kubectl get pod -n flink |grep flink-user |grep Running |awk '{print $1}'` -- ls /opt/flink/user/wordcount/trino_output
-kubectl exec -n flink `kubectl get pod -n flink |grep flink-user |grep Running |awk '{print $1}'` -- cat /opt/flink/user/wordcount/trino_output/2024-04-18--02/part-20728dd8-b0cc-4e34-a7a9-597a8535d523-0
-
 cp seatunnel-flink-template.yaml seatunnel-yaml/seatunnel-flink-streaming-fake.yaml
 $SED -i 's@seatunnel-flink-streaming-example@seatunnel-flink-streaming-fake@g' seatunnel-yaml/seatunnel-flink-streaming-fake.yaml
 $SED -i 's@            - key: seatunnel.streaming.conf@            - key: seatunnel.streaming.fake.conf@g' seatunnel-yaml/seatunnel-flink-streaming-fake.yaml

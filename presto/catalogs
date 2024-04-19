@@ -1,0 +1,10 @@
+  mysql
+    connector.name=mysql
+    connection-url=jdbc:mysql://mmubu:3306?useSSL=false
+    connection-user=root
+    connection-password=root
+  postgresql
+    connector.name=postgresql
+    connection-url=jdbc:postgresql://mmubu:2000/postgres
+    connection-user=postgres
+    connection-password=postgres

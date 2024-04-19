@@ -1,0 +1,22 @@
+ARG FLINK_SHORT_VERSION
+FROM flink:${FLINK_SHORT_VERSION}
+ARG SEATUNNEL_VERSION
+
+ENV SEATUNNEL_HOME="/opt/seatunnel"
+
+ADD apache-seatunnel-${SEATUNNEL_VERSION}-bin.tar.gz /opt
+RUN mv /opt/apache-seatunnel-${SEATUNNEL_VERSION} ${SEATUNNEL_HOME}
+
+COPY connector-cdc-mongodb-2.3.4.jar ${SEATUNNEL_HOME}/connectors/
+COPY mysql-connector-j-8.0.33.jar ${SEATUNNEL_HOME}/plugins/
+COPY postgresql-42.7.3.jar ${SEATUNNEL_HOME}/plugins/
+#RUN cd ${SEATUNNEL_HOME}||sh bin/install-plugin.sh ${SEATUNNEL_VERSION}
+#RUN ls -l /opt/seatunnel/starter/
+#logging
+#seatunnel-flink-13-starter.jar
+#seatunnel-flink-15-starter.jar
+#seatunnel-spark-2-starter.jar
+#seatunnel-spark-3-starter.jar
+#seatunnel-starter.jar
+RUN mkdir -p /opt/flink/state
+RUN mkdir -p /opt/flink/user
