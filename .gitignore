@@ -176,6 +176,9 @@ integrate/bitsail-master
 integrate/bitsail-release-0.1.0
 integrate/bitsail-master.zip
 integrate/apache-seatunnel-2.3.4
+integrate/pulsar-helm-chart
+integrate/apache-inlong-1.11.0
+integrate/apache-inlong-1.11.0-bin.tar.gz
 
 juicefs/juicefs-1.0.2
 juicefs/juicefs-1.0.3

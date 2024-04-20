@@ -1,0 +1,15 @@
+incubator               https://charts.helm.sh/incubator                                      
+stable                  https://charts.helm.sh/stable                                         
+stable-azure            http://mirror.azure.cn/kubernetes/charts/                             
+spark-operator          https://googlecloudplatform.github.io/spark-on-k8s-operator           
+trino                   https://trinodb.github.io/charts/                                     
+polardbx                https://polardbx-charts.oss-cn-beijing.aliyuncs.com                   
+nebula-operator         https://vesoft-inc.github.io/nebula-operator/charts                   
+juicefs                 https://juicedata.github.io/charts/                                   
+apisix                  https://charts.apiseven.com                                           
+apache-airflow          https://airflow.apache.org                                            
+airbyte                 https://airbytehq.github.io/helm-charts                               
+starrocks-community     https://starrocks.github.io/starrocks-kubernetes-operator             
+flink_operator-repo     https://archive.apache.org/dist/flink/flink-kubernetes-operator-1.8.0/
+pfisterer-hadoop        https://pfisterer.github.io/apache-hadoop-helm/                       
+bitnami                 https://charts.bitnami.com/bitnami                                    

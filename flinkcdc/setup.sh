@@ -35,10 +35,6 @@ cd ${FLINKCDC_HOME}
 #while ! ; do sleep 2 ; done ; echo succeed
 
 :<<EOF
-wget -c https://github.com/jetstack/cert-manager/releases/download/v1.8.2/cert-manager.yaml
-kubectl create -f cert-manager.yaml
-kubectl get pods -A |grep cert-manager
-kubectl delete -f cert-manager.yaml
 
 #wget -c https://downloads.apache.org/flink/flink-kubernetes-operator-1.8.0/#:~:text=Parent%20Directory%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%2D-,flink%2Dkubernetes%2Doperator%2D1.8.0%2Dhelm.tgz,-2024%2D03%2D22
 #tar xzvf flink-kubernetes-operator-1.8.0-helm.tgz

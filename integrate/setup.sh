@@ -43,6 +43,8 @@ CHUNJUN_REV=master
 
 SEATUNNEL_VERSION=2.3.4
 
+INLONG_VERSION=1.11.0
+
 export PATH=$PATH:${INT_HOME}
 
 cd ${INT_HOME}
@@ -149,3 +151,41 @@ EOF
 # seatunnel end--------------------------------------------
 
 
+
+# inlong end--------------------------------------------
+#install cert-manager
+#install local-provisioner
+
+helm repo add apache https://pulsar.apache.org/charts
+helm repo update
+kubectl create ns pulsar
+git clone git@github.com:apache/pulsar-helm-chart
+cd pulsar-helm-chart
+file=scripts/pulsar/common_auth.sh
+cp ${file} ${file}.bk
+#curl --retry 10 -L -o $install_script https://raw.githubusercontent.com/streamnative/pulsarctl/master/install.sh
+wget -c https://raw.githubusercontent.com/streamnative/pulsarctl/master/install.sh -o ./scripts/pulsar/install.sh
+./scripts/pulsar/prepare_helm_release.sh \
+    -n pulsar \
+    -k pulsar-mini \
+    -c
+#Your Helm version is not supported. Please upgrade to Helm 3.10.0 or later. The recommended version is currently 3.12.3 or newer.
+#upgrade helm to latest above 3.10
+while ! helm install \
+    --values examples/values-minikube.yaml \
+    --set initialize=true \
+    --namespace pulsar \
+    pulsar-mini apache/pulsar; do sleep 2 ; done ; echo succeed
+while ! helm pull apache/pulsar; do sleep 2 ; done ; echo succeed
+kubectl get pods -n pulsar
+kubectl get pod -n pulsar |grep -v Running |awk '{print $1}'| xargs kubectl delete -n pulsar pod "$1" --force --grace-period=0
+
+
+kubectl create namespace inlong
+wget -c https://downloads.apache.org/inlong/${INLONG_VERSION}/apache-inlong-${INLONG_VERSION}-bin.tar.gz
+tar xzvf apache-inlong-${INLONG_VERSION}-bin.tar.gz
+cd apache-inlong-${INLONG_VERSION}-bin
+file=values.yaml
+cp ${file} ${file}.bk
+helm upgrade inlong --install -n inlong ./
+# inlong end--------------------------------------------
