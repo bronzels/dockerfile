@@ -1,10 +1,13 @@
 #参考文章kubectl get all -n minio-tenant-1
+
+#MINIO_OP_VERSION=4.5.4
+MINIO_OP_VERSION=5.0.14
 #linux
 rm -f kubectl-minio
-wget -c https://github.com/minio/operator/releases/download/v4.5.4/kubectl-minio_4.5.4_linux_amd64 -O kubectl-minio
+wget -c https://github.com/minio/operator/releases/download/v${MINIO_OP_VERSION}/kubectl-minio_${MINIO_OP_VERSION}_linux_amd64 -O kubectl-minio
 #mac
 rm -f kubectl-minio
-wget -c https://github.com/minio/operator/releases/download/v4.5.4/kubectl-minio_4.5.4_darwin_amd64 -O kubectl-minio
+wget -c https://github.com/minio/operator/releases/download/v${MINIO_OP_VERSION}/kubectl-minio_${MINIO_OP_VERSION}_darwin_amd64 -O kubectl-minio
 chmod +x kubectl-minio
 mv kubectl-minio /usr/local/bin/
 
@@ -21,9 +24,12 @@ localhost:minio apple$ Starting port forward of the Console UI.
 
 To connect open a browser and go to http://localhost:9090
 
-Current JWT to login: eyJhbGciOiJSUzI1NiIsImtpZCI6IjVxTUNjc2MxMTJsVUdEX3V0WTVsd3BDcVZSLWJoYnhlV29vQ0E2SVNBWjQifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJtaW5pby1vcGVyYXRvciIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJjb25zb2xlLXNhLXNlY3JldCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJjb25zb2xlLXNhIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiY2ZkYTYyNzUtM2E5ZC00ZGNiLTljYjItMjcwY2RhY2RlYjRjIiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50Om1pbmlvLW9wZXJhdG9yOmNvbnNvbGUtc2EifQ.Ft59XCR8NLowhMguyrtgie3aJz-KVt-RzW2uh-Ar8dsNbrFBn39IAX_KBJ_HBuf6IdriSI40ULXdnSUQb8zfgJA-GPB5uWcu-bR76V92zS9Yek_AucjXQymhD_UXy-btvDVkKB4CEUNJWBmfsnGzxyQoFLvUhId_fp9IehH_4vdfr_6wHYh1zOdaX-9I0R_SnsUKn8QHAA3wIvxaPb1QoRH9OTX6Pl0LqtTX3252sOjSDCkWjGTKBnfyIS5aFtzC44iblyvNMnmNgXrToqN4RRdbzZ9PD8-BMejmfhgZAmTnEyv0cclYG__TWCp-OTiRpwo1ocm6yJnacL7xOlY1HA
+Current JWT to login: eyJhbGciOiJSUzI1NiIsImtpZCI6IjRvZ1FuNDhtYTlZUWg1ZGhLbzF6YVE3dGVTOHdNM3Z1THB1UGtkaVVHRFEifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJtaW5pby1vcGVyYXRvciIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJjb25zb2xlLXNhLXRva2VuLXg2Y3M1Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImNvbnNvbGUtc2EiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiJjYjU0ZDQ0ZC0wMGQ4LTQ4M2UtYTJkZS1kNDM3MjdiNDNmNGQiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6bWluaW8tb3BlcmF0b3I6Y29uc29sZS1zYSJ9.W4Ck-w8M4d5OqT4dkPsZwCH5CGO026lKWcKlPGbI2XXdzliQK_o5_oTNJt0oqB-NbYvdyqhS1yOw8eI_BSKkLr4diiABjBJ05P8zg4yF_fWGmmYCeiYJKRL6Iq4pfijb2rtijFz2034zq2DuHcErK75z1d-OeSXoPV5jrfTWmFp05oTKBQnwEAncFRTQIleSJ8CkCW0DO4GXBXVrY-lVu9-90dmjWkNyuAbziLVzs5YRbBUUtFERFo5SWvZpFZYDfzOH6yi9EVu4E0TRymTMbbCdWL1_HzXTdnWk_im0zaDie0lXq94K6AjigTrEgbBRW-NmdCvykBNmv6AR_Nu4MA
 
 EOF
+
+kubectl minio delete
+
 
 kubectl apply -f - <<EOF
 apiVersion: storage.k8s.io/v1
@@ -38,11 +44,15 @@ kubectl get sc
 
 mkdir pvs
 
+#local-path和 minio-local-storage作用一样
+:<<EOF
 ansible all -m shell -a"rm -rf /data0/minio"
 ansible all -m shell -a"mkdir -p /data0/minio/pv1"
 ansible all -m shell -a"mkdir -p /data0/minio/pv2"
 ansible all -m shell -a"mkdir -p /data0/minio/pv3"
 ansible all -m shell -a"mkdir -p /data0/minio/pv4"
+EOF
+
 cat << EOF > minio-pv-template.yaml
 apiVersion: v1
 kind: PersistentVolume
@@ -124,31 +134,38 @@ do
   cat pvs/${file}
 done
 
+#local-path和 minio-local-storage作用一样
+:<<EOF
 ansible all -m shell -a"ls /data0/minio/"
 
 kubectl apply -f pvs/
 kubectl delete -f pvs/
+EOF
+
 kubectl get pv | grep minio
 
 kubectl create ns minio-tenant-1
+#local-path和 minio-local-storage作用一样
 #  --storage-class  minio-local-storage \
+#最新版本不支持
+#  --enable-audit-logs=false \
+#  --enable-prometheus=false
 kubectl minio tenant create minio-tenant-1  \
   --servers 3 \
   --volumes 12 \
   --capacity 240Gi \
   --storage-class  local-path \
-  --namespace minio-tenant-1 \
-  --enable-audit-logs=false \
-  --enable-prometheus=false \
-  --image registry.cn-hangzhou.aliyuncs.com/bronzels/minio-minio-release-2022-10-29:1.0
+  --namespace minio-tenant-1
+# 指定image会造成tenent通信错误
+#  --image registry.cn-hangzhou.aliyuncs.com/bronzels/minio-minio-release-2022-10-29:1.0
 #  --image registry.cn-hangzhou.aliyuncs.com/bronzels/minio-minio2022-04-16:1.0
 :<<EOF
 W0414 10:48:58.168858   15937 warnings.go:70] unknown field "spec.pools[0].volumeClaimTemplate.metadata.creationTimestamp"
 
 Tenant 'minio-tenant-1' created in 'minio-tenant-1' Namespace
 
-  Username: 0SQOVOSRXO76MGE00P9H 
-  Password: 36ySAfqCBr799YL57x4VoNjC11ik85aFbdbzqoSJ 
+  Username: INE1337BT1CWKY1QFCKB 
+  Password: 1cVBLXO8MCSBgm9V0JGIDp7BPQmgcx3qUtbBhjMi 
   Note: Copy the credentials to a secure location. MinIO will not display these again.
 
 APPLICATION	SERVICE NAME          	NAMESPACE     	SERVICE TYPE	SERVICE PORT 
@@ -183,8 +200,8 @@ metadata:
 provisioner: minio.min.io
 parameters:
   serverEndpoint: "http://my-minio-0.my-minio.minio-operator.svc.cluster.local:9000"
-  accessKey: "0SQOVOSRXO76MGE00P9H"
-  secretKey: "36ySAfqCBr799YL57x4VoNjC11ik85aFbdbzqoSJ"
+  accessKey: "INE1337BT1CWKY1QFCKB"
+  secretKey: "1cVBLXO8MCSBgm9V0JGIDp7BPQmgcx3qUtbBhjMi"
   bucket: "scstorage"
   region: "us-east-1"
 EOF
@@ -193,7 +210,7 @@ kubectl apply -f minio-sc.yaml
 
 kubectl run distfs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib --restart=Never --rm -- /bin/bash
 #kubectl exec -it distfs-test -- /bin/bash
-  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local 8UO66W6IHMOVQ3377AVN RtiK0qLDMjzLHKhMIk3NHqsblQjMijF23AKDUltw
+  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local INE1337BT1CWKY1QFCKB 1cVBLXO8MCSBgm9V0JGIDp7BPQmgcx3qUtbBhjMi
   mc mb minio/scstorage
   mc ls minio/scstorage
 

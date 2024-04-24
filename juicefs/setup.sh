@@ -74,19 +74,19 @@ yum install -y fuse
 modprobe fuse
 ls /dev/fuse
 
-  accessKey: "0SQOVOSRXO76MGE00P9H"
-  secretKey: "36ySAfqCBr799YL57x4VoNjC11ik85aFbdbzqoSJ"
+  Username: Y8KDY5XS66U8JUPV85X3 
+  Password: HARJDPXlVTQGnz8DXL3rzTa5L882SHWHSlk824M5 
 
 kubectl run distfs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubussh-juicefs:3.2.1-nolib --restart=Never --rm -- /bin/bash
 #kubectl exec -it distfs-test -- /bin/bash
-  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local 0SQOVOSRXO76MGE00P9H 36ySAfqCBr799YL57x4VoNjC11ik85aFbdbzqoSJ
+  mc config host add minio https://minio.minio-tenant-1.svc.cluster.local INE1337BT1CWKY1QFCKB 1cVBLXO8MCSBgm9V0JGIDp7BPQmgcx3qUtbBhjMi
   mc mb minio/jfs
   mc ls minio/jfs
   juicefs format \
       --storage minio \
       --bucket https://minio.minio-tenant-1.svc.cluster.local/jfs?tls-insecure-skip-verify=true \
-      --access-key 0SQOVOSRXO76MGE00P9H \
-      --secret-key 36ySAfqCBr799YL57x4VoNjC11ik85aFbdbzqoSJ \
+      --access-key INE1337BT1CWKY1QFCKB \
+      --secret-key 1cVBLXO8MCSBgm9V0JGIDp7BPQmgcx3qUtbBhjMi \
       "redis://:redis@my-redis-master.redis.svc.cluster.local:6379/1" \
       miniofs
   #mount test use distfs-test image and modprob 1stly
@@ -166,8 +166,8 @@ kubectl run distfs-test -it --image=harbor.my.org:1080/chenseanxy/hadoop-ubussh-
   juicefs format \
       --storage minio \
       --bucket https://minio.minio-tenant-1.svc.cluster.local/jfspvc?tls-insecure-skip-verify=true \
-      --access-key 0SQOVOSRXO76MGE00P9H \
-      --secret-key 36ySAfqCBr799YL57x4VoNjC11ik85aFbdbzqoSJ \
+      --access-key INE1337BT1CWKY1QFCKB \
+      --secret-key 1cVBLXO8MCSBgm9V0JGIDp7BPQmgcx3qUtbBhjMi \
       "redis://:redis@my-redis-master.redis.svc.cluster.local:6379/2" \
       miniofspvc
   export MINIO_ROOT_USER=admin

@@ -5,7 +5,7 @@ metadata:
 provisioner: minio.min.io
 parameters:
   serverEndpoint: "http://my-minio-0.my-minio.minio-operator.svc.cluster.local:9000"
-  accessKey: "0SQOVOSRXO76MGE00P9H"
-  secretKey: "36ySAfqCBr799YL57x4VoNjC11ik85aFbdbzqoSJ"
+  accessKey: "INE1337BT1CWKY1QFCKB"
+  secretKey: "1cVBLXO8MCSBgm9V0JGIDp7BPQmgcx3qUtbBhjMi"
   bucket: "scstorage"
   region: "us-east-1"

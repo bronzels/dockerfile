@@ -21,8 +21,10 @@ yum install nvidia-detect -y
 nvidia-detect -v
 #This device requires the current 515.57 NVIDIA driver kmod-nvidia
 #This device requires the current 525.85.05 NVIDIA driver kmod-nvidia
+#This device requires the current 550.76 NVIDIA driver kmod-nvidia
 #drvrev=515.57
-drvrev=525.85.05
+#drvrev=525.85.05
+drvrev=550.76
 :<<EOF
 英伟达显卡算力
 CUDA Toolkit	Toolkit Driver Version Linux()
@@ -49,7 +51,7 @@ dracut -v /boot/initramfs-$(uname -r).img $(uname -r)
 sync;reboot now
 lsmod | grep nouveau
 
-ls
+
 #编译工具devtoolset gcc/gcc-c++/make, tar已安装
 yum install -y gcc gcc-c++ make
 gcc -v
@@ -96,12 +98,15 @@ CUDA 9.0 (9.0.76)	>= 384.81
 EOF
 #https://www.nvidia.cn/Download/index.aspx?lang=cn
 #drvrev=515.76
-drvrev=525.85.05
+#drvrev=525.85.05
+drvrev=550.76
 chmod a+x NVIDIA-Linux-x86_64-${drvrev}.run
 #ncurses图形界面安装，逐个主机，可以用--ui=none转命令行，用expect自动化
 ./NVIDIA-Linux-x86_64-${drvrev}.run
 #Install NVIDIA's 32-bit compatibility libraries?
 #no
+#Rebuild ramfs
+#yes
 nvidia-smi
 #卸载nvidia驱动
 sh NVIDIA-Linux-x86_64-515.76.run --uninstall
@@ -190,6 +195,14 @@ To uninstall the CUDA Toolkit, run cuda-uninstaller in /usr/local/cuda-11.2/bin
 To uninstall the NVIDIA Driver, run nvidia-uninstall
 Logfile is /var/log/cuda-installer.log
 EOF
+rm -f /usr/local/cuda
+mkdir /data0/cuda
+mv /usr/local/cuda-11.8 /data0/cuda/
+ln -s /data0/cuda/cuda-11.6 /usr/local/cuda
+
+#安装cudnn
+#https://developer.nvidia.com/rdp/cudnn-archive
+#https://developer.nvidia.com/rdp/cudnn-archive/v8.3.2
 echo "export PATH=\$PATH:/usr/local/cuda/bin" >> /root/.bashrc
 echo "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/usr/local/cuda/lib64" >> /root/.bashrc
 tail -4 /root/.bashrc
@@ -217,13 +230,13 @@ cd /usr/local/cuda
 #tar -xzvf cudnn-11.3-linux-x64-v8.2.1.32.tgz
 xz -d cudnn-linux-x86_64-8.6.0.163_cuda11-archive.tar.xz
 tar -xvf cudnn-linux-x86_64-8.6.0.163_cuda11-archive.tar
-rm -f cuda
-ln -s cudnn-linux-x86_64-8.6.0.163_cuda11-archive cuda
-mv cuda/lib cuda/lib64
+rm -f cudnn
+ln -s cudnn-linux-x86_64-8.6.0.163_cuda11-archive cudnn
+mv cudnn/lib cudnn/lib64
 #cp -r /usr/local/cuda/include /usr/local/cuda/include.bk4-cudnn-setup
-\cp cuda/include/cudnn*.h /usr/local/cuda/include
+\cp cudnn/include/cudnn*.h /usr/local/cuda/include
 #cp -r /usr/local/cuda/lib64 /usr/local/cuda/lib64.bk4-cudnn-setup
-\cp -P cuda/lib64/libcudnn* /usr/local/cuda/lib64
+\cp -P cudnn/lib64/libcudnn* /usr/local/cuda/lib64
 chmod a+r /usr/local/cuda/include/cudnn*.h /usr/local/cuda/lib64/libcudnn*
 
 #occupancy计算器

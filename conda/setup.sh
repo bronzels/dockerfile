@@ -1,6 +1,6 @@
 wget -c https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-ansible nvidia -m copy -a"src=Miniconda3-latest-Linux-x86_64.sh dest=/root/"
-bash /root/Miniconda3-latest-Linux-x86_64.sh -b -p /usr/local/miniconda3
+ansible nvidia -m copy -a"src=Miniconda3-latest-Linux-x86_64.sh dest=/data0/"
+bash Miniconda3-latest-Linux-x86_64.sh -b -p /usr/local/miniconda3
 echo "eval \"\$(/usr/local/miniconda3/bin/conda shell.bash hook)\"" >> /root/.bashrc
 #ansible nvidia -m shell -a'echo "eval \"\$(/usr/local/miniconda3/bin/conda shell.bash hook)\"" >> /root/.bashrc'
 tail -2 /root/.bashrc

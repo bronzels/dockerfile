@@ -1,0 +1,6 @@
+Trino is a distributed query engine that processes data in parallel across multiple servers. 
+A Trino cluster consists of a coordinator and many workers. Users connect to the coordinator with their SQL query tool. The coordinator collaborates with the workers. The coordinator and the workers access the connected data sources. This access is configured in catalogs.
+Processing each query is a stateful operation. The workload is orchestrated by the coordinator and spread parallel across all workers in the cluster. Each node runs Trino in one JVM instance, and processing is parallelized further using threads.
+A connector adapts Trino to a data source such as Hive or a relational database. You can think of a connector the same way you think of a driver for a database. It is an implementation of Trino’s SPI, which allows Trino to interact with a resource using a standard API.
+A Trino catalog contains schemas and references a data source via a connector. 
+Schemas are a way to organize tables. Together, a catalog and schema define a set of tables that can be queried. When accessing Hive or a relational database such as MySQL with Trino, a schema translates to the same concept in the target database.
