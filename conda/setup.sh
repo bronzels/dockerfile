@@ -1,10 +1,15 @@
 wget -c https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 ansible nvidia -m copy -a"src=Miniconda3-latest-Linux-x86_64.sh dest=/data0/"
-bash Miniconda3-latest-Linux-x86_64.sh -b -p /usr/local/miniconda3
-echo "eval \"\$(/usr/local/miniconda3/bin/conda shell.bash hook)\"" >> /root/.bashrc
+#bash Miniconda3-latest-Linux-x86_64.sh -b -p /usr/local/miniconda3
+bash Miniconda3-latest-Linux-x86_64.sh -b -p /data0/miniconda3
+#echo "eval \"\$(/usr/local/miniconda3/bin/conda shell.bash hook)\"" >> /root/.bashrc
 #ansible nvidia -m shell -a'echo "eval \"\$(/usr/local/miniconda3/bin/conda shell.bash hook)\"" >> /root/.bashrc'
+echo "eval \"\$(/data0/miniconda3/bin/conda shell.bash hook)\"" >> /root/.bashrc
 tail -2 /root/.bashrc
 conda init
+mv /root/.condarc condarc
+ln -s condarc /root/.condarc
+
 #使用以下命令查看源channel：
 conda config --show-sources
 conda config --show
@@ -18,7 +23,7 @@ conda config --add channels http://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/ma
 conda config --add channels http://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
 conda config --add channels http://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/bioconda/
 
-conda update --all -y
+conda update --all -yconda update --all -y
 
 #rm -f ~/.condarc exit
 
@@ -34,11 +39,16 @@ conda config --add channels https://mirrors.aliyun.com/anaconda/pkgs/free/
 conda config --add channels https://mirrors.douban.com/anaconda/cloud/conda-forge/
 conda config --add channels https://mirrors.douban.com/anaconda/pkgs/main/
 conda config --add channels https://mirrors.douban.com/anaconda/pkgs/free/
+
+conda config --add channels https://mirrors.sjtug.sjtu.edu.cn/anaconda/pkgs/main/
+conda config --add channels https://mirrors.sjtug.sjtu.edu.cn/anaconda/pkgs/free/
+conda config --add channels https://mirrors.sjtug.sjtu.edu.cn/anaconda/cloud/conda-forge/
+
 EOF
 
-cat << \EOF >> ~/.condarc
+cat << EOF >> ~/.condarc
 envs_dirs:
-  - /data0/envs
+  - /data0/envsbk
 EOF
 
 #nvidia节点
