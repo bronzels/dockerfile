@@ -7,8 +7,10 @@ bash Miniconda3-latest-Linux-x86_64.sh -b -p /data0/miniconda3
 echo "eval \"\$(/data0/miniconda3/bin/conda shell.bash hook)\"" >> /root/.bashrc
 tail -2 /root/.bashrc
 conda init
-mv /root/.condarc condarc
+mv /root/.condarc /data0/condarc
 ln -s condarc /root/.condarc
+mv /root/.cache /data0/cache
+ln -s /data0/cache /root/.cache
 
 #使用以下命令查看源channel：
 conda config --show-sources
