@@ -765,6 +765,7 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,
 1,CUTLASS,gemm,cutlass_simt_sgemm_256x128_8x5_tt_align1,passed,success,universal,4352,4096,4096,f32:row,f32:row,f32:column,f32:column,1,0,serial,1,1,heuristic,simt,f32,256,128,8,1,1,1,5,4,2,1,1,1,1,50,1024,209715200,146064539648,696,15.6657,12.4676,9323.87
 EOF
 make -j12
+rm -rf install
 make install
 cd $NVIDIA_PRJ_HOME
 mv $NVIDIA_PRJ_HOME/cutlass/build  ./

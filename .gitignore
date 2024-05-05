@@ -231,6 +231,9 @@ nvidia/e1000e-3.8.4.tar.gz
 nvidia/NVIDIA-Linux-x86_64-515.57.run
 nvidia/NVIDIA-Linux-x86_64-515.76.run
 nvidia/Release_27_7.zip
+nvidia/cutlass-3.5.0.tar.gz
+nvidia/cutlass-3.5.0
+nvidia/cutlass
 
 presto/hudibk
 presto/presto-cluster-main
