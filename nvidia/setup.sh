@@ -741,6 +741,7 @@ EOF
 make -j12
 make install
 cp -r install /data0/cutlass
+echo "export CUTLASS_PATH=/data0/cutlass" >> ~/.bashrc
 
 #安装python 3.9
 
