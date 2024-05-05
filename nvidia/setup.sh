@@ -327,7 +327,7 @@ EOF
 which nvidia-container-toolkit
 
 #https://github.com/NVIDIA/k8s-device-plugin/blob/main/nvidia-device-plugin.yml
-cat << \EOF > nvidia-device-plugin.yml
+cat << EOF > nvidia-device-plugin.yml
 # Copyright (c) 2019, NVIDIA CORPORATION.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -422,6 +422,325 @@ yum install -y openssl openssl-devel
 echo 'export PATH=/usr/local/bin:$PATH' >> /root/.bashrc
 cmake --version
 yum install -y rsync
+
+#cmake
+cd /data0
+CMAKE_VERSION=3.29.2
+CMAKE_SHORT_VERSION=3.29
+wget -c https://cmake.org/files/v${CMAKE_SHORT_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz
+tar xzvf cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz
+ln -s cmake-${CMAKE_VERSION}-linux-x86_64 cmake
+echo "export PATH=/data0/cmake/bin:$PATH" >> /root/.bashrc
+source /root/.bashrc
+cmake --version
+
+#cutlass
+:<<EOF
+|**GPU**|**CUDA Compute Capability**|**Minimum CUDA Toolkit Required by CUTLASS-3**|
+|---|---|---|
+|NVIDIA V100 Tensor Core GPU            |7.0|11.4|
+|NVIDIA TitanV                          |7.0|11.4|
+|NVIDIA GeForce RTX 2080 TI, 2080, 2070 |7.5|11.4|
+|NVIDIA T4                              |7.5|11.4|
+|NVIDIA A100 Tensor Core GPU            |8.0|11.4|
+|NVIDIA A10                             |8.6|11.4|
+|NVIDIA GeForce RTX 3090                |8.6|11.4|
+|NVIDIA GeForce RTX 4090                |8.9|11.8|
+|NVIDIA L40                             |8.9|11.8|
+|NVIDIA H100 Tensor Core GPU            |9.0|11.8|
+EOF
+#activate a env to use cutlass
+conda install cuda-toolkit -c nvidia
+git clone git@github.com:NVIDIA/cutlass.git
+cd cutlass
+mkdir build && cd build
+source scl_source enable devtoolset-11
+cmake .. -DCUTLASS_NVCC_ARCHS=86
+make test_unit -j12
+:<<EOF
+并行跑-jx个任务，每个任务占用100-130M的GPU显存
+[----------] Global test environment tear-down
+[==========] 18 tests from 18 test suites ran. (558700 ms total)
+[  PASSED  ] 18 tests.
+EOF
+make cutlass_profiler -j12
+./tools/profiler/cutlass_profiler --kernels=sgemm --m=4352 --n=4096 --k=4096
+:<<EOF
+
+
+
+=============================
+  Problem ID: 1
+
+        Provider: CUTLASS
+   OperationKind: gemm
+       Operation: cutlass_simt_sgemm_128x128_8x2_nn_align1
+
+          Status: Success
+    Verification: ON
+     Disposition: Passed
+
+reference_device: Passed
+          cuBLAS: Not run
+           cuDNN: Not run
+
+       Arguments: --gemm_kind=universal --m=4352 --n=4096 --k=4096 --A=f32:column --B=f32:column --C=f32:column --D=f32:column  \
+                  --alpha=1 --beta=0 --split_k_mode=serial --split_k_slices=1 --batch_count=1 --raster_order=heuristic  \
+                  --op_class=simt --accum=f32 --cta_m=128 --cta_n=128 --cta_k=8 --cluster_m=1 --cluster_n=1 --cluster_k=1  \
+                  --stages=2 --warps_m=4 --warps_n=2 --warps_k=1 --inst_m=1 --inst_n=1 --inst_k=1 --min_cc=50 --max_cc=1024  \
+                 
+
+           Bytes: 209715200  bytes
+           FLOPs: 146064539648  flops
+           FLOPs/Byte: 696
+
+         Runtime: 17.364  ms
+          Memory: 11.2481 GiB/s
+
+            Math: 8411.93 GFLOP/s
+
+
+
+=============================
+  Problem ID: 1
+
+        Provider: CUTLASS
+   OperationKind: gemm
+       Operation: cutlass_simt_sgemm_128x128_8x2_nt_align1
+
+          Status: Success
+    Verification: ON
+     Disposition: Passed
+
+reference_device: Passed
+          cuBLAS: Not run
+           cuDNN: Not run
+
+       Arguments: --gemm_kind=universal --m=4352 --n=4096 --k=4096 --A=f32:column --B=f32:row --C=f32:column --D=f32:column  \
+                  --alpha=1 --beta=0 --split_k_mode=serial --split_k_slices=1 --batch_count=1 --raster_order=heuristic  \
+                  --op_class=simt --accum=f32 --cta_m=128 --cta_n=128 --cta_k=8 --cluster_m=1 --cluster_n=1 --cluster_k=1  \
+                  --stages=2 --warps_m=4 --warps_n=2 --warps_k=1 --inst_m=1 --inst_n=1 --inst_k=1 --min_cc=50 --max_cc=1024  \
+                 
+
+           Bytes: 209715200  bytes
+           FLOPs: 146064539648  flops
+           FLOPs/Byte: 696
+
+         Runtime: 17.2378  ms
+          Memory: 11.3305 GiB/s
+
+            Math: 8473.5 GFLOP/s
+
+
+
+=============================
+  Problem ID: 1
+
+        Provider: CUTLASS
+   OperationKind: gemm
+       Operation: cutlass_simt_sgemm_128x128_8x2_tn_align1
+
+          Status: Success
+    Verification: ON
+     Disposition: Passed
+
+reference_device: Passed
+          cuBLAS: Not run
+           cuDNN: Not run
+
+       Arguments: --gemm_kind=universal --m=4352 --n=4096 --k=4096 --A=f32:row --B=f32:column --C=f32:column --D=f32:column  \
+                  --alpha=1 --beta=0 --split_k_mode=serial --split_k_slices=1 --batch_count=1 --raster_order=heuristic  \
+                  --op_class=simt --accum=f32 --cta_m=128 --cta_n=128 --cta_k=8 --cluster_m=1 --cluster_n=1 --cluster_k=1  \
+                  --stages=2 --warps_m=4 --warps_n=2 --warps_k=1 --inst_m=1 --inst_n=1 --inst_k=1 --min_cc=50 --max_cc=1024  \
+                 
+
+           Bytes: 209715200  bytes
+           FLOPs: 146064539648  flops
+           FLOPs/Byte: 696
+
+         Runtime: 17.9268  ms
+          Memory: 10.895 GiB/s
+
+            Math: 8147.82 GFLOP/s
+
+
+
+=============================
+  Problem ID: 1
+
+        Provider: CUTLASS
+   OperationKind: gemm
+       Operation: cutlass_simt_sgemm_128x128_8x2_tt_align1
+
+          Status: Success
+    Verification: ON
+     Disposition: Passed
+
+reference_device: Passed
+          cuBLAS: Not run
+           cuDNN: Not run
+
+       Arguments: --gemm_kind=universal --m=4352 --n=4096 --k=4096 --A=f32:row --B=f32:row --C=f32:column --D=f32:column  \
+                  --alpha=1 --beta=0 --split_k_mode=serial --split_k_slices=1 --batch_count=1 --raster_order=heuristic  \
+                  --op_class=simt --accum=f32 --cta_m=128 --cta_n=128 --cta_k=8 --cluster_m=1 --cluster_n=1 --cluster_k=1  \
+                  --stages=2 --warps_m=4 --warps_n=2 --warps_k=1 --inst_m=1 --inst_n=1 --inst_k=1 --min_cc=50 --max_cc=1024  \
+                 
+
+           Bytes: 209715200  bytes
+           FLOPs: 146064539648  flops
+           FLOPs/Byte: 696
+
+         Runtime: 17.3976  ms
+          Memory: 11.2264 GiB/s
+
+            Math: 8395.66 GFLOP/s
+
+
+
+=============================
+  Problem ID: 1
+
+        Provider: CUTLASS
+   OperationKind: gemm
+       Operation: cutlass_simt_sgemm_256x128_8x5_nn_align1
+
+          Status: Success
+    Verification: ON
+     Disposition: Passed
+
+reference_device: Passed
+          cuBLAS: Not run
+           cuDNN: Not run
+
+       Arguments: --gemm_kind=universal --m=4352 --n=4096 --k=4096 --A=f32:column --B=f32:column --C=f32:column --D=f32:column  \
+                  --alpha=1 --beta=0 --split_k_mode=serial --split_k_slices=1 --batch_count=1 --raster_order=heuristic  \
+                  --op_class=simt --accum=f32 --cta_m=256 --cta_n=128 --cta_k=8 --cluster_m=1 --cluster_n=1 --cluster_k=1  \
+                  --stages=5 --warps_m=4 --warps_n=2 --warps_k=1 --inst_m=1 --inst_n=1 --inst_k=1 --min_cc=50 --max_cc=1024  \
+                 
+
+           Bytes: 209715200  bytes
+           FLOPs: 146064539648  flops
+           FLOPs/Byte: 696
+
+         Runtime: 15.8189  ms
+          Memory: 12.3468 GiB/s
+
+            Math: 9233.52 GFLOP/s
+
+
+
+=============================
+  Problem ID: 1
+
+        Provider: CUTLASS
+   OperationKind: gemm
+       Operation: cutlass_simt_sgemm_256x128_8x5_nt_align1
+
+          Status: Success
+    Verification: ON
+     Disposition: Passed
+
+reference_device: Passed
+          cuBLAS: Not run
+           cuDNN: Not run
+
+       Arguments: --gemm_kind=universal --m=4352 --n=4096 --k=4096 --A=f32:column --B=f32:row --C=f32:column --D=f32:column  \
+                  --alpha=1 --beta=0 --split_k_mode=serial --split_k_slices=1 --batch_count=1 --raster_order=heuristic  \
+                  --op_class=simt --accum=f32 --cta_m=256 --cta_n=128 --cta_k=8 --cluster_m=1 --cluster_n=1 --cluster_k=1  \
+                  --stages=5 --warps_m=4 --warps_n=2 --warps_k=1 --inst_m=1 --inst_n=1 --inst_k=1 --min_cc=50 --max_cc=1024  \
+                 
+
+           Bytes: 209715200  bytes
+           FLOPs: 146064539648  flops
+           FLOPs/Byte: 696
+
+         Runtime: 15.1359  ms
+          Memory: 12.9039 GiB/s
+
+            Math: 9650.2 GFLOP/s
+
+
+
+=============================
+  Problem ID: 1
+
+        Provider: CUTLASS
+   OperationKind: gemm
+       Operation: cutlass_simt_sgemm_256x128_8x5_tn_align1
+
+          Status: Success
+    Verification: ON
+     Disposition: Passed
+
+reference_device: Passed
+          cuBLAS: Not run
+           cuDNN: Not run
+
+       Arguments: --gemm_kind=universal --m=4352 --n=4096 --k=4096 --A=f32:row --B=f32:column --C=f32:column --D=f32:column  \
+                  --alpha=1 --beta=0 --split_k_mode=serial --split_k_slices=1 --batch_count=1 --raster_order=heuristic  \
+                  --op_class=simt --accum=f32 --cta_m=256 --cta_n=128 --cta_k=8 --cluster_m=1 --cluster_n=1 --cluster_k=1  \
+                  --stages=5 --warps_m=4 --warps_n=2 --warps_k=1 --inst_m=1 --inst_n=1 --inst_k=1 --min_cc=50 --max_cc=1024  \
+                 
+
+           Bytes: 209715200  bytes
+           FLOPs: 146064539648  flops
+           FLOPs/Byte: 696
+
+         Runtime: 16.5687  ms
+          Memory: 11.7881 GiB/s
+
+            Math: 8815.7 GFLOP/s
+
+
+
+=============================
+  Problem ID: 1
+
+        Provider: CUTLASS
+   OperationKind: gemm
+       Operation: cutlass_simt_sgemm_256x128_8x5_tt_align1
+
+          Status: Success
+    Verification: ON
+     Disposition: Passed
+
+reference_device: Passed
+          cuBLAS: Not run
+           cuDNN: Not run
+
+       Arguments: --gemm_kind=universal --m=4352 --n=4096 --k=4096 --A=f32:row --B=f32:row --C=f32:column --D=f32:column  \
+                  --alpha=1 --beta=0 --split_k_mode=serial --split_k_slices=1 --batch_count=1 --raster_order=heuristic  \
+                  --op_class=simt --accum=f32 --cta_m=256 --cta_n=128 --cta_k=8 --cluster_m=1 --cluster_n=1 --cluster_k=1  \
+                  --stages=5 --warps_m=4 --warps_n=2 --warps_k=1 --inst_m=1 --inst_n=1 --inst_k=1 --min_cc=50 --max_cc=1024  \
+                 
+
+           Bytes: 209715200  bytes
+           FLOPs: 146064539648  flops
+           FLOPs/Byte: 696
+
+         Runtime: 15.6657  ms
+          Memory: 12.4676 GiB/s
+
+            Math: 9323.87 GFLOP/s
+
+
+=============================
+
+CSV Results:
+
+Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,C,D,alpha,beta,split_k_mode,split_k_slices,batch_count,raster_order,op_class,accum,cta_m,cta_n,cta_k,cluster_m,cluster_n,cluster_k,stages,warps_m,warps_n,warps_k,inst_m,inst_n,inst_k,min_cc,max_cc,Bytes,Flops,Flops/Byte,Runtime,GB/s,GFLOPs
+1,CUTLASS,gemm,cutlass_simt_sgemm_128x128_8x2_nn_align1,passed,success,universal,4352,4096,4096,f32:column,f32:column,f32:column,f32:column,1,0,serial,1,1,heuristic,simt,f32,128,128,8,1,1,1,2,4,2,1,1,1,1,50,1024,209715200,146064539648,696,17.364,11.2481,8411.93
+1,CUTLASS,gemm,cutlass_simt_sgemm_128x128_8x2_nt_align1,passed,success,universal,4352,4096,4096,f32:column,f32:row,f32:column,f32:column,1,0,serial,1,1,heuristic,simt,f32,128,128,8,1,1,1,2,4,2,1,1,1,1,50,1024,209715200,146064539648,696,17.2378,11.3305,8473.5
+1,CUTLASS,gemm,cutlass_simt_sgemm_128x128_8x2_tn_align1,passed,success,universal,4352,4096,4096,f32:row,f32:column,f32:column,f32:column,1,0,serial,1,1,heuristic,simt,f32,128,128,8,1,1,1,2,4,2,1,1,1,1,50,1024,209715200,146064539648,696,17.9268,10.895,8147.82
+1,CUTLASS,gemm,cutlass_simt_sgemm_128x128_8x2_tt_align1,passed,success,universal,4352,4096,4096,f32:row,f32:row,f32:column,f32:column,1,0,serial,1,1,heuristic,simt,f32,128,128,8,1,1,1,2,4,2,1,1,1,1,50,1024,209715200,146064539648,696,17.3976,11.2264,8395.66
+1,CUTLASS,gemm,cutlass_simt_sgemm_256x128_8x5_nn_align1,passed,success,universal,4352,4096,4096,f32:column,f32:column,f32:column,f32:column,1,0,serial,1,1,heuristic,simt,f32,256,128,8,1,1,1,5,4,2,1,1,1,1,50,1024,209715200,146064539648,696,15.8189,12.3468,9233.52
+1,CUTLASS,gemm,cutlass_simt_sgemm_256x128_8x5_nt_align1,passed,success,universal,4352,4096,4096,f32:column,f32:row,f32:column,f32:column,1,0,serial,1,1,heuristic,simt,f32,256,128,8,1,1,1,5,4,2,1,1,1,1,50,1024,209715200,146064539648,696,15.1359,12.9039,9650.2
+1,CUTLASS,gemm,cutlass_simt_sgemm_256x128_8x5_tn_align1,passed,success,universal,4352,4096,4096,f32:row,f32:column,f32:column,f32:column,1,0,serial,1,1,heuristic,simt,f32,256,128,8,1,1,1,5,4,2,1,1,1,1,50,1024,209715200,146064539648,696,16.5687,11.7881,8815.7
+1,CUTLASS,gemm,cutlass_simt_sgemm_256x128_8x5_tt_align1,passed,success,universal,4352,4096,4096,f32:row,f32:row,f32:column,f32:column,1,0,serial,1,1,heuristic,simt,f32,256,128,8,1,1,1,5,4,2,1,1,1,1,50,1024,209715200,146064539648,696,15.6657,12.4676,9323.87
+EOF
+make -j12
+make install
+cp -r install /data0/cutlass
 
 #安装python 3.9
 
