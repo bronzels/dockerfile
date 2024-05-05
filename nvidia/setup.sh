@@ -1,3 +1,24 @@
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "Mac detected."
+    #mac
+    os=darwin
+    MYHOME=/Volumes/data
+    SED=gsed
+    bin=/Users/apple/bin
+else
+    echo "Assuming linux by default."
+    #linux
+    os=linux
+    MYHOME=
+    SED=sed
+    bin=/usr/local/bin
+fi
+
+WORK_HOME=${MYHOME}/workspace
+PRJ_HOME=${WORK_HOME}/dockerfile
+
+NVIDIA_PRJ_HOME=${PRJ_HOME}/nvidia
+
 ansible nvidia -m shell -a""
 
 #参考这篇文章
@@ -451,11 +472,16 @@ cmake --version
 EOF
 #activate a env to use cutlass
 conda install cuda-toolkit -c nvidia
-git clone git@github.com:NVIDIA/cutlass.git
+#git clone git@github.com:NVIDIA/cutlass.git
+CUTLASS_VERSION=3.5.0
+wget -c https://github.com/NVIDIA/cutlass/archive/refs/tags/v${CUTLASS_VERSION}.tar.gz
+tar xzvf cutlass-${CUTLASS_VERSION}.tar.gz
+ln -a cutlass-${CUTLASS_VERSION} cutlass
 cd cutlass
 mkdir build && cd build
 source scl_source enable devtoolset-11
-cmake .. -DCUTLASS_NVCC_ARCHS=86
+git config --global --add safe.directory /workspace/dockerfile
+while ! cmake .. -DCUTLASS_NVCC_ARCHS=86; do sleep 2 ; done ; echo succeed
 make test_unit -j12
 :<<EOF
 并行跑-jx个任务，每个任务占用100-130M的GPU显存
@@ -740,7 +766,14 @@ Problem,Provider,OperationKind,Operation,Disposition,Status,gemm_kind,m,n,k,A,B,
 EOF
 make -j12
 make install
-cp -r install /data0/cutlass
+cd $NVIDIA_PRJ_HOME
+mv $NVIDIA_PRJ_HOME/cutlass/build  ./
+mv build/install/include ./
+cp -r build/install/* $NVIDIA_PRJ_HOME/cutlass/
+mv include build/install/
+rm -rf /data0/cutlass
+cp -r $NVIDIA_PRJ_HOME/cutlass-${CUTLASS_VERSION} /data0/cutlass
+mv ./build $NVIDIA_PRJ_HOME/cutlass/
 echo "export CUTLASS_PATH=/data0/cutlass" >> ~/.bashrc
 
 #安装python 3.9
