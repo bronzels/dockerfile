@@ -119,3 +119,25 @@ pip install /root/trt/graphsurgeon/graphsurgeon-0.4.6-py2.py3-none-any.whl
 """
 pip install tf2onnx
 python -c "import tensorrt;print(tensorrt.__version__)"
+python -c '''import torch
+flag = torch.cuda.is_available()
+print(flag)
+ 
+ngpu= 1
+device = torch.device("cuda:0" if (torch.cuda.is_available() and ngpu > 0) else "cpu")
+print(device)
+print(torch.__version__)
+print(torch.cuda.get_device_name(0))
+print(torch.rand(3,3).cuda())'''
+
+cat << EOF >> ~/.bashrc
+export HF_ENDPOINT=https://hf-mirror.com
+export HF_HOME=/workspace/hfcache
+export HF_DATASETS_CACHE=$HF_HOME/datasets
+export HUGGINGFACE_HUB_CACHE=$HF_HOME/hub
+export TRANSFORMERS_CACHE=$HF_HOME/hub
+export HF_METRICS_CACHE=$HF_HOME/metrics
+export HF_EVALUATE_CACHE=$HF_HOME/evaluate
+export HF_MODULES_CACHE=$HF_HOME/modules/evaluate_modules
+export DIFFUSERS_CACHE=$HF_HOME/diffusers
+EOF

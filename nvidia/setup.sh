@@ -770,7 +770,7 @@ make install
 cd $NVIDIA_PRJ_HOME
 mv $NVIDIA_PRJ_HOME/cutlass/build  ./
 mv build/install/include ./
-cp -r build/install/* $NVIDIA_PRJ_HOME/cutlass/
+\cp -r build/install/* $NVIDIA_PRJ_HOME/cutlass/
 mv include build/install/
 rm -rf /data0/cutlass
 cp -r $NVIDIA_PRJ_HOME/cutlass-${CUTLASS_VERSION} /data0/cutlass
