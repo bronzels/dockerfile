@@ -11,14 +11,18 @@ else
     SED=sed
 fi
 
+
 img=$1
 echo "img:${img}"
-tarfile=`echo "${img}"|gsed 's@/@-@g'|gsed 's@:@-@g'`.tar
+tagged=$2
+tarfile=`echo "${tagged}"|gsed 's@/@-@g'|gsed 's@:@-@g'`.tar
 echo "tarfile:${tarfile}"
 
-#docker pull $img
+docker pull $img
+docker tag $img $tagged
 
-docker save ${img} -o ${tarfile}
-ansible all -m copy -a"src=${tarfile} dest=/root/"
-ansible all -m shell -a"docker load -i /root/${tarfile}"
-ansible all -m shell -a"rm -f /root/${tarfile}"
+docker save ${tagged} -o ${tarfile}
+ansible all -m copy -a"src=${tarfile} dest=/data0/"
+ansible all -m shell -a"docker load -i /data0/${tarfile}"
+ansible all -m shell -a"rm -f /data0/${tarfile}"
+rm -f ${tarfile}

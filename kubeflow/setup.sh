@@ -566,7 +566,7 @@ kustomize build common/cert-manager/kubeflow-issuer/base | kubectl delete -f -
 kustomize build common/cert-manager/cert-manager/base | kubectl delete -f -
 
 kubectl proxy --port=8009 &
-remove_abnormal_pods.sh
+remove_nonrunning_pods.sh
 kubectl get deployments.apps -n kubeflow-user-example-com | awk '{print $1}' | xargs kubectl delete deployments.apps $1 -n kubeflow-user-example-com --force --grace-period=0
 kubectl get replicaset.apps -n kubeflow-user-example-com | awk '{print $1}' | xargs kubectl delete replicaset.apps $1 -n kubeflow-user-example-com --force --grace-period=0
 kubectl get service -n kubeflow-user-example-com | awk '{print $1}' | xargs kubectl delete service $1 -n kubeflow-user-example-com --force --grace-period=0

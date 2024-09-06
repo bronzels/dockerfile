@@ -1,0 +1,43 @@
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment    
+metadata:
+  name: flink-session-cluster
+spec:
+  image: harbor.my.org:1080/flink/flink:cdc-3.0.1-flink-1.18.1
+  flinkVersion: v1_18
+  flinkConfiguration:
+    taskmanager.numberOfTaskSlots: "2"
+    state.backend: filesystem
+    state.checkpoints.dir: file:///opt/flink/state
+    state.savepoints.dir: file:///opt/flink/state
+    execution.checkpointing.interval: "3000s"
+  serviceAccount: flink
+  jobManager:
+    resource:
+      memory: "2048m"
+      cpu: 1
+  taskManager:
+    resource:
+      memory: "2048m"
+      cpu: 1
+  podTemplate:
+    spec:
+      containers:
+        - name: flink-main-container
+          volumeMounts:
+            - name: log-volume
+              mountPath: /opt/flink/log
+            - name: state-volume
+              mountPath: /opt/flink/state
+            - name: user-volume
+              mountPath: /opt/flink/user
+      volumes:
+        - name: log-volume
+          persistentVolumeClaim:
+            claimName: jfs-flink-log-claim
+        - name: state-volume
+          persistentVolumeClaim:
+            claimName: jfs-flink-state-claim
+        - name: user-volume
+          persistentVolumeClaim:
+            claimName: jfs-flink-user-claim

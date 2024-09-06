@@ -1,0 +1,58 @@
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  name: seatunnel-flink-streaming-fake
+spec:
+  image: harbor.my.org:1080/integrate/seatunnel:2.3.4-flink-1.15
+  flinkVersion: v1_15
+  flinkConfiguration:
+    taskmanager.numberOfTaskSlots: "2"
+    state.backend: filesystem
+    state.checkpoints.dir: file:///opt/flink/checkpoints
+    state.savepoints.dir: file:///opt/flink/savepoints
+  serviceAccount: flink
+  jobManager:
+    replicas: 1
+    resource:
+      memory: "1024m"
+      cpu: 1
+  taskManager:
+    resource:
+      memory: "1024m"
+      cpu: 1
+  podTemplate:
+    spec:
+      containers:
+        - name: flink-main-container
+          volumeMounts:
+            - name: log-volume
+              mountPath: /opt/flink/log
+            - name: state-volume
+              mountPath: /opt/flink/state
+            - name: user-volume
+              mountPath: /opt/flink/user
+            - name: seatunnel-config
+              mountPath: /data/seatunnel.streaming.conf
+              subPath: seatunnel.streaming.conf
+      volumes:
+        - name: log-volume
+          persistentVolumeClaim:
+            claimName: jfs-flink-log-claim
+        - name: state-volume
+          persistentVolumeClaim:
+            claimName: jfs-flink-state-claim
+        - name: user-volume
+          persistentVolumeClaim:
+            claimName: jfs-flink-user-claim
+        - name: seatunnel-config
+          configMap:
+            name: seatunnel-config
+            items:
+            - key: seatunnel.streaming.fake.conf
+              path: seatunnel.streaming.conf
+  job:
+    jarURI: local:///opt/seatunnel/starter/seatunnel-flink-15-starter.jar
+    entryClass: org.apache.seatunnel.core.starter.flink.SeaTunnelFlink
+    args: ["--config", "/data/seatunnel.streaming.conf"]
+    parallelism: 2
+    upgradeMode: stateless

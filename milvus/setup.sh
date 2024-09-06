@@ -37,8 +37,30 @@ AVX2
 AVX512
 EOF
 lscpu | grep -e sse4_2 -e avx -e avx2 -e avx512
-wget https://raw.githubusercontent.com/milvus-io/milvus/master/deployments/docker/standalone/docker-compose.yml -O docker-compose.yml
+
+wget -c https://github.com/milvus-io/milvus/releases/download/v2.4.10/milvus-standalone-docker-compose.yml
 #修改DOCKER_VOLUME_DIRECTORY指向固定目录
 export MYMILVUS_HOME=/home/milvus
-docker-compose up -d
+docker compose -f milvus-standalone-docker-compose.yml up -d
+#while ! docker compose -f milvus-standalone-docker-compose.yml up -d; do sleep 2 ; done ; echo succeed
+docker run -d \
+--restart=always \
+--name=attu \
+-p 8003:3000 \
+-e MILVUS_URL=192.168.3.14:19530 \
+zilliz/attu:v2.3.1
 
+git clone git@github.com:milvus-io/bootcamp
+mkdir ~/.kaggle
+mv /workspace/dockerfile/milvus/kaggle.json ~/.kaggle/
+
+export KAGGLE_USERNAME=bronzels
+export KAGGLE_KEY=7ca32efd0cee4ee48cb62016944eb3fd
+export TOKENIZERS_PARALLELISM=true
+
+import kaggle dependency
+import kaggle
+kaggle.api.authenticate()
+kaggle.api.dataset_download_files('rounakbanik/the-movies-dataset', path='dataset', unzip=True)
+
+pip install sentence_transformers

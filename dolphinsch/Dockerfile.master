@@ -1,0 +1,15 @@
+FROM eclipse-temurin:8-jre
+
+ARG DOLPHINSCH_REV=
+ENV DOCKER true
+ENV TZ Asia/Shanghai
+ENV DOLPHINSCHEDULER_HOME /opt/dolphinscheduler
+
+WORKDIR $DOLPHINSCHEDULER_HOME
+
+ARG DOLPHINSCH_REV=
+
+
+ADD apache-dolphinscheduler-${DOLPHINSCH_REV}-bin/master-server $DOLPHINSCHEDULER_HOME
+EXPOSE 12345
+CMD [ "/bin/bash", "./bin/start.sh" ]

@@ -121,6 +121,7 @@ EOF
 #drvrev=515.76
 #drvrev=525.85.05
 drvrev=550.76
+#drvrev=555.42.02
 chmod a+x NVIDIA-Linux-x86_64-${drvrev}.run
 #ncurses图形界面安装，逐个主机，可以用--ui=none转命令行，用expect自动化
 ./NVIDIA-Linux-x86_64-${drvrev}.run
@@ -131,7 +132,10 @@ chmod a+x NVIDIA-Linux-x86_64-${drvrev}.run
 nvidia-smi
 #卸载nvidia驱动
 sh NVIDIA-Linux-x86_64-515.76.run --uninstall
-
+#升级kernel以后需要重新build驱动
+yum install dkms -y
+ls -l /usr/src|grep nvidia
+dkms install -m nvidia -v 550.76
 
 #！！！
 #cuda/cudnn版本关键看tf的版本配套，pytorch自带cuda包，不需要手工安装的cuda一致，只需要nvidia驱动能够向上兼容pytorch要求的cuda版本
@@ -776,6 +780,13 @@ rm -rf /data0/cutlass
 cp -r $NVIDIA_PRJ_HOME/cutlass-${CUTLASS_VERSION} /data0/cutlass
 mv ./build $NVIDIA_PRJ_HOME/cutlass/
 echo "export CUTLASS_PATH=/data0/cutlass" >> ~/.bashrc
+
+
+#安装nccl
+yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
+yum install -y libnccl libnccl-devel libnccl-static 
+#2.21.5-1+cuda12.4
+
 
 #安装python 3.9
 

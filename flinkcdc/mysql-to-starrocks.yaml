@@ -3,7 +3,7 @@
 ################################################################################
 source:
   type: mysql
-  hostname: mmubu
+  hostname: localhost
   port: 3306
   username: root
   password: 123456
@@ -14,8 +14,8 @@ source:
 sink:
   type: starrocks
   name: StarRocks Sink
-  jdbc-url: jdbc:mysql://mmubu:9030
-  load-url: mmubu:8030
+  jdbc-url: jdbc:mysql://127.0.0.1:9030
+  load-url: 127.0.0.1:8030
   username: root
   password: ""
   table.create.properties.replication_num: 1

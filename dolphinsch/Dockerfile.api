@@ -1,0 +1,27 @@
+FROM harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:3.3.1 AS spark
+
+FROM eclipse-temurin:8-jre AS final
+
+ARG DOLPHINSCH_REV=
+ENV DOCKER true
+ENV TZ Asia/Shanghai
+ENV DOLPHINSCHEDULER_HOME /opt/dolphinscheduler
+
+WORKDIR $DOLPHINSCHEDULER_HOME
+
+ARG DOLPHINSCH_REV=
+
+RUN useradd -d /app/hdfs hdfs
+RUN mkdir -p /app/hdfs
+RUN chown hdfs:hdfs /app/hdfs
+RUN usermod -g root hdfs
+
+RUN mkdir /app/hdfs/spark
+RUN chown hdfs:root /app/hdfs/spark
+COPY --from=spark --chown=hdfs:root /app/hdfs/spark/conf /app/hdfs/spark/conf
+ENV HADOOP_CONF_DIR /app/hdfs/spark/conf
+
+ADD apache-dolphinscheduler-${DOLPHINSCH_REV}-bin/api-server $DOLPHINSCHEDULER_HOME
+COPY --from=spark --chown=hdfs:root /app/hdfs/spark/jars/juicefs-hadoop-1.0.2.jar $DOLPHINSCHEDULER_HOME/libs
+EXPOSE 12345 25333
+CMD [ "/bin/bash", "./bin/start.sh" ]

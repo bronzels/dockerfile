@@ -1,0 +1,37 @@
+FROM harbor.my.org:1080/bronzels/spark-juicefs-volcano-rss:3.3.1 AS spark
+
+FROM eclipse-temurin:8-jre AS final
+
+ARG DOLPHINSCH_REV=
+ENV DOCKER true
+ENV TZ Asia/Shanghai
+ENV DOLPHINSCHEDULER_HOME /opt/dolphinscheduler
+
+WORKDIR $DOLPHINSCHEDULER_HOME
+
+ARG DOLPHINSCH_REV=
+
+RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list
+
+RUN set -ex &&     apt-get update &&     ln -s /lib /lib64 &&     apt install -y bash tini libc6 libpam-modules krb5-user libnss3 procps net-tools sudo &&     rm /bin/sh &&     ln -sv /bin/bash /bin/sh &&     echo "auth required pam_wheel.so use_uid" >> /etc/pam.d/su &&     chgrp root /etc/passwd && chmod ug+rw /etc/passwd &&     rm -rf /var/cache/apt/* && rm -rf /var/lib/apt/lists/*
+
+RUN useradd -d /app/hdfs hdfs
+RUN mkdir -p /app/hdfs
+RUN chown hdfs:hdfs /app/hdfs
+RUN usermod -g root hdfs
+
+RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+ENV TIME_ZONE Asia/Shanghai
+
+COPY --from=spark --chown=hdfs:root /app/hdfs/spark /app/hdfs/spark
+ENV SPARK_HOME /app/hdfs/spark
+
+COPY --from=spark --chown=hdfs:root /app/hdfs/decom.sh /app/hdfs/decom.sh
+
+COPY --from=spark /usr/local/bin/mc /usr/local/bin/mc
+COPY --from=spark /usr/local/bin/miniogw /usr/local/bin/miniogw
+COPY --from=spark /usr/local/bin/juicefs /usr/local/bin/juicefs
+
+ADD apache-dolphinscheduler-${DOLPHINSCH_REV}-bin/worker-server $DOLPHINSCHEDULER_HOME
+EXPOSE 1235
+CMD [ "/bin/bash", "./bin/start.sh" ]
