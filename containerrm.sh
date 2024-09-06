@@ -1,0 +1,1 @@
+docker ps -a | grep Exited | grep milvus | awk '{print $1}' | xargs docker rm $1

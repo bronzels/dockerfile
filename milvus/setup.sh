@@ -41,6 +41,7 @@ lscpu | grep -e sse4_2 -e avx -e avx2 -e avx512
 wget -c https://github.com/milvus-io/milvus/releases/download/v2.4.10/milvus-standalone-docker-compose.yml
 #修改DOCKER_VOLUME_DIRECTORY指向固定目录
 export MYMILVUS_HOME=/home/milvus
+
 docker compose -f milvus-standalone-docker-compose.yml up -d
 #while ! docker compose -f milvus-standalone-docker-compose.yml up -d; do sleep 2 ; done ; echo succeed
 docker run -d \
