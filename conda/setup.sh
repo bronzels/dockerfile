@@ -89,14 +89,14 @@ pip install jupyter notebook
 jupyter notebook --generate-config
 :<<EOF
 #step 3
-接下来键盘输入ipython
-输入from notebook.auth import passwd
-输入passwd()，Enter password: 输入你要设定的密码，Verify password: 验证密码
+jupyter notebook password
+Enter password: 
+Verify password: 
+[JupyterPasswordApp] Wrote hashed password to /root/.jupyter/jupyter_server_config.json
 
 #step 4
 在~/.jupyter/jupyter_notebook_config.py末尾添加
 c.NotebookApp.ip = '*'                     # 允许访问此服务器的 IP，星号表示任意 IP
-c.NotebookApp.password = 'argon2:$argon2id$v=19$m=10240,t=10,p=8$QplvWXtYUtp4TlXS1T1urQ$xulqNxrIqlJmCPrBHd7nGA' # 之前生成的密码 hash 字串, 粘贴进去
 c.NotebookApp.open_browser = False         # 运行时不打开本机浏览器
 c.NotebookApp.port = 8890                  # 使用的端口，随意设置，但是要记得你设定的这个端口
 c.NotebookApp.enable_mathjax = True        # 启用 MathJax
