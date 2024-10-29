@@ -48,10 +48,7 @@ conda config --add channels https://mirrors.sjtug.sjtu.edu.cn/anaconda/cloud/con
 
 EOF
 
-cat << EOF >> ~/.condarc
-envs_dirs:
-  - /data0/envsbk
-EOF
+\cp condarc ~/.condarc
 
 #nvidia节点
 mkdir /data0/envs
